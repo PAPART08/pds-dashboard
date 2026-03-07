@@ -1,0 +1,198 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import styles from './page.module.css';
+
+// Dummy accounts for different roles
+const DUMMY_ACCOUNTS = [
+    { email: 'admin@dpwh.gov.ph', username: 'admin', password: 'password123', role: 'Admin', name: 'System Admin', route: '/dashboard/team' },
+    { email: 'chief@dpwh.gov.ph', username: 'chief', password: 'password123', role: 'Section Chief', name: 'Carlos Santos', route: '/dashboard' },
+    { email: 'head@dpwh.gov.ph', username: 'head', password: 'password123', role: 'Unit Head', name: 'Antonio Reyes', route: '/dashboard/unit-head-task' },
+    { email: 'user@dpwh.gov.ph', username: 'user', password: 'password123', role: 'Regular Member', name: 'Maria Dela Cruz', route: '/dashboard/user-task' },
+];
+
+export default function Login() {
+    const router = useRouter();
+    const [showPassword, setShowPassword] = useState(false);
+    const [identifier, setIdentifier] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+
+    const getRedirectRoute = (role: string) => {
+        switch (role) {
+            case 'Admin': return '/dashboard/team';
+            case 'Section Chief': return '/dashboard';
+            case 'Unit Head': return '/dashboard/unit-head-task';
+            case 'Regular Member':
+            case 'Unit Member':
+            case 'Planning Unit':
+            default: return '/dashboard/user-task';
+        }
+    };
+
+    const handleLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        // Get users from localStorage (added via Admin)
+        let localUsers = [];
+        try {
+            const savedTeam = localStorage.getItem('pds_team');
+            if (savedTeam) {
+                localUsers = JSON.parse(savedTeam);
+            }
+        } catch (err) {
+            console.error('Error reading local team:', err);
+        }
+
+        // Combine hardcoded dummy accounts with dynamic local users
+        const allAccounts = [...DUMMY_ACCOUNTS, ...localUsers];
+
+        const account = allAccounts.find(
+            (acc) => (acc.email === identifier || acc.username === identifier) && acc.password === password
+        );
+
+        if (account) {
+            // Ensure the account object has the correct route if it's a dynamic user
+            const finalAccount = {
+                ...account,
+                route: account.route || getRedirectRoute(account.role || account.position || 'User')
+            };
+
+            localStorage.setItem('currentUser', JSON.stringify(finalAccount));
+            router.push(finalAccount.route);
+        } else {
+            setError('Invalid credentials. Please try again.');
+        }
+    };
+
+    const handleFillDemo = (acc: typeof DUMMY_ACCOUNTS[0]) => {
+        setIdentifier(acc.email);
+        setPassword(acc.password);
+        setError('');
+    };
+
+    return (
+        <div className={styles.container}>
+            {/* Background */}
+            <div className={styles.bgWrapper}>
+                <div className={styles.glowTopLeft}></div>
+                <div className={styles.glowBottomRight}></div>
+            </div>
+
+            {/* Main Login Card */}
+            <main className={styles.main}>
+                <div className={styles.glassCard}>
+                    {/* Logo/Icon Section */}
+                    <div className={styles.header}>
+                        <div className={styles.logoBox}>
+                            <span className={`material-symbols-outlined ${styles.logoIcon}`}>engineering</span>
+                        </div>
+                        <h1 className={styles.title}>DPWH Task Management</h1>
+                        <p className={styles.subtitle}>District Engineering Office Portal</p>
+                    </div>
+
+                    {/* Form Fields */}
+                    <form onSubmit={handleLogin} className={styles.formGroup}>
+                        {error && (
+                            <div style={{ color: '#ef4444', backgroundColor: '#fee2e2', padding: '0.75rem', borderRadius: '0.5rem', fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center' }}>
+                                {error}
+                            </div>
+                        )}
+
+                        {/* Email or Username Field */}
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Email or Username</label>
+                            <div className={styles.inputWrapper}>
+                                <span className={`material-symbols-outlined ${styles.inputIcon}`} style={{ fontSize: '1.25rem' }}>person</span>
+                                <input
+                                    type="text"
+                                    placeholder="email or username"
+                                    className={styles.inputField}
+                                    value={identifier}
+                                    onChange={(e) => setIdentifier(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* Password Field */}
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Password</label>
+                            <div className={styles.inputWrapper}>
+                                <span className={`material-symbols-outlined ${styles.inputIcon}`} style={{ fontSize: '1.25rem' }}>lock</span>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="••••••••"
+                                    className={styles.inputField}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    className={styles.visibilityBtn}
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    <span className={`material-symbols-outlined ${styles.inputIcon}`} style={{ position: 'relative', left: 0 }}>
+                                        {showPassword ? 'visibility_off' : 'visibility'}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Options */}
+                        <div className={styles.optionsWrapper}>
+                            <label className={styles.checkboxLabel}>
+                                <input type="checkbox" className={styles.checkbox} />
+                                <span className={styles.checkboxText}>Remember Me</span>
+                            </label>
+                            <a href="#" className={styles.forgotLink}>Forgot Password?</a>
+                        </div>
+
+                        {/* Submit Button */}
+                        <button type="submit" className={styles.submitBtn}>
+                            <span>Sign In</span>
+                            <span className={`material-symbols-outlined ${styles.submitIcon}`}>login</span>
+                        </button>
+                    </form>
+
+                    {/* Dummy Accounts Section */}
+                    <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.5)', borderRadius: '0.5rem', border: '1px solid rgba(0,0,0,0.1)' }}>
+                        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#4b5563', marginBottom: '0.5rem', textAlign: 'center' }}>Demo Accounts:</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {DUMMY_ACCOUNTS.map((acc, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => handleFillDemo(acc)}
+                                    style={{ textAlign: 'left', padding: '0.5rem', fontSize: '0.75rem', backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.25rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                                >
+                                    <span style={{ fontWeight: 600, color: '#111827' }}>{acc.role}</span>: {acc.email} (pw: {acc.password})
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Footer Info */}
+                    <div className={styles.cardFooter}>
+                        <p className={styles.footerTitle}>Department of Public Works and Highways</p>
+                        <div className={styles.dots}>
+                            <span className={styles.dot}></span>
+                            <span className={styles.dot}></span>
+                            <span className={styles.dot}></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Bottom Security Notice */}
+                <p className={styles.securityNotice}>
+                    Authorized Personnel Access Only<br />Department of Public Works and Highways © 2024
+                </p>
+            </main>
+        </div>
+    );
+}

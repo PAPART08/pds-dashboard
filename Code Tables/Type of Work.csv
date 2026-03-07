@@ -1,0 +1,109 @@
+﻿Infra Type,Major Work Category,Type Of Work,Unit of Measure,progsub_CW1,"Min
+Amount",Max Amount,Selection
+ -   , -   , -   , -   , -   , -   , -   , 1.00 
+Accessibility Facility,Construction,Construction of Accessibility Facility,Number of Units,,1,10, 1.00 
+Accessibility Facility,Rehabilitation/Major Repair,Rehabilitation/Major Repair of Accessibility Facility,Number of Units,,1,10, 1.00 
+Bridges,Construction,Construction of Bailey Bridge,Square meters,11,0,300, 1.00 
+Bridges,Construction,Construction of Concrete Bridge,Square meters,11,0,35000, 1.00 
+Bridges,Construction,Construction of Bridge Approach,Lane Km,11,,, 1.00 
+Bridges,Construction,Construction of Flyover,Square meters,,0,50000, 1.00 
+Bridges,Construction,Construction of Interchange,Square meters,,0,50000, 1.00 
+Bridges,Construction,Construction of Steel Bridge,Square meters,11,0,3000, 1.00 
+Bridges,Construction,Construction of Viaduct,Square meters,,1,5000, 1.00 
+Bridges,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Bridge,Number of Bridges,12,1,1, 1.00 
+Bridges,Replacement,Replacement of Bridge,Square meters,13,0,10000, 1.00 
+Bridges,Replacement,Replacement of Bridge,Square meters,14,0,10000, 1.00 
+Bridges,Retrofitting/Strengthening,Retrofitting / Strengthening of Bridge,Number of Bridges,15,1,1, 1.00 
+Bridges,Widening,Widening of Bridge,Square meters,16,0,6600, 1.00 
+Bridges,Widening,Construction of Parallel Bridge,Square meters,16,0,35000, 1.00 
+Flood Control Structures,Construction,Construction of Cutoff Channel,Lineal meters,,0,10000, 1.00 
+Flood Control Structures,Construction,Construction of Dike,Lineal meters,,0,10000, 1.00 
+Flood Control Structures,Construction,Construction of Drainage Structure,Lineal meters,,0,15000, 1.00 
+Flood Control Structures,Construction,Construction of Flood Gate / Sluice Gate,Lineal meters,,0,10000, 1.00 
+Flood Control Structures,Construction,Construction of Flood Mitigation Facility,Number of Facilities,,1,10, 1.00 
+Flood Control Structures,Construction,Construction of Flood Mitigation Structure,Lineal meters,,0,30000, 1.00 
+Flood Control Structures,Construction,Construction of Groundsill,Lineal meters,,0,20000, 1.00 
+Flood Control Structures,Construction,Construction of Retarding Basin,Square meters,,100,100000, 1.00 
+Flood Control Structures,Construction,Construction of Revetment,Lineal meters,,0,25000, 1.00 
+Flood Control Structures,Construction,Construction of Sabo Dam,Lineal meters,,0,10000, 1.00 
+Flood Control Structures,Construction,Construction of Slope Protection Structure,Square meters,,0,120000, 1.00 
+Flood Control Structures,Construction,Construction of Spur Dike,Lineal meters,,0,10000, 1.00 
+Flood Control Structures,Construction,Repair/Maintenance of Flood Control Structures,Lineal meters,,0,10000, 1.00 
+Flood Control Structures,Construction,Construction of Waterway,Lineal meters,,0,10000, 1.00 
+Flood Control Structures,Construction,Embankment,Cubic meters,,0,500000, 1.00 
+Flood Control Structures,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Drainage Structure,Lineal meters,,0,20000, 1.00 
+Flood Control Structures,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Flood Control Structure,Lineal meters,,1,10000, 1.00 
+Flood Control Structures,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Flood Mitigation Facility,Number of Facilities,,0,50, 1.00 
+Flood Control Structures,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Slope Protection Structure,Square meters,,0,50000, 1.00 
+Flood Control Structures,Upgrading,Upgrading of Drainage Structure,Lineal meters,,0,10000, 1.00 
+Hospitals,Construction,Construction of Barangay Health Station,Number of Units,,1,1, 1.00 
+Hospitals,Construction,Construction of Hospital,Number of Hospitals,,1,1, 1.00 
+Hospitals,Construction,Rehabilitation / Major Repair of Rural Health Unit,Number of Units,,1,1, 1.00 
+Hospitals,Construction,Rehabilitation / Major Repair of Barangay Health Station,Number of Units,,1,1, 1.00 
+Hospitals,Construction,Construction of Rural Health Unit,Number of Units,,1,1, 1.00 
+Hospitals,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Hospital,Number of Hospitals,,1,1, 1.00 
+Multi Purpose Buildings,Construction,Construction of Multi Purpose Building,Number of Buildings,,1,10, 1.00 
+Multi Purpose Buildings,Construction,Construction of Evacuation Center,Number of Buildings,,1,10, 1.00 
+Multi Purpose Buildings,Construction,Construction of Other Building,Number of Buildings,,1,10, 1.00 
+Multi Purpose Buildings,Construction,Construction of Other Facilities,Number of Facilities,,1,20, 1.00 
+Multi Purpose Buildings,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Multi Purpose Building,Number of Buildings,,1,20, 1.00 
+Multi Purpose Buildings,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Facilities,Number of Facilities,,1,20, 1.00 
+Multi Purpose Buildings,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Evacuation Center,Number of Buildings,,1,1, 1.00 
+Multi Purpose Buildings,Retrofitting / Strengthening of Building,Retrofitting / Strengthening of Building,Number of Buildings,,1,1, 1.00 
+Multi Purpose Buildings,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Other Building,Number of Buildings,,1,1, 1.00 
+Other Buildings,Construction,Construction of Other Building,Number of Buildings,,1,200, 1.00 
+Other Buildings,Construction,Construction of Other Facilities,Number of Facilities,,1,200, 1.00 
+Other Buildings,Rehabilitation/Major Repair,Repair/Rehabilitation of Other Buildings,Number of Buildings,,1,200, 1.00 
+Rain Water Collector,Construction,Construction of Rain Water Collector,Number of Units,,1,10, 1.00 
+Roads,Construction,Construction of Asphalt Road,Lane Km,,0,50, 1.00 
+Roads,Construction,Construction of Concrete Road,Lane Km,,0,250, 1.00 
+Roads,Construction,Construction of Drainage Structure along Road,Lineal meters,1,0,20000, 1.00 
+Roads,Construction,Construction of Gravel Road,Lane Km,,0,70, 1.00 
+Roads,Construction,Construction of Road Slope Protection Structure,Square meters,3,0,4000000, 1.00 
+Roads,Construction,Construction of Underpass,Square meters,,0,5000, 1.00 
+Roads,Construction,Construction of Tunnel,Lane Km,,0,50, -   
+Roads,Off-Carriageway Improvement,Off-Carriageway Improvement: Construction of Bike Lanes,Square meters,7,0,100000, 1.00 
+Roads,Off-Carriageway Improvement,Off-Carriageway Improvement: Construction of Laybys,Number of Laybys,7,1,20, 1.00 
+Roads,Off-Carriageway Improvement,Off-Carriageway Improvement: Construction of Loading and Unloading Bays,Number of Loading and Unloading Bays,7,1,20, 1.00 
+Roads,Off-Carriageway Improvement,Off-Carriageway Improvement: Construction of Turnouts,Number of Turnouts,7,1,20, 1.00 
+Roads,Off-Carriageway Improvement,Off-Carriageway Improvement: Flaring of Intersections / Improvement of Intersections,Number of Intersections,7,1,20, 1.00 
+Roads,Off-Carriageway Improvement,Off-Carriageway Improvement: Construction of Traffic Island,Square meters,7,50,100000, 1.00 
+Roads,Off-Carriageway Improvement,Off-Carriageway Improvement: Paving of Shoulders,Square meters,7,0,100000, 1.00 
+Roads,Off-Carriageway Improvement,Off-Carriageway Improvement: Construction of Sidewalk,Square meters,7,0,100000, 1.00 
+Roads,Off-Carriageway Improvement,Off-Carriageway Improvement: Construction of Median/Center Island,Square meters,7,0,100000, 1.00 
+Roads,Preventive Maintenance,Preventive Maintenance of Road: Asphalt Overlay,Lane Km,2,0,50, 1.00 
+Roads,Preventive Maintenance,Preventive Maintenance of Road: Concrete Reblocking,Lane Km,2,0,50, 1.00 
+Roads,Preventive Maintenance,Rehabilitation / Major Repair of Drainage Structure along Road,Lineal meters,1,0,10000, 1.00 
+Roads,Reconstruction,Reconstruction to Concrete Pavement,Lane Km,4,0,1000, 1.00 
+Roads,Reconstruction,Reconstruction: Raising of Grade,Lane Km,,0,50, 1.00 
+Roads,Rehabilitation,Rehabilitation of Paved Road,Lane Km,4,0,50, 1.00 
+Roads,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Road Slope Protection Structure,Square meters,3,0,300000, 1.00 
+Roads,Road Safety,Road Safety: Pavement Markings,Lineal meters,118,0,100, 1.00 
+Roads,Road Safety,Road Safety: Guardrails,Lineal meters,118,0,10000, 1.00 
+Roads,Road Safety,Road Safety: Road Signs,Number of Signs,118,1,10000, 1.00 
+Roads,Road Safety,Road Safety: Pavement of Markings,Lineal meters,118,1,2000, 1.00 
+Roads,Road Safety,Road Safety: Pedestrian Overpass,Number of Pedestrian Overpass,118,0,10, 1.00 
+Roads,Road Safety,Road Safety: Roadway Lighting,Number of Units,118,0,10, 1.00 
+Roads,Road Safety,Road Safety: Traffic Signals,Number of Traffic Signals,118,0,10, 1.00 
+Roads,Road Safety,Road Safety: Solar / Reflectorized Pavement Studs,Number of Units,118,0,10, 1.00 
+Roads,Upgrading,Upgrading of Drainage Structure along Road,Lineal meters,1,0,25000, 1.00 
+Roads,Upgrading,Paving of Unpaved Roads,Lane Km,6,0,50, 1.00 
+Roads,Widening,Additional Lane Width,Square meters,,0,100000, 1.00 
+Roads,Widening,Road Widening,Lane Km,5,0,50, 1.00 
+ROW,ROW Acquisition,ROW Acquisition,Square meters,,0,10000000, 1.00 
+School Buildings,Construction,Construction of 1-Storey Classrooms,Number of 1-Storey Classrooms,,1,10, 1.00 
+School Buildings,Construction,Construction of 2-Storey Classrooms,Number of 2-Storey Classrooms,,1,10, 1.00 
+School Buildings,Construction,Construction of 3-Storey Classrooms,Number of 3-Storey Classrooms,,1,10, 1.00 
+School Buildings,Construction,Construction of 4-Storey Classrooms,Number of 4-Storey Classrooms,,1,10, 1.00 
+School Buildings,Construction,Construction of Classrooms,Number of Classrooms,,1,150, 1.00 
+School Buildings,Construction,Construction of School Buildings,Number of School Buildings,,1,10, 1.00 
+School Buildings,Rehabilitation/Major Repair,Rehabilitation / Major Repair of 1-Storey Classrooms,Number of 1-Storey Classrooms,,1,10, 1.00 
+School Buildings,Rehabilitation/Major Repair,Rehabilitation / Major Repair of 2-Storey Classrooms,Number of 2-Storey Classrooms,,1,10, 1.00 
+School Buildings,Rehabilitation/Major Repair,Rehabilitation / Major Repair of School  Buildings,Number of School Buildings,,1,10, 1.00 
+Septage and Sewerage Plants,Construction,Construction of Septage / Sewerage Plants,Number of Septage/Sewerage Plants,,1,1, 1.00 
+Septage and Sewerage Plants,Rehabilitation/Major Repair,Rehabilitation / Major Repair of Septage / Sewerage Plants,Number of Septage/Sewerage Plants,,1,1, 1.00 
+Water Supply Systems,Construction,Construction of Water Supply Systems,Number of Water Supply Systems,,1,10, 1.00 
+Water Supply Systems,Rehabilitation,Rehabilitation of Water Supply Systems,Number of Water Supply Systems,,1,10, 1.00 
+Waterway,Channelization,Channelization,Cubic meters,,0,500000, 1.00 
+Waterway,Dredging / Desilting,Dredging / Desilting,Cubic meters,,0,500000, 1.00 
+,,,,,,,

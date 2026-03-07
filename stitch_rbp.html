@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RBP Stage Dashboard Table View</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0C3E7C",
+                        "accent-orange": "#ED7D31",
+                        "background-light": "#f6f7f7",
+                        "background-dark": "#16191c",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .mesh-gradient {
+            background-color: #f6f7f7;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(12, 62, 124, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(99, 131, 171, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(237, 125, 49, 0.05) 0px, transparent 50%);
+        }
+        .frosted-glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light text-slate-900 overflow-x-hidden">
+<div class="flex h-screen w-full overflow-hidden mesh-gradient">
+<!-- Desktop Sidebar (Hidden on iOS Phone factor as per request but kept structure-ready) -->
+<aside class="hidden md:flex w-64 bg-primary flex-col text-white">
+<div class="p-6 flex items-center gap-3">
+<div class="size-8 bg-white/20 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white">account_balance</span>
+</div>
+<span class="font-bold text-lg tracking-tight">DPWH RBP</span>
+</div>
+<nav class="flex-1 px-4 space-y-2 mt-4">
+<a class="flex items-center gap-3 px-3 py-2 bg-white/10 rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span> Dashboard
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-white/5 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">assignment</span> Projects
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-white/5 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span> Stages
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-white/5 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span> Settings
+                </a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 relative overflow-y-auto">
+<!-- Mobile Header -->
+<header class="flex items-center justify-between px-4 py-4 md:px-8 bg-white/40 backdrop-blur-md sticky top-0 z-10 border-b border-slate-200">
+<div class="flex items-center gap-3">
+<button class="md:hidden text-primary">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div>
+<h1 class="text-xl font-bold text-slate-900 leading-none">RBP Stage</h1>
+<p class="text-xs text-slate-500 mt-1">DPWH District Engineering Office</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-slate-200/50 transition-colors">
+<span class="material-symbols-outlined text-slate-600">notifications</span>
+</button>
+<div class="size-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm">person</span>
+</div>
+</div>
+</header>
+<div class="p-4 md:p-8 space-y-6">
+<!-- Dashboard Info -->
+<section>
+<h2 class="text-2xl font-bold text-slate-900">Manage Projects</h2>
+<p class="text-slate-600 text-sm">Initialize and track project details for the current RBP cycle.</p>
+</section>
+<!-- Control Bar -->
+<section class="flex flex-col gap-4">
+<div class="flex flex-col sm:flex-row gap-3">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+<input class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm" placeholder="Search by ID, Name..." type="text"/>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors">
+<span class="material-symbols-outlined text-lg">tune</span>
+<span>Filters</span>
+</button>
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-shadow shadow-sm">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+<span>Encode Project</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Data Table Card -->
+<section class="frosted-glass rounded-2xl overflow-hidden shadow-sm border border-white/50">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-slate-200/60 bg-slate-50/50">
+<th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Project ID</th>
+<th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Description</th>
+<th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Location</th>
+<th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Cost (M)</th>
+<th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
+<th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-200/40">
+<!-- Row 1 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-4 py-4 text-sm font-semibold text-primary">24-DEO-001</td>
+<td class="px-4 py-4">
+<p class="text-sm font-medium text-slate-900 line-clamp-1">Rehabilitation of National Road</p>
+<p class="text-[10px] text-slate-400">Road Maintenance Phase 1</p>
+</td>
+<td class="px-4 py-4 text-sm text-slate-600">District II, City Center</td>
+<td class="px-4 py-4 text-sm text-slate-900 font-bold text-right">45.20</td>
+<td class="px-4 py-4 text-center">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                                            Vetting
+                                        </span>
+</td>
+<td class="px-4 py-4 text-right">
+<div class="flex justify-end gap-1">
+<button class="p-1.5 hover:bg-slate-200 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-lg text-slate-500">edit</span>
+</button>
+<button class="p-1.5 hover:bg-slate-200 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-lg text-slate-500">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-4 py-4 text-sm font-semibold text-primary">24-DEO-002</td>
+<td class="px-4 py-4">
+<p class="text-sm font-medium text-slate-900 line-clamp-1">Multi-Purpose Building Const.</p>
+<p class="text-[10px] text-slate-400">Barangay San Jose Site</p>
+</td>
+<td class="px-4 py-4 text-sm text-slate-600">Brgy. San Jose</td>
+<td class="px-4 py-4 text-sm text-slate-900 font-bold text-right">12.50</td>
+<td class="px-4 py-4 text-center">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-accent-orange/10 text-accent-orange border border-accent-orange/20">
+                                            Drafting
+                                        </span>
+</td>
+<td class="px-4 py-4 text-right">
+<div class="flex justify-end gap-1">
+<button class="p-1.5 hover:bg-slate-200 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-lg text-slate-500">edit</span>
+</button>
+<button class="p-1.5 hover:bg-slate-200 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-lg text-slate-500">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-4 py-4 text-sm font-semibold text-primary">24-DEO-003</td>
+<td class="px-4 py-4">
+<p class="text-sm font-medium text-slate-900 line-clamp-1">Flood Control System Upgrade</p>
+<p class="text-[10px] text-slate-400">River Basin Revetment</p>
+</td>
+<td class="px-4 py-4 text-sm text-slate-600">Eastern Boundary</td>
+<td class="px-4 py-4 text-sm text-slate-900 font-bold text-right">88.75</td>
+<td class="px-4 py-4 text-center">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                                            Vetting
+                                        </span>
+</td>
+<td class="px-4 py-4 text-right">
+<div class="flex justify-end gap-1">
+<button class="p-1.5 hover:bg-slate-200 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-lg text-slate-500">edit</span>
+</button>
+<button class="p-1.5 hover:bg-slate-200 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-lg text-slate-500">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination-like Info -->
+<div class="px-4 py-3 bg-slate-50/50 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-widest">
+<span>Showing 3 of 128 Projects</span>
+<div class="flex gap-2">
+<button class="p-1 hover:text-primary"><span class="material-symbols-outlined text-lg">chevron_left</span></button>
+<button class="p-1 hover:text-primary"><span class="material-symbols-outlined text-lg">chevron_right</span></button>
+</div>
+</div>
+</section>
+<div class="h-20"></div> <!-- Spacer for Bottom Nav -->
+</div>
+</main>
+<!-- Bottom Navigation Bar (Fixed for Mobile) -->
+<nav class="fixed bottom-0 left-0 right-0 md:hidden bg-white/90 backdrop-blur-xl border-t border-slate-200 flex justify-around items-center px-4 pb-6 pt-3 shadow-2xl z-50">
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined text-2xl">grid_view</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Dashboard</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined text-2xl">list_alt</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Projects</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<div class="relative">
+<span class="material-symbols-outlined text-2xl">layers</span>
+<div class="absolute -top-1 -right-1 size-2 bg-accent-orange rounded-full"></div>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Stages</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined text-2xl">settings</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Settings</span>
+</a>
+</nav>
+</div>
+</body></html>

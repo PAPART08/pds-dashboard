@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DPWH Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<div class="relative flex h-screen w-full overflow-hidden">
+<!-- Sidebar -->
+<aside class="flex w-64 flex-col bg-slate-900 dark:bg-slate-950 text-slate-100 h-full border-r border-slate-800">
+<div class="flex items-center gap-3 px-6 py-5 border-b border-slate-800">
+<div class="size-8 text-primary flex items-center justify-center bg-slate-800 rounded-lg">
+<span class="material-symbols-outlined text-xl">construction</span>
+</div>
+<h1 class="text-lg font-bold tracking-tight text-white">DPWH Portal</h1>
+</div>
+<nav class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/20 text-primary font-medium transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+                    Dashboard
+                </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors font-medium" href="#">
+<span class="material-symbols-outlined text-lg">folder_open</span>
+                    Projects
+                </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors font-medium" href="#">
+<span class="material-symbols-outlined text-lg">bar_chart</span>
+                    Reports
+                </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors font-medium" href="#">
+<span class="material-symbols-outlined text-lg">group</span>
+                    Teams
+                </a>
+</nav>
+<div class="p-4 border-t border-slate-800">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors font-medium" href="#">
+<span class="material-symbols-outlined text-lg">settings</span>
+                    Settings
+                </a>
+</div>
+</aside>
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-full overflow-hidden">
+<!-- Header -->
+<header class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-8 py-4 shrink-0">
+<div class="flex items-center max-w-md w-full">
+<label class="flex w-full items-center bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 focus-within:ring-2 ring-primary/50 transition-all">
+<span class="material-symbols-outlined text-slate-400 dark:text-slate-500">search</span>
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 ml-2" placeholder="Search projects, reports..." type="text"/>
+</label>
+</div>
+<div class="flex items-center gap-4">
+<button class="relative p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+</button>
+<div class="h-8 w-px bg-slate-200 dark:bg-slate-800"></div>
+<div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+<div class="text-right hidden sm:block">
+<p class="text-sm font-bold text-slate-900 dark:text-white">Juan Dela Cruz</p>
+<p class="text-xs text-slate-500 dark:text-slate-400">Chief Engineer</p>
+</div>
+<div class="size-10 rounded-full bg-slate-200 dark:bg-slate-800 bg-cover bg-center border border-slate-200 dark:border-slate-700" data-alt="User profile avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAaFGBo0tntm3fL3rujqD-9z-FWXRnao4PZCKZjPLsxcXccZl3NueR_rQc6nnbwW2voS5H_TfdYByyM23ZFEKlBoCg4FedeJ9RY1HPPo783qv64Mj3MeR0is1PkTFa45fhgco1WdfLPfOEXiZcXLs78QR-ClaIWVl9cfDZzR99W0kW-UR5yaWw8By6LeUoiUruCtnakr-SME1oxFHu9hxKfHJS0Yg_Tq2GBwLXSzoZWovjas6w6QhiZOJCSNo8rz1rRP23KTBp0DpI');"></div>
+</div>
+</div>
+</header>
+<!-- Main Scrollable Area -->
+<main class="flex-1 overflow-y-auto p-8">
+<div class="max-w-7xl mx-auto space-y-8">
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+<div>
+<h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white mb-1">Project Overview</h2>
+<p class="text-slate-500 dark:text-slate-400">Monitor ongoing tasks across all engineering units</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+                                Filter
+                            </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                                New Project
+                            </button>
+</div>
+</div>
+<!-- Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Unit Card: Highway Design -->
+<div class="flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between mb-4">
+<div class="size-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">add_road</span>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Highway Design</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Planning and layout of road networks</p>
+<div class="mt-auto space-y-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-600 dark:text-slate-400">Total Projects</span>
+<span class="font-bold text-slate-900 dark:text-white">102</span>
+</div>
+<div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+<div class="h-full bg-emerald-500" style="width: 55%"></div>
+<div class="h-full bg-amber-500" style="width: 33%"></div>
+<div class="h-full bg-slate-300 dark:bg-slate-600" style="width: 12%"></div>
+</div>
+<div class="flex justify-between text-xs pt-1">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+<span>Pending (12)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-amber-500"></div>
+<span>In-Prog (34)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-emerald-500"></div>
+<span>Done (56)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Unit Card: Bridge & Social Infra -->
+<div class="flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between mb-4">
+<div class="size-12 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">link</span>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Bridge &amp; Social Infra</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Structural engineering for bridges &amp; facilities</p>
+<div class="mt-auto space-y-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-600 dark:text-slate-400">Total Projects</span>
+<span class="font-bold text-slate-900 dark:text-white">75</span>
+</div>
+<div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+<div class="h-full bg-emerald-500" style="width: 60%"></div>
+<div class="h-full bg-amber-500" style="width: 29%"></div>
+<div class="h-full bg-slate-300 dark:bg-slate-600" style="width: 11%"></div>
+</div>
+<div class="flex justify-between text-xs pt-1">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+<span>Pending (8)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-amber-500"></div>
+<span>In-Prog (22)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-emerald-500"></div>
+<span>Done (45)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Unit Card: Flood Control -->
+<div class="flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between mb-4">
+<div class="size-12 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">water_drop</span>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Flood Control</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Drainage and waterway management systems</p>
+<div class="mt-auto space-y-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-600 dark:text-slate-400">Total Projects</span>
+<span class="font-bold text-slate-900 dark:text-white">115</span>
+</div>
+<div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+<div class="h-full bg-emerald-500" style="width: 52%"></div>
+<div class="h-full bg-amber-500" style="width: 35%"></div>
+<div class="h-full bg-slate-300 dark:bg-slate-600" style="width: 13%"></div>
+</div>
+<div class="flex justify-between text-xs pt-1">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+<span>Pending (15)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-amber-500"></div>
+<span>In-Prog (40)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-emerald-500"></div>
+<span>Done (60)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Unit Card: Environmental & Social -->
+<div class="flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between mb-4">
+<div class="size-12 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">eco</span>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Environmental &amp; Social</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Impact assessments and compliance monitoring</p>
+<div class="mt-auto space-y-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-600 dark:text-slate-400">Total Projects</span>
+<span class="font-bold text-slate-900 dark:text-white">53</span>
+</div>
+<div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+<div class="h-full bg-emerald-500" style="width: 57%"></div>
+<div class="h-full bg-amber-500" style="width: 34%"></div>
+<div class="h-full bg-slate-300 dark:bg-slate-600" style="width: 9%"></div>
+</div>
+<div class="flex justify-between text-xs pt-1">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+<span>Pending (5)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-amber-500"></div>
+<span>In-Prog (18)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-emerald-500"></div>
+<span>Done (30)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Unit Card: Engineering Investigation -->
+<div class="flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between mb-4">
+<div class="size-12 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">map</span>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Engineering Inv. &amp; Surveys</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Site analysis, topography, and geotechnical studies</p>
+<div class="mt-auto space-y-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-600 dark:text-slate-400">Total Projects</span>
+<span class="font-bold text-slate-900 dark:text-white">75</span>
+</div>
+<div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+<div class="h-full bg-emerald-500" style="width: 53%"></div>
+<div class="h-full bg-amber-500" style="width: 33%"></div>
+<div class="h-full bg-slate-300 dark:bg-slate-600" style="width: 14%"></div>
+</div>
+<div class="flex justify-between text-xs pt-1">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+<span>Pending (10)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-amber-500"></div>
+<span>In-Prog (25)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-emerald-500"></div>
+<span>Done (40)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Unit Card: Planning -->
+<div class="flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between mb-4">
+<div class="size-12 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">trending_up</span>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Planning</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Strategic development and resource allocation</p>
+<div class="mt-auto space-y-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-600 dark:text-slate-400">Total Projects</span>
+<span class="font-bold text-slate-900 dark:text-white">150</span>
+</div>
+<div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+<div class="h-full bg-emerald-500" style="width: 53%"></div>
+<div class="h-full bg-amber-500" style="width: 33%"></div>
+<div class="h-full bg-slate-300 dark:bg-slate-600" style="width: 14%"></div>
+</div>
+<div class="flex justify-between text-xs pt-1">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+<span>Pending (20)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-amber-500"></div>
+<span>In-Prog (50)</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<div class="size-2 rounded-full bg-emerald-500"></div>
+<span>Done (80)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

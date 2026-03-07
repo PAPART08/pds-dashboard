@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Premium DPWH Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0c3f7d",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111821",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center p-4">
+<!-- Premium Mesh Background Container -->
+<div class="fixed inset-0 z-0 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 dark:from-slate-900 dark:via-slate-800 dark:to-background-dark">
+<div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]"></div>
+</div>
+<!-- Main Login Card -->
+<main class="relative z-10 w-full max-w-[420px]">
+<!-- Frosted Glass Card -->
+<div class="backdrop-blur-2xl bg-white/70 dark:bg-slate-900/60 border border-white/40 dark:border-slate-700/30 shadow-2xl rounded-2xl p-8 md:p-10">
+<!-- Logo/Icon Section -->
+<div class="flex flex-col items-center mb-10">
+<div class="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center shadow-lg mb-6">
+<span class="material-symbols-outlined text-white text-4xl">engineering</span>
+</div>
+<h1 class="text-slate-900 dark:text-slate-100 text-2xl font-bold tracking-tight text-center">
+                    DPWH Task Management
+                </h1>
+<p class="text-slate-500 dark:text-slate-400 text-sm mt-2 text-center font-medium">
+                    District Engineering Office Portal
+                </p>
+</div>
+<!-- Form Fields -->
+<form class="space-y-6">
+<!-- Email Field -->
+<div class="space-y-2">
+<label class="text-slate-700 dark:text-slate-300 text-sm font-semibold ml-1">Email Address</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-slate-400">mail</span>
+<input class="w-full pl-12 pr-4 py-4 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-slate-900 dark:text-slate-100 placeholder:text-slate-400" placeholder="name@dpwh.gov.ph" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<label class="text-slate-700 dark:text-slate-300 text-sm font-semibold ml-1">Password</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-slate-400">lock</span>
+<input class="w-full pl-12 pr-12 py-4 bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-slate-900 dark:text-slate-100 placeholder:text-slate-400" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 text-slate-400 hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</div>
+</div>
+<!-- Options -->
+<div class="flex items-center justify-between px-1">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/20 transition-all cursor-pointer" type="checkbox"/>
+<span class="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors">Remember Me</span>
+</label>
+<a class="text-sm font-semibold text-primary hover:text-primary/80 transition-colors" href="#">Forgot Password?</a>
+</div>
+<!-- Sign In Button -->
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transform active:scale-[0.98] transition-all flex items-center justify-center gap-2" type="submit">
+<span>Sign In</span>
+<span class="material-symbols-outlined text-xl">login</span>
+</button>
+</form>
+<!-- Footer Info -->
+<div class="mt-10 pt-6 border-t border-slate-200/50 dark:border-slate-700/50">
+<div class="flex flex-col items-center gap-4">
+<p class="text-xs text-slate-400 dark:text-slate-500 text-center uppercase tracking-widest font-bold">
+                        Department of Public Works and Highways
+                    </p>
+<div class="flex gap-4">
+<span class="w-2 h-2 rounded-full bg-primary/30"></span>
+<span class="w-2 h-2 rounded-full bg-primary/30"></span>
+<span class="w-2 h-2 rounded-full bg-primary/30"></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Security Notice -->
+<p class="mt-8 text-center text-slate-400 dark:text-slate-600 text-[10px] uppercase tracking-tighter">
+            Authorized Personnel Access Only • Department of Public Works and Highways © 2024
+        </p>
+</main>
+</body></html>

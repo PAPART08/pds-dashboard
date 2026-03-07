@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>New Project Entry Form RIF v.9.0</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0c3f7d",
+                        "accent-orange": "#ED7D31",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111821",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .mesh-gradient {
+            background-color: #f6f7f8;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(12, 63, 125, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(237, 125, 49, 0.05) 0px, transparent 50%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark mesh-gradient min-h-screen pb-32">
+<!-- Top Header Bar -->
+<header class="bg-primary sticky top-0 z-50 px-4 py-4 shadow-lg flex items-center justify-between text-white">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-2xl">arrow_back_ios</span>
+<div>
+<h1 class="text-lg font-bold leading-tight">RIF v.9.0</h1>
+<p class="text-[10px] uppercase tracking-widest opacity-80">Regional Budget Proposal (RBP)</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined">notifications</span>
+<div class="w-8 h-8 rounded-full bg-primary/30 border border-white/20 flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-sm">person</span>
+</div>
+</div>
+</header>
+<main class="p-4 space-y-6">
+<!-- Section 1: Location -->
+<section class="glass-card rounded-xl p-5 shadow-sm">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">location_on</span>
+<h2 class="text-slate-900 font-bold text-base">Location / Office Information</h2>
+</div>
+<div class="space-y-4">
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Region</label>
+<select class="w-full rounded-lg border-slate-200 bg-white/50 py-3 px-4 text-slate-900 focus:ring-primary focus:border-primary">
+<option>Select Region</option>
+<option>Region IV-A</option>
+<option>Region III</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Implementing Office</label>
+<select class="w-full rounded-lg border-slate-200 bg-white/50 py-3 px-4 text-slate-900 focus:ring-primary focus:border-primary">
+<option>Select Office</option>
+<option>Regional Office</option>
+</select>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">DEO</label>
+<select class="w-full rounded-lg border-slate-200 bg-white/50 py-3 px-4 text-slate-900 focus:ring-primary focus:border-primary text-sm">
+<option>Select DEO</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Municipality</label>
+<select class="w-full rounded-lg border-slate-200 bg-white/50 py-3 px-4 text-slate-900 focus:ring-primary focus:border-primary text-sm">
+<option>Select Mun.</option>
+</select>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: General Details -->
+<section class="glass-card rounded-xl p-5 shadow-sm">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">description</span>
+<h2 class="text-slate-900 font-bold text-base">General Details</h2>
+</div>
+<div class="space-y-4">
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Alternate ID</label>
+<input class="w-full rounded-lg border-slate-200 bg-white/50 py-3 px-4 text-slate-900 focus:ring-primary focus:border-primary text-sm" placeholder="ID No." type="text"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Fiscal Year</label>
+<select class="w-full rounded-lg border-slate-200 bg-white/50 py-3 px-4 text-slate-900 focus:ring-primary focus:border-primary text-sm">
+<option>2024</option>
+<option>2025</option>
+</select>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Thrust</label>
+<select class="w-full rounded-lg border-slate-200 bg-white/50 py-3 px-4 text-slate-900 focus:ring-primary focus:border-primary">
+<option>Asset Preservation</option>
+<option>Network Development</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Category</label>
+<select class="w-full rounded-lg border-slate-200 bg-white/50 py-3 px-4 text-slate-900 focus:ring-primary focus:border-primary">
+<option>Major Project</option>
+<option>Minor Project</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Project Description</label>
+<textarea class="w-full rounded-lg border-slate-200 bg-white/50 py-3 px-4 text-slate-900 focus:ring-primary focus:border-primary" placeholder="Enter full project description..." rows="4"></textarea>
+</div>
+</div>
+</section>
+<!-- Section 3: Component Details -->
+<section class="glass-card rounded-xl p-5 shadow-sm overflow-hidden">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">view_quilt</span>
+<h2 class="text-slate-900 font-bold text-base">Component Details</h2>
+</div>
+<button class="text-primary text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">add_circle</span> ADD
+                </button>
+</div>
+<div class="overflow-x-auto -mx-5 px-5">
+<table class="w-full text-left text-sm">
+<thead class="bg-primary/5 text-slate-500 uppercase text-[10px] tracking-widest">
+<tr>
+<th class="py-2 px-2">Type</th>
+<th class="py-2 px-2">Work</th>
+<th class="py-2 px-2">Target</th>
+<th class="py-2 px-2 text-right">Cost (P)</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<tr>
+<td class="py-3 px-2 text-slate-700 font-medium">Bridges</td>
+<td class="py-3 px-2 text-slate-500">Retrofitting</td>
+<td class="py-3 px-2 text-slate-500">120 lm</td>
+<td class="py-3 px-2 text-right text-slate-900">4,500,000</td>
+</tr>
+<tr>
+<td class="py-3 px-2 text-slate-700 font-medium">Roads</td>
+<td class="py-3 px-2 text-slate-500">Paving</td>
+<td class="py-3 px-2 text-slate-500">2.5 km</td>
+<td class="py-3 px-2 text-right text-slate-900">12,250,000</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+<span class="text-xs font-bold text-slate-500 uppercase">Total Estimated Cost</span>
+<span class="text-lg font-black text-primary">₱ 16,750,000.00</span>
+</div>
+</section>
+<!-- Section 4: Supporting Documents -->
+<section class="glass-card rounded-xl p-5 shadow-sm">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">upload_file</span>
+<h2 class="text-slate-900 font-bold text-base">Supporting Documents (SD)</h2>
+</div>
+<div class="border-2 border-dashed border-primary/20 bg-primary/5 rounded-xl p-8 flex flex-col items-center justify-center gap-2 text-center">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">cloud_upload</span>
+</div>
+<div class="space-y-1">
+<p class="text-sm font-bold text-slate-700">Tap to upload or drag &amp; drop</p>
+<p class="text-[10px] text-slate-500 px-4">PDF, PNG, JPG (Max 25MB each)</p>
+</div>
+</div>
+<div class="mt-4 space-y-2">
+<div class="flex items-center justify-between p-2 bg-white/40 rounded-lg border border-slate-100">
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-red-500">picture_as_pdf</span>
+<span class="text-xs text-slate-600 truncate">Feasibility_Study_V1.pdf</span>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-sm">close</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Bar -->
+<div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-slate-200 z-50">
+<div class="flex flex-col gap-3">
+<button class="w-full bg-accent-orange py-3 rounded-lg text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">auto_awesome</span>
+                Generate Description
+            </button>
+<div class="flex gap-2">
+<button class="flex-1 bg-primary py-3 rounded-lg text-white font-bold text-sm shadow-md">
+                    Save Project
+                </button>
+<button class="px-4 py-3 rounded-lg bg-slate-100 text-slate-600 font-bold text-sm border border-slate-200">
+                    Clear
+                </button>
+<button class="px-4 py-3 rounded-lg bg-red-50 text-red-600 font-bold text-sm border border-red-100">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- iOS Bottom Home Indicator Space -->
+<div class="h-8 bg-white/80 fixed bottom-0 left-0 right-0 z-40"></div>
+<!-- Bottom Nav (Small indicators) -->
+<div class="hidden">
+<!-- Reusing BottomNavBar logic if required by platform consistency, but keeping mobile actions clean above -->
+</div>
+</body></html>
