@@ -21,11 +21,12 @@ import {
     Eraser
 } from 'lucide-react';
 import { SUPPORTING_DOC_DESCRIPTIONS } from '@/lib/supporting-docs';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
+import dynamic from 'next/dynamic';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+const PdfReviewer = dynamic(() => import('@/components/PdfReviewer'), {
+    ssr: false,
+    loading: () => <div className="p-10 text-slate-500 font-bold animate-pulse">Initializing PDF Reviewer...</div>
+});
 
 export default function DocumentReviewPage({ params }: { params: Promise<{ id: string, docCode: string }> }) {
     const { id, docCode } = use(params);
@@ -291,47 +292,16 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                             </div>
                         ) : (
                             <div className="w-full h-full relative overflow-auto bg-slate-400 p-8 flex flex-col items-center">
-                                <div className="relative shadow-2xl">
-                                    <Document
-                                        file={pdfUrl}
-                                        onLoadSuccess={onDocumentLoadSuccess}
-                                        className="flex flex-col gap-4"
-                                    >
-                                        {Array.from({ length: numPages || 0 }, (_, i) => (
-                                            <div key={`page_${i + 1}`} className="relative bg-white">
-                                                <Page
-                                                    pageNumber={i + 1}
-                                                    renderAnnotationLayer={false}
-                                                    renderTextLayer={false}
-                                                    width={800}
-                                                />
-                                            </div>
-                                        ))}
-                                    </Document>
-
-                                    {/* Annotation Overlay (Canvas) - Absolute to the whole document stack */}
-                                    <svg
-                                        className={`absolute inset-0 w-full h-full z-10 ${activeTool === 'draw' || activeTool === 'highlight' || activeTool === 'eraser' ? 'cursor-crosshair' : 'pointer-events-none'}`}
-                                        onMouseDown={startDrawing}
-                                        onMouseMove={draw}
-                                        onMouseUp={endDrawing}
-                                        onMouseLeave={endDrawing}
-                                    >
-                                        {[...paths, currentPath].filter(Boolean).map((p, i) => (
-                                            <polyline
-                                                key={i}
-                                                points={p.points.map((pt: any) => `${pt.x},${pt.y}`).join(' ')}
-                                                fill="none"
-                                                stroke={p.tool === 'highlight' ? '#fde047' : '#ef4444'}
-                                                strokeWidth={p.tool === 'highlight' ? 20 : 3}
-                                                opacity={p.tool === 'highlight' ? 0.3 : 1}
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                style={{ mixBlendMode: 'multiply' }}
-                                            />
-                                        ))}
-                                    </svg>
-                                </div>
+                                <PdfReviewer
+                                    pdfUrl={pdfUrl}
+                                    numPages={numPages}
+                                    onLoadSuccess={onDocumentLoadSuccess}
+                                    paths={paths}
+                                    activeTool={activeTool}
+                                    onMouseDown={startDrawing}
+                                    onMouseMove={draw}
+                                    onMouseUp={endDrawing}
+                                />
                             </div>
                         )}
                     </div>

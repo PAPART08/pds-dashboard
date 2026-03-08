@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import styles from './Sidebar.module.css';
 
 // Define User Roles
@@ -329,7 +330,10 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
             <Link
               href="/login"
               className={styles.btnLogout}
-              onClick={() => localStorage.removeItem('currentUser')}
+              onClick={async () => {
+                await supabase.auth.signOut();
+                localStorage.removeItem('currentUser');
+              }}
               title="Logout"
             >
               <span className={`material-symbols-outlined ${styles.btnLogoutIcon}`}>logout</span>

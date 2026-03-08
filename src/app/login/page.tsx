@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
 
 // Dummy accounts for different roles
@@ -19,18 +20,7 @@ export default function Login() {
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-
-    useEffect(() => {
-        const user = localStorage.getItem('currentUser');
-        if (user) {
-            try {
-                const parsed = JSON.parse(user);
-                router.push(parsed.route || '/dashboard/modules');
-            } catch (err) {
-                localStorage.removeItem('currentUser');
-            }
-        }
-    }, [router]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const getRedirectRoute = (role: string) => {
         switch (role) {
@@ -44,39 +34,67 @@ export default function Login() {
         }
     };
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setIsSubmitting(true);
 
-        // Get users from localStorage (added via Admin)
-        let localUsers = [];
         try {
-            const savedTeam = localStorage.getItem('pds_team');
-            if (savedTeam) {
-                localUsers = JSON.parse(savedTeam);
+            // First attempt: Supabase Auth
+            const { data, error: authError } = await supabase.auth.signInWithPassword({
+                email: identifier.includes('@') ? identifier : `${identifier}@dpwh.gov.ph`,
+                password: password,
+            });
+
+            if (authError) {
+                // Second attempt: Fallback to dummy/local users for testing/legacy
+                console.log("Supabase Auth failed, checking local mocks...");
+                const savedTeam = localStorage.getItem('pds_team');
+                const localUsers = savedTeam ? JSON.parse(savedTeam) : [];
+                const allAccounts = [...DUMMY_ACCOUNTS, ...localUsers];
+
+                const account = allAccounts.find(
+                    (acc) => (acc.email === identifier || acc.username === identifier) && acc.password === password
+                );
+
+                if (account) {
+                    const finalAccount = {
+                        ...account,
+                        route: account.route || getRedirectRoute(account.role || account.position || 'User')
+                    };
+                    localStorage.setItem('currentUser', JSON.stringify(finalAccount));
+                    router.push(finalAccount.route);
+                    return;
+                }
+
+                setError(authError.message === 'Invalid login credentials' ? 'Invalid credentials. Please try again.' : authError.message);
+                setIsSubmitting(false);
+                return;
             }
-        } catch (err) {
-            console.error('Error reading local team:', err);
-        }
 
-        // Combine hardcoded dummy accounts with dynamic local users
-        const allAccounts = [...DUMMY_ACCOUNTS, ...localUsers];
+            if (data?.user) {
+                // If Supabase login successful, fetch profile details if exists
+                const { data: profile } = await supabase
+                    .from('employees')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .single();
 
-        const account = allAccounts.find(
-            (acc) => (acc.email === identifier || acc.username === identifier) && acc.password === password
-        );
+                const userData = {
+                    email: data.user.email,
+                    name: profile?.name || data.user.user_metadata?.full_name || 'Authenticated User',
+                    role: profile?.position || 'User',
+                    user_type: profile?.user_type || 'User',
+                    route: getRedirectRoute(profile?.position || 'User')
+                };
 
-        if (account) {
-            // Ensure the account object has the correct route if it's a dynamic user
-            const finalAccount = {
-                ...account,
-                route: account.route || getRedirectRoute(account.role || account.position || 'User')
-            };
-
-            localStorage.setItem('currentUser', JSON.stringify(finalAccount));
-            router.push(finalAccount.route);
-        } else {
-            setError('Invalid credentials. Please try again.');
+                localStorage.setItem('currentUser', JSON.stringify(userData));
+                router.push(userData.route);
+            }
+        } catch (err: any) {
+            setError(err.message || 'An unexpected error occurred during login.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -165,9 +183,15 @@ export default function Login() {
                         </div>
 
                         {/* Submit Button */}
-                        <button type="submit" className={styles.submitBtn}>
-                            <span>Sign In</span>
-                            <span className={`material-symbols-outlined ${styles.submitIcon}`}>login</span>
+                        <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+                            {isSubmitting ? (
+                                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent mx-auto"></div>
+                            ) : (
+                                <>
+                                    <span>Sign In</span>
+                                    <span className={`material-symbols-outlined ${styles.submitIcon}`}>login</span>
+                                </>
+                            )}
                         </button>
                     </form>
 
