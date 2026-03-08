@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 
 // Dummy accounts for different roles
 const DUMMY_ACCOUNTS = [
     { email: 'admin@dpwh.gov.ph', username: 'admin', password: 'password123', role: 'Admin', name: 'System Admin', route: '/dashboard/team' },
-    { email: 'chief@dpwh.gov.ph', username: 'chief', password: 'password123', role: 'Section Chief', name: 'Carlos Santos', route: '/dashboard' },
+    { email: 'chief@dpwh.gov.ph', username: 'chief', password: 'password123', role: 'Section Chief', name: 'Carlos Santos', route: '/dashboard/modules' },
     { email: 'head@dpwh.gov.ph', username: 'head', password: 'password123', role: 'Unit Head', name: 'Antonio Reyes', route: '/dashboard/unit-head-task' },
     { email: 'user@dpwh.gov.ph', username: 'user', password: 'password123', role: 'Regular Member', name: 'Maria Dela Cruz', route: '/dashboard/user-task' },
     { email: 'planning@dpwh.gov.ph', username: 'planning', password: 'password123', role: 'Planning Unit', name: 'James Rodriguez', route: '/dashboard/rbp-progress' },
@@ -20,10 +20,22 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
+    useEffect(() => {
+        const user = localStorage.getItem('currentUser');
+        if (user) {
+            try {
+                const parsed = JSON.parse(user);
+                router.push(parsed.route || '/dashboard/modules');
+            } catch (err) {
+                localStorage.removeItem('currentUser');
+            }
+        }
+    }, [router]);
+
     const getRedirectRoute = (role: string) => {
         switch (role) {
             case 'Admin': return '/dashboard/team';
-            case 'Section Chief': return '/dashboard';
+            case 'Section Chief': return '/dashboard/modules';
             case 'Unit Head': return '/dashboard/unit-head-task';
             case 'Regular Member':
             case 'Unit Member':
