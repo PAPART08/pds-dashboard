@@ -47,26 +47,6 @@ export default function Login() {
             });
 
             if (authError) {
-                // Second attempt: Fallback to dummy/local users for testing/legacy
-                console.log("Supabase Auth failed, checking local mocks...");
-                const savedTeam = localStorage.getItem('pds_team');
-                const localUsers = savedTeam ? JSON.parse(savedTeam) : [];
-                const allAccounts = [...DUMMY_ACCOUNTS, ...localUsers];
-
-                const account = allAccounts.find(
-                    (acc) => (acc.email === identifier || acc.username === identifier) && acc.password === password
-                );
-
-                if (account) {
-                    const finalAccount = {
-                        ...account,
-                        route: account.route || getRedirectRoute(account.role || account.position || 'User')
-                    };
-                    localStorage.setItem('currentUser', JSON.stringify(finalAccount));
-                    router.push(finalAccount.route);
-                    return;
-                }
-
                 setError(authError.message === 'Invalid login credentials' ? 'Invalid credentials. Please try again.' : authError.message);
                 setIsSubmitting(false);
                 return;

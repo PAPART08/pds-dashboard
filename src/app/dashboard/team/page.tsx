@@ -166,50 +166,59 @@ export default function TeamPage() {
   };
 
   const handleSaveNewUser = async () => {
-    if (!newUser.name || !newUser.position || !newUser.unit) return;
+    if (!newUser.name || !newUser.position || !newUser.unit || !newUser.email) {
+      alert("Please ensure Name, Email, Position, and Unit are filled out.");
+      return;
+    }
 
-    // Create unique ID for local usage, but supabase uses uuid
-    const tempId = `temp-${Date.now()}`;
-    const employeeToSave = {
-      ...newUser,
-      id: tempId,
-      restrictions: newUser.restrictions || [],
-      password: newUser.password
-    } as Employee;
-
-    // Optimistic UI update and Local Storage Fallback
-    const updatedTeam = [...team, employeeToSave];
-    saveTeamLocally(updatedTeam);
+    setIsAdding(false); // Close modal while processing to prevent duplicate clicks
 
     const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
       process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
 
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase
-          .from('employees')
-          .insert([{
-            name: newUser.name,
-            username: newUser.username,
-            email: newUser.email,
-            position: newUser.position,
-            unit: newUser.unit,
-            user_type: newUser.user_type || 'User',
-            restrictions: newUser.restrictions || [],
-            password: newUser.password
-          }])
-          .select();
+        // Dynamically import the action to avoid client/server component conflicts
+        const { createTeamMember } = await import('@/app/actions/user');
 
-        // Overwrite temp UI item with real DB record
-        if (!error && data && data.length > 0) {
-          saveTeamLocally([...team, data[0] as Employee]);
+        const result = await createTeamMember({
+          name: newUser.name,
+          username: newUser.username,
+          email: newUser.email,
+          position: newUser.position,
+          unit: newUser.unit,
+          user_type: newUser.user_type || 'User',
+          restrictions: newUser.restrictions || [],
+          password: newUser.password
+        });
+
+        if (result.success && result.data) {
+          // Overwrite temp UI item with real DB record
+          saveTeamLocally([...team, result.data as Employee]);
+          alert('User successfully created and added to Supabase Auth.');
+        } else {
+          console.error('Failed to create member:', result.error);
+          alert(`Failed to create user: ${result.error}`);
         }
       } catch (err) {
-        console.error('Failed to insert new member in Supabase', err);
+        console.error('Failed to insert new member via Action', err);
+        alert('An unexpected error occurred while creating the user.');
       }
-    }
+    } else {
+      // Create unique ID for local usage fallback
+      const tempId = `temp-${Date.now()}`;
+      const employeeToSave = {
+        ...newUser,
+        id: tempId,
+        restrictions: newUser.restrictions || [],
+        password: newUser.password
+      } as Employee;
 
-    setIsAdding(false);
+      // Optimistic UI update and Local Storage Fallback
+      const updatedTeam = [...team, employeeToSave];
+      saveTeamLocally(updatedTeam);
+      alert('User created locally (Supabase not configured).');
+    }
   };
 
   const getUserTypeIcon = (user_type: string) => {
