@@ -24,7 +24,10 @@ interface Project {
     createdAt: string;
     fiscalYear: string;
     docId?: string;
+    projectId?: string;
+    docCode?: string;
     type?: string;
+    deadline?: string;
 }
 
 export default function UserTaskDashboard() {
@@ -93,17 +96,22 @@ export default function UserTaskDashboard() {
                     const docAssignments = p.docAssignments || {};
                     Object.entries(docAssignments).forEach(([code, assignedName]) => {
                         if (assignedName === currentUserName) {
+                            const corrCount = p.docCorrections?.[code] || 0;
+                            const docIdSuffix = corrCount > 0 ? `_Correction_No.${corrCount}` : '';
                             userAssignedTasks.push({
                                 id: `${p.id}-${code}`,
-                                docId: `${p.alternateId || p.id.substring(0, 8).toUpperCase()}-${code}`,
+                                docId: `${p.alternateId || p.id.substring(0, 8).toUpperCase()}-${code}${docIdSuffix}`,
                                 title: p.projectDescription || 'Untitled Project',
                                 location: p.municipality || 'Unspecified',
                                 costValue: p.totalCost || 0,
                                 stage: 'Preparation',
-                                status: p.uploadedDocs?.[code] ? 'Submitted' : 'Drafting',
+                                status: p.docStatuses?.[code] || (p.uploadedDocs?.[code] ? 'Submitted' : 'Drafting'),
                                 createdAt: p.createdAt || new Date().toISOString(),
                                 fiscalYear: p.fiscalYear || '2025',
-                                type: 'Assigned Document'
+                                type: 'Assigned Document',
+                                deadline: p.docDeadlines?.[code],
+                                projectId: p.id,
+                                docCode: code
                             });
                         }
                     });
@@ -153,12 +161,57 @@ export default function UserTaskDashboard() {
 
     const displayProjects = projects.slice(0, 5); // Just show top 5 for dashboard
 
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, projectId: string, docCode: string, fullDocId: string) => {
+        const file = e.target.files?.[0];
+        if (!file || !projectId || !docCode) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64String = event.target?.result as string;
+
+            // Save the file globally
+            localStorage.setItem(`pdf_${projectId}_${docCode}`, base64String);
+
+            // Update the project status specifically
+            try {
+                const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
+                const projectIndex = localDataRaw.findIndex((p: any) => p.id === projectId || p.alternateId === projectId.substring(0, 8).toUpperCase());
+
+                if (projectIndex !== -1) {
+                    if (!localDataRaw[projectIndex].docStatuses) localDataRaw[projectIndex].docStatuses = {};
+                    localDataRaw[projectIndex].docStatuses[docCode] = 'Submitted';
+
+                    if (!localDataRaw[projectIndex].uploadedDocs) localDataRaw[projectIndex].uploadedDocs = {};
+                    localDataRaw[projectIndex].uploadedDocs[docCode] = true;
+
+                    localStorage.setItem('rbp_projects', JSON.stringify(localDataRaw));
+
+                    // Update local state to reflect change immediately
+                    setProjects(prevProjects => prevProjects.map(p => {
+                        if (p.id === fullDocId) {
+                            return { ...p, status: 'Submitted' };
+                        }
+                        return p;
+                    }));
+
+                    alert("Document successfully uploaded.");
+                } else {
+                    alert("Project not found in local storage. Upload successful temporarily.");
+                }
+            } catch (err) {
+                console.error("Error updating local storage:", err);
+                alert("Document successfully uploaded.");
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
 
     return (
-        <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50 dark:bg-slate-900 animate-fade-in font-sans flex flex-col xl:flex-row gap-6 xl:gap-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8 bg-slate-50 dark:bg-slate-900 animate-fade-in font-sans flex flex-col xl:flex-row gap-6 xl:gap-8">
 
             {/* Main Content Area */}
-            <div className="flex-1 space-y-8">
+            <div className="flex-1 min-w-0 overflow-hidden space-y-8">
 
                 {/* Header */}
                 <div>
@@ -206,7 +259,7 @@ export default function UserTaskDashboard() {
                     <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                            Technical Review List
+                            Documents to Comply
                         </h3>
 
                         <div className="relative w-full sm:w-64">
@@ -227,6 +280,7 @@ export default function UserTaskDashboard() {
                                     <th className="px-5 py-3">Project Title</th>
                                     <th className="px-5 py-3">Status</th>
                                     <th className="px-5 py-3">Deadline</th>
+                                    <th className="px-5 py-3 text-center">Correction</th>
                                     <th className="px-5 py-3 text-right">Action</th>
                                 </tr>
                             </thead>
@@ -247,20 +301,35 @@ export default function UserTaskDashboard() {
                                         </td>
                                         <td className="px-5 py-4">
                                             <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${doc.status === 'Approved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
-                                                doc.status === 'Under Review' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
-                                                    'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
+                                                doc.status === 'Submitted' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
+                                                    doc.status === 'Under Review' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400' :
+                                                        doc.status === 'Returned' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' :
+                                                            'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
                                                 }`}>
-                                                {doc.status}
+                                                {doc.status === 'Submitted' ? 'Submitted to Unit Head' : doc.status === 'Returned' ? 'Returned for Correction' : doc.status}
                                             </span>
                                         </td>
                                         <td className="px-5 py-4 flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                                            {(doc.status === 'Draft' || doc.status.includes('Pending')) && <AlertCircle className="w-4 h-4 text-orange-500" />}
-                                            {new Date(doc.createdAt).toLocaleDateString()}
+                                            {(doc.status === 'Drafting' || doc.status.includes('Pending') || doc.status === 'Returned') && <AlertCircle className="w-4 h-4 text-orange-500" />}
+                                            {doc.deadline ? new Date(doc.deadline).toLocaleDateString() : 'Not Set'}
+                                        </td>
+                                        <td className="px-5 py-4 text-center">
+                                            {doc.status === 'Returned' && doc.projectId && doc.docCode && (
+                                                <a href={`/dashboard/view-correction/${doc.projectId}/${doc.docCode}`} className="text-orange-600 hover:text-orange-700 dark:text-orange-400 font-bold text-sm underline inline-block">
+                                                    View Correction
+                                                </a>
+                                            )}
                                         </td>
                                         <td className="px-5 py-4 text-right">
-                                            <a href={`/dashboard/rbp/${doc.id}`} className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium text-sm inline-block">
-                                                Review
-                                            </a>
+                                            <label className="text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline font-medium text-sm inline-block cursor-pointer">
+                                                Upload File
+                                                <input
+                                                    type="file"
+                                                    accept="application/pdf"
+                                                    className="hidden"
+                                                    onChange={(e) => handleFileUpload(e, doc.projectId || '', doc.docCode || '', doc.id)}
+                                                />
+                                            </label>
                                         </td>
                                     </tr>
                                 ))}

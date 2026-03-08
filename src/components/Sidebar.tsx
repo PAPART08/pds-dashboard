@@ -8,9 +8,10 @@ import styles from './Sidebar.module.css';
 // Define User Roles
 type UserRole = 'Admin' | 'Section Chief' | 'Unit Head' | 'Planning Unit' | 'Unit Member' | 'Regular Member' | 'Cost Estimator' | 'Project Programmer' | 'User';
 
-export default function Sidebar() {
+export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isCollapsed?: boolean; toggleSidebar?: () => void }) {
   const pathname = usePathname();
   const [userRole, setUserRole] = useState<UserRole | ''>('');
+  const [userRestrictions, setUserRestrictions] = useState<string[]>([]);
   const [userName, setUserName] = useState<string>('');
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -24,6 +25,9 @@ export default function Sidebar() {
       }
       if (parsedUser.name) {
         setUserName(parsedUser.name);
+      }
+      if (parsedUser.restrictions) {
+        setUserRestrictions(parsedUser.restrictions);
       }
     } else {
       // Fallback defaults for demo if no one is logged in
@@ -84,10 +88,10 @@ export default function Sidebar() {
           name: 'Global Task List',
           href: '/dashboard/rbp/global-tasks',
           icon: 'list_alt',
-          roles: ['Section Chief', 'Unit Head']
+          roles: ['Section Chief', 'Planning Unit']
         },
         {
-          name: 'Master List (A-1)',
+          name: 'Master List',
           href: '/dashboard/rbp/master-list',
           icon: 'database',
           roles: ['Section Chief', 'Planning Unit']
@@ -160,9 +164,17 @@ export default function Sidebar() {
     { name: 'Team & Permissions', href: '/dashboard/team', icon: 'groups', roles: ['Section Chief', 'Admin'] },
   ];
 
-  const filteredItems = isLoaded ? navConfig[activeStage].items.filter(item =>
-    item.roles.includes(userRole as any)
-  ) : [];
+  const filteredItems = isLoaded ? navConfig[activeStage].items.filter(item => {
+    if (!item.roles.includes(userRole as any)) return false;
+
+    // Specifically filter Global Task List for Section Chief, it requires an Admin to manually toggle them
+    if (item.href === '/dashboard/rbp/global-tasks') {
+      if (userRole === 'Section Chief' && !userRestrictions.includes('Global Task & Lead Assignment')) {
+        return false;
+      }
+    }
+    return true;
+  }) : [];
 
   const filteredAdminItems = isLoaded ? adminItems.filter(item =>
     item.roles.includes(userRole as any)
@@ -184,13 +196,13 @@ export default function Sidebar() {
         <div className={styles.navItemIconBox}>
           <span className={`material-symbols-outlined ${styles.navItemIcon}`}>{item.icon}</span>
         </div>
-        <span>{item.name}</span>
+        {!isCollapsed && <span>{item.name}</span>}
       </Link>
     );
   };
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={`${styles.sidebar} ${isCollapsed ? styles.sidebarCollapsed : ''}`}>
 
       {/* Brand area */}
       <div className={styles.brand}>
@@ -198,39 +210,50 @@ export default function Sidebar() {
           <div className={styles.brandIconBox}>
             <span className={`material-symbols-outlined ${styles.brandIcon}`}>engineering</span>
           </div>
-          <h1 className={styles.brandTitle}>
-            DPWH <span className={styles.brandTitleHighlight}>TASK</span>
-          </h1>
+          {!isCollapsed && (
+            <h1 className={styles.brandTitle}>
+              DPWH <span className={styles.brandTitleHighlight}>TASK</span>
+            </h1>
+          )}
         </div>
-        <p className={styles.brandSubtitle}>Management System</p>
+        {!isCollapsed && <p className={styles.brandSubtitle}>Management System</p>}
+
+        {toggleSidebar && (
+          <button onClick={toggleSidebar} className={styles.toggleBtn} aria-label="Toggle Sidebar">
+            <span className="material-symbols-outlined">{isCollapsed ? 'menu' : 'menu_open'}</span>
+          </button>
+        )}
       </div>
 
       {/* Stage Selection */}
       <div className={styles.moduleSelect}>
-        <p className={styles.moduleLabel}>Select Module</p>
-        <div className={styles.moduleGrid}>
+        {!isCollapsed && <p className={styles.moduleLabel}>Select Module</p>}
+        <div className={styles.moduleGrid} style={isCollapsed ? { gridTemplateColumns: '1fr' } : {}}>
           <Link
             href="/dashboard/rbp"
             className={`${styles.moduleBtn} ${activeStage === 'RBP' ? styles.moduleBtnActiveRBP : ''}`}
+            title="Regional Budget Proposal"
           >
             <span className={`material-symbols-outlined ${styles.moduleIcon}`}>account_balance_wallet</span>
-            <span className={styles.moduleText}>RBP</span>
+            {!isCollapsed && <span className={styles.moduleText}>RBP</span>}
           </Link>
           <Link
             href="/dashboard/gaa"
             className={`${styles.moduleBtn} ${activeStage === 'GAA' ? styles.moduleBtnActiveGAA : ''}`}
+            title="Project Implementation"
           >
             <span className={`material-symbols-outlined ${styles.moduleIcon}`}>analytics</span>
-            <span className={styles.moduleText}>GAA</span>
+            {!isCollapsed && <span className={styles.moduleText}>GAA</span>}
           </Link>
           {userRole === 'Admin' && (
             <Link
               href="/dashboard/team"
               className={`${styles.moduleBtn} ${activeStage === 'ADMIN' ? styles.moduleBtnActiveRBP : ''}`}
               style={activeStage === 'ADMIN' ? { backgroundColor: 'var(--dpwh-blue)', color: 'white' } : {}}
+              title="Administration"
             >
               <span className={`material-symbols-outlined ${styles.moduleIcon}`}>admin_panel_settings</span>
-              <span className={styles.moduleText}>ADMIN</span>
+              {!isCollapsed && <span className={styles.moduleText}>ADMIN</span>}
             </Link>
           )}
         </div>
@@ -244,25 +267,28 @@ export default function Sidebar() {
             href={overviewHref}
             className={`${styles.navItem} ${pathname === overviewHref ? styles.navItemActive : ''}`}
             style={pathname === overviewHref ? { backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)' } : {}}
+            title="Overview Dashboard"
           >
             <div className={styles.navItemIconBox}>
               <span className={`material-symbols-outlined ${styles.navItemIcon}`}>dashboard</span>
             </div>
-            <span>Overview Dashboard</span>
+            {!isCollapsed && <span>Overview Dashboard</span>}
           </Link>
         </div>
 
         <div className={styles.navSection}>
-          <div className={styles.navSectionHeader}>
-            <div className={styles.navDot} style={{ backgroundColor: navConfig[activeStage].color }}></div>
-            <p className={styles.navSectionLabel}>{navConfig[activeStage].label}</p>
-          </div>
+          {!isCollapsed && (
+            <div className={styles.navSectionHeader}>
+              <div className={styles.navDot} style={{ backgroundColor: navConfig[activeStage].color }}></div>
+              <p className={styles.navSectionLabel}>{navConfig[activeStage].label}</p>
+            </div>
+          )}
           {filteredItems.map(renderLink)}
         </div>
 
         {filteredAdminItems.length > 0 && (
           <div className={styles.navSection}>
-            <p className={styles.navSectionLabel} style={{ marginLeft: '0.5rem', marginBottom: '0.5rem' }}>Administration</p>
+            {!isCollapsed && <p className={styles.navSectionLabel} style={{ marginLeft: '0.5rem', marginBottom: '0.5rem' }}>Administration</p>}
             {filteredAdminItems.map(renderLink)}
           </div>
         )}
@@ -270,43 +296,50 @@ export default function Sidebar() {
 
       {/* Role Emulator & Footer */}
       <div className={styles.footer}>
-        <div className={styles.roleBoxWrapper}>
-          <div className={styles.roleBox}>
-            <div className={styles.roleAvatar}>
-              {userName ? userName.split(' ').map(n => n[0]).join('') : '??'}
-            </div>
-            <div className={styles.roleInfo}>
-              <p className={styles.roleName}>{userName || 'Unknown User'}</p>
-              <p className={styles.roleTitle}>{userRole || 'Guest'}</p>
+        {!isCollapsed && (
+          <div className={styles.roleBoxWrapper}>
+            <div className={styles.roleBox}>
+              <div className={styles.roleAvatar}>
+                {userName ? userName.split(' ').map(n => n[0]).join('') : '??'}
+              </div>
+              <div className={styles.roleInfo}>
+                <p className={styles.roleName}>{userName || 'Unknown User'}</p>
+                <p className={styles.roleTitle}>{userRole || 'Guest'}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Status Bar Section */}
-        <div className={styles.statusBar}>
-          <div className={styles.statusRow}>
-            <div className={styles.statusItem}>
-              <span className={styles.pulse}></span>
-              <span>System Online</span>
+        <div className={styles.statusBar} style={isCollapsed ? { padding: '1.25rem 0.5rem', alignItems: 'center' } : {}}>
+          {!isCollapsed && (
+            <div className={styles.statusRow}>
+              <div className={styles.statusItem}>
+                <span className={styles.pulse}></span>
+                <span>System Online</span>
+              </div>
+              <div className={styles.statusItem}>
+                <span className={`material-symbols-outlined ${styles.statusIcon}`}>verified_user</span>
+                <span>Secure</span>
+              </div>
             </div>
-            <div className={styles.statusItem}>
-              <span className={`material-symbols-outlined ${styles.statusIcon}`}>verified_user</span>
-              <span>Secure</span>
-            </div>
-          </div>
+          )}
 
-          <div className={styles.bottomRow}>
+          <div className={styles.bottomRow} style={isCollapsed ? { flexDirection: 'column', width: '100%' } : {}}>
             <Link
               href="/login"
               className={styles.btnLogout}
               onClick={() => localStorage.removeItem('currentUser')}
+              title="Logout"
             >
               <span className={`material-symbols-outlined ${styles.btnLogoutIcon}`}>logout</span>
-              Logout
+              {!isCollapsed && 'Logout'}
             </Link>
-            <div className={styles.versionBadge}>
-              v2.4.0
-            </div>
+            {!isCollapsed && (
+              <div className={styles.versionBadge}>
+                v2.4.0
+              </div>
+            )}
           </div>
         </div>
       </div>

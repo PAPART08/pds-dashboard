@@ -2,12 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 
 export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
+    // Auth Check
+    const user = localStorage.getItem('currentUser');
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    setIsCheckingAuth(false);
+
+    // Dark Mode Check
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
       setIsDarkMode(true);
@@ -15,7 +27,7 @@ export default function Home() {
       document.documentElement.classList.remove('dark');
       setIsDarkMode(false);
     }
-  }, []);
+  }, [router]);
 
   const toggleDarkMode = () => {
     if (isDarkMode) {
@@ -28,6 +40,17 @@ export default function Home() {
       setIsDarkMode(true);
     }
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+          <p className="font-medium text-slate-500 animate-pulse uppercase tracking-[0.2em] text-xs">Verifying Session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mesh-gradient min-h-screen relative">

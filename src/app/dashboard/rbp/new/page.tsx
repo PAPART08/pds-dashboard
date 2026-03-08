@@ -681,32 +681,32 @@ export default function NewProjectEntry() {
               <tbody>
                 {components.map((comp, idx) => (
                   <tr key={idx}>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} value={comp.id} onChange={(e) => updateComponent(idx, 'id', e.target.value)} /></td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} value={comp.id || ''} onChange={(e) => updateComponent(idx, 'id', e.target.value)} /></td>
                     <td className={styles.td}>
-                      <select className={styles.tableInput} value={comp.compType} onChange={(e) => updateComponent(idx, 'compType', e.target.value)}>
+                      <select className={styles.tableInput} value={comp.compType || ''} onChange={(e) => updateComponent(idx, 'compType', e.target.value)}>
                         <option value="">Type</option>
                         {componentTypes.map((t: string) => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </td>
                     <td className={styles.td}>
-                      <select className={styles.tableInput} value={comp.infraType} onChange={(e) => updateComponent(idx, 'infraType', e.target.value)}>
+                      <select className={styles.tableInput} value={comp.infraType || ''} onChange={(e) => updateComponent(idx, 'infraType', e.target.value)}>
                         <option value="">Select</option>
                         {infraTypes.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="Road/Bridge Name" value={comp.infraName} onChange={(e) => updateComponent(idx, 'infraName', e.target.value)} /></td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="Road/Bridge Name" value={comp.infraName || ''} onChange={(e) => updateComponent(idx, 'infraName', e.target.value)} /></td>
                     <td className={styles.td}>
-                      <select className={styles.tableInput} value={comp.workType} onChange={(e) => updateComponent(idx, 'workType', e.target.value)} disabled={!comp.infraType}>
+                      <select className={styles.tableInput} value={comp.workType || ''} onChange={(e) => updateComponent(idx, 'workType', e.target.value)} disabled={!comp.infraType}>
                         <option value="">Select Type of Work</option>
                         {comp.infraType && (codes.work_types as any)[comp.infraType]?.map((w: any) => <option key={w} value={w}>{w}</option>)}
                       </select>
                     </td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} value={comp.unit} onChange={(e) => updateComponent(idx, 'unit', e.target.value)} /></td>
-                    <td className={styles.td}><input type="number" className={styles.tableInput} value={comp.target} readOnly disabled /></td>
-                    <td className={styles.tdCost}><input type="number" className={styles.tableInput} style={{ textAlign: 'right' }} value={comp.cost} readOnly disabled /></td>
-                    <td className={styles.td}><input type="number" className={styles.tableInput} value={comp.unitCost.toFixed(2)} readOnly disabled /></td>
-                    <td className={styles.td}><input type="date" className={styles.tableInput} value={comp.start} onChange={(e) => updateComponent(idx, 'start', e.target.value)} /></td>
-                    <td className={styles.td}><input type="date" className={styles.tableInput} value={comp.end} onChange={(e) => updateComponent(idx, 'end', e.target.value)} /></td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} value={comp.unit || ''} onChange={(e) => updateComponent(idx, 'unit', e.target.value)} /></td>
+                    <td className={styles.td}><input type="number" className={styles.tableInput} value={comp.target || 0} readOnly disabled /></td>
+                    <td className={styles.tdCost}><input type="number" className={styles.tableInput} style={{ textAlign: 'right' }} value={comp.cost || 0} readOnly disabled /></td>
+                    <td className={styles.td}><input type="number" className={styles.tableInput} value={(comp.unitCost || 0).toFixed(2)} readOnly disabled /></td>
+                    <td className={styles.td}><input type="date" className={styles.tableInput} value={comp.start || ''} onChange={(e) => updateComponent(idx, 'start', e.target.value)} /></td>
+                    <td className={styles.td}><input type="date" className={styles.tableInput} value={comp.end || ''} onChange={(e) => updateComponent(idx, 'end', e.target.value)} /></td>
                     <td className={styles.td}>
                       <button className={styles.btnIconOnly} onClick={() => removeComponent(idx)}>
                         <span className="material-symbols-outlined">delete</span>

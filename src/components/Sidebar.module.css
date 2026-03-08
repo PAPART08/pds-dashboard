@@ -10,7 +10,35 @@
     border-right: 1px solid var(--border-color);
     z-index: 50;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebarCollapsed {
+    width: 5rem;
+}
+
+.toggleBtn {
+    position: absolute;
+    right: 0.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.toggleBtn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--text-main);
+}
+
+:global(.dark) .toggleBtn:hover {
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 .brand {

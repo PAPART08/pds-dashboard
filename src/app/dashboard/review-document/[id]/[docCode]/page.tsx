@@ -16,9 +16,16 @@ import {
     Search,
     ZoomIn,
     ZoomOut,
-    Download
+    Download,
+    Save,
+    Eraser
 } from 'lucide-react';
 import { SUPPORTING_DOC_DESCRIPTIONS } from '@/lib/supporting-docs';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export default function DocumentReviewPage({ params }: { params: Promise<{ id: string, docCode: string }> }) {
     const { id, docCode } = use(params);
@@ -26,6 +33,7 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
 
     const [activeTool, setActiveTool] = useState('select');
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const [numPages, setNumPages] = useState<number | null>(null);
     const [comments, setComments] = useState<{ id: number, user: string, role: string, text: string, time: string, isResolved: boolean }[]>([]);
     const [newComment, setNewComment] = useState('');
     const [currentUser, setCurrentUser] = useState<any>(null);
@@ -40,46 +48,113 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
     useEffect(() => {
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) setCurrentUser(JSON.parse(savedUser));
-        // Initial dummy data for demonstration
-        setComments([
-            {
-                id: 1,
-                user: 'Engr. Sarah Lee',
-                role: 'Planning Unit',
-                text: 'The chainage on page 3 doesn\'t match the RIF declaration. Please verify.',
-                time: 'Oct 14, 2025 • 09:30 AM',
-                isResolved: false
-            },
-            {
-                id: 2,
-                user: 'Antonio Reyes',
-                role: 'Section Chief',
-                text: 'Checked the cost estimates. Looks within range for this specific region.',
-                time: 'Oct 14, 2025 • 11:15 AM',
-                isResolved: true
-            }
-        ]);
+        const savedComments = localStorage.getItem(`pds_comments_${id}_${docCode}`);
+        if (savedComments) {
+            setComments(JSON.parse(savedComments));
+        } else {
+            setComments([
+                {
+                    id: 1,
+                    user: 'Engr. Sarah Lee',
+                    role: 'Planning Unit',
+                    text: 'The chainage on page 3 doesn\'t match the RIF declaration. Please verify.',
+                    time: 'Oct 14, 2025 • 09:30 AM',
+                    isResolved: false
+                }
+            ]);
+        }
 
-        const savedUrl = sessionStorage.getItem(`pdf_${id}_${docCode}`);
-        if (savedUrl) {
-            setPdfUrl(savedUrl);
+        // Load annotations
+        const savedAnnotations = localStorage.getItem(`pds_annotations_${id}_${docCode}`);
+        if (savedAnnotations) {
+            try {
+                setPaths(JSON.parse(savedAnnotations));
+            } catch (err) {
+                console.error("Error loading annotations", err);
+            }
+        }
+
+        const savedUrlGlobal = localStorage.getItem(`pdf_${id}_${docCode}`);
+        const savedUrlSession = sessionStorage.getItem(`pdf_${id}_${docCode}`);
+
+        if (savedUrlGlobal) {
+            setPdfUrl(savedUrlGlobal);
+        } else if (savedUrlSession) {
+            setPdfUrl(savedUrlSession);
         }
     }, [id, docCode]);
 
     const handleApprove = () => {
+        // Save to project data
+        try {
+            const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
+            const projectIndex = localDataRaw.findIndex((p: any) => p.id === id || p.alternateId === id.substring(0, 8).toUpperCase());
+            if (projectIndex !== -1) {
+                if (!localDataRaw[projectIndex].docStatuses) localDataRaw[projectIndex].docStatuses = {};
+                localDataRaw[projectIndex].docStatuses[docCode as string] = 'Approved';
+                localStorage.setItem('rbp_projects', JSON.stringify(localDataRaw));
+            }
+        } catch (e) {
+            console.error("Failed to approve doc", e);
+        }
+
         alert("Document Approved & Sent to Chief.");
         setComments([...comments, { id: Date.now(), user: 'You', role: 'Reviewer', text: 'Document Approved & Sent to Chief.', time: 'Just now', isResolved: true }]);
         setTimeout(() => router.push(`/dashboard/rbp/${id}`), 1000);
     };
 
     const handleReturn = () => {
+        // Increment correction count & alter status
+        try {
+            const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
+            const projectIndex = localDataRaw.findIndex((p: any) => p.id === id || p.alternateId === id.substring(0, 8).toUpperCase());
+            if (projectIndex !== -1) {
+                if (!localDataRaw[projectIndex].docCorrections) localDataRaw[projectIndex].docCorrections = {};
+                if (!localDataRaw[projectIndex].docStatuses) localDataRaw[projectIndex].docStatuses = {};
+
+                const currentCorrections = localDataRaw[projectIndex].docCorrections[docCode as string] || 0;
+                localDataRaw[projectIndex].docCorrections[docCode as string] = currentCorrections + 1;
+                localDataRaw[projectIndex].docStatuses[docCode as string] = 'Returned';
+
+                localStorage.setItem('rbp_projects', JSON.stringify(localDataRaw));
+
+                // Auto-save annotations when returning
+                localStorage.setItem(`pds_annotations_${id}_${docCode}`, JSON.stringify(paths));
+            }
+        } catch (e) {
+            console.error("Failed to append correction logs", e);
+        }
+
         alert("Document Returned to Compiler with Corrections.");
-        setComments([...comments, { id: Date.now(), user: 'You', role: 'Reviewer', text: 'Document Returned for Corrections.', time: 'Just now', isResolved: false }]);
+        const updatedComments = [...comments, { id: Date.now(), user: 'You', role: 'Reviewer', text: 'Document Returned for Corrections.', time: 'Just now', isResolved: false }];
+        setComments(updatedComments);
+        localStorage.setItem(`pds_comments_${id}_${docCode}`, JSON.stringify(updatedComments));
         setTimeout(() => router.push(`/dashboard/rbp/${id}`), 1000);
+    };
+
+    const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+        setNumPages(numPages);
+    };
+
+    const handleSaveAnnotations = () => {
+        localStorage.setItem(`pds_annotations_${id}_${docCode}`, JSON.stringify(paths));
+        alert("Annotations successfully saved to the document.");
     };
 
     // Drawing Handlers
     const startDrawing = (e: React.MouseEvent<SVGSVGElement>) => {
+        if (activeTool === 'eraser') {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Remove paths near the click
+            setPaths(paths.filter(p => {
+                return !p.points.some((pt: any) => Math.sqrt(Math.pow(pt.x - x, 2) + Math.pow(pt.y - y, 2)) < 15);
+            }));
+            return;
+        }
+
         if (activeTool !== 'draw' && activeTool !== 'highlight') return;
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -115,7 +190,9 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
             time: 'Just now',
             isResolved: false
         };
-        setComments([...comments, comment]);
+        const updatedComments = [...comments, comment];
+        setComments(updatedComments);
+        localStorage.setItem(`pds_comments_${id}_${docCode}`, JSON.stringify(updatedComments));
         setNewComment('');
     };
 
@@ -134,7 +211,6 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                     <div>
                         <div className="flex items-center space-x-3">
                             <h1 className="text-xl font-bold text-gray-800">{docName}</h1>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-[color:var(--dpwh-blue)] uppercase">v1.2</span>
                         </div>
                         <p className="text-sm text-gray-500 font-medium">Project {id.substring(0, 8).toUpperCase()} • {docCode}</p>
                     </div>
@@ -177,6 +253,12 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                         </button>
                         <button
                             disabled={isMember}
+                            onClick={() => setActiveTool('eraser')}
+                            className={`p-2 rounded-full transition-colors ${activeTool === 'eraser' ? 'bg-red-50 text-red-600' : (isMember ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-100')}`} title="Eraser">
+                            <Eraser className="w-4 h-4" />
+                        </button>
+                        <button
+                            disabled={isMember}
                             onClick={() => setActiveTool('text')}
                             className={`p-2 rounded-full transition-colors ${activeTool === 'text' ? 'bg-blue-50 text-[color:var(--dpwh-blue)]' : (isMember ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-100')}`} title="Add Text">
                             <Type className="w-4 h-4" />
@@ -208,35 +290,48 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                                 <p className="text-gray-500 font-medium mt-1">Drag and drop or click to browse</p>
                             </div>
                         ) : (
-                            <div className="w-full h-full relative z-0">
-                                <iframe
-                                    src={`${pdfUrl}#toolbar=0`}
-                                    className="w-full h-full"
-                                    title="PDF Document Viewer"
-                                />
-                                {/* Annotation Overlay (Canvas) */}
-                                <svg
-                                    className="absolute inset-0 w-full h-full z-10 cursor-crosshair"
-                                    style={{ pointerEvents: activeTool === 'draw' || activeTool === 'highlight' ? 'auto' : 'none' }}
-                                    onMouseDown={startDrawing}
-                                    onMouseMove={draw}
-                                    onMouseUp={endDrawing}
-                                    onMouseLeave={endDrawing}
-                                >
-                                    {[...paths, currentPath].filter(Boolean).map((p, i) => (
-                                        <polyline
-                                            key={i}
-                                            points={p.points.map((pt: any) => `${pt.x},${pt.y}`).join(' ')}
-                                            fill="none"
-                                            stroke={p.tool === 'highlight' ? '#fde047' : '#ef4444'}
-                                            strokeWidth={p.tool === 'highlight' ? 20 : 3}
-                                            opacity={p.tool === 'highlight' ? 0.3 : 1}
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            style={{ mixBlendMode: 'multiply' }}
-                                        />
-                                    ))}
-                                </svg>
+                            <div className="w-full h-full relative overflow-auto bg-slate-400 p-8 flex flex-col items-center">
+                                <div className="relative shadow-2xl">
+                                    <Document
+                                        file={pdfUrl}
+                                        onLoadSuccess={onDocumentLoadSuccess}
+                                        className="flex flex-col gap-4"
+                                    >
+                                        {Array.from({ length: numPages || 0 }, (_, i) => (
+                                            <div key={`page_${i + 1}`} className="relative bg-white">
+                                                <Page
+                                                    pageNumber={i + 1}
+                                                    renderAnnotationLayer={false}
+                                                    renderTextLayer={false}
+                                                    width={800}
+                                                />
+                                            </div>
+                                        ))}
+                                    </Document>
+
+                                    {/* Annotation Overlay (Canvas) - Absolute to the whole document stack */}
+                                    <svg
+                                        className={`absolute inset-0 w-full h-full z-10 ${activeTool === 'draw' || activeTool === 'highlight' || activeTool === 'eraser' ? 'cursor-crosshair' : 'pointer-events-none'}`}
+                                        onMouseDown={startDrawing}
+                                        onMouseMove={draw}
+                                        onMouseUp={endDrawing}
+                                        onMouseLeave={endDrawing}
+                                    >
+                                        {[...paths, currentPath].filter(Boolean).map((p, i) => (
+                                            <polyline
+                                                key={i}
+                                                points={p.points.map((pt: any) => `${pt.x},${pt.y}`).join(' ')}
+                                                fill="none"
+                                                stroke={p.tool === 'highlight' ? '#fde047' : '#ef4444'}
+                                                strokeWidth={p.tool === 'highlight' ? 20 : 3}
+                                                opacity={p.tool === 'highlight' ? 0.3 : 1}
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                style={{ mixBlendMode: 'multiply' }}
+                                            />
+                                        ))}
+                                    </svg>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -248,6 +343,26 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                     {/* Action Buttons */}
                     {!isMember && (
                         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-3">
+                            <button onClick={handleSaveAnnotations} className="w-full flex justify-center items-center py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-sm shadow-sm active:scale-[0.98]">
+                                <Save className="w-4 h-4 mr-2" />
+                                Save Tool Annotations
+                            </button>
+                            <label className="w-full flex justify-center items-center py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-sm shadow-sm active:scale-[0.98] cursor-pointer">
+                                <Download className="w-4 h-4 mr-2" />
+                                Upload Annotated PDF
+                                <input
+                                    type="file"
+                                    accept="application/pdf"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            setPdfUrl(URL.createObjectURL(file));
+                                            alert("Annotated PDF successfully loaded.");
+                                        }
+                                    }}
+                                />
+                            </label>
                             <button onClick={handleApprove} className="w-full flex justify-center items-center py-3 bg-[color:var(--dpwh-blue)] hover:bg-blue-800 text-white font-bold rounded-xl transition-colors text-sm shadow-md active:scale-[0.98]">
                                 <Check className="w-4 h-4 mr-2" />
                                 Approve & Send to Chief

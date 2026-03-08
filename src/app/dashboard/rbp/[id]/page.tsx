@@ -202,7 +202,9 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
 
   const isMember = currentUser?.role === 'Unit Member' || currentUser?.role === 'Regular Member';
   const isUnitHead = currentUser?.role === 'Unit Head';
+  const isSectionChief = currentUser?.role === 'Section Chief';
   const canAssignDocs = currentUser?.role === 'Section Chief' || currentUser?.role === 'Unit Head';
+  const canAssignLead = currentUser?.role === 'Unit Head' || currentUser?.role === 'Section Chief';
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -305,7 +307,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
                         <History className="w-4 h-4" />
                       </button>
                       <div className="relative inline-block">
-                        {(!isMember || docAssignments[doc.code] === currentUser?.name) && (
+                        {!isSectionChief && (!isMember || docAssignments[doc.code] === currentUser?.name) && (
                           <input
                             type="file"
                             accept="application/pdf"
@@ -318,14 +320,16 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
                           />
                         )}
                         <button
-                          disabled={isMember && docAssignments[doc.code] !== currentUser?.name}
-                          className={`btn btn-outline py-1.5 px-4 text-xs font-bold border-dashed ${uploadedDocs[doc.code]
+                          disabled={isSectionChief || (isMember && docAssignments[doc.code] !== currentUser?.name)}
+                          className={`btn btn-outline py-1.5 px-4 text-xs font-bold border-dashed ${isSectionChief
+                            ? 'border-gray-200 text-gray-300 bg-gray-50 cursor-not-allowed opacity-60'
+                            : uploadedDocs[doc.code]
                               ? 'border-emerald-400 text-emerald-600 bg-emerald-50'
                               : (isMember && docAssignments[doc.code] !== currentUser?.name)
                                 ? 'border-gray-200 text-gray-300 bg-gray-50 cursor-not-allowed opacity-60'
                                 : 'border-gray-300 hover:border-blue-400 hover:text-blue-600 group-hover:bg-white'
                             }`}
-                          title={isMember && docAssignments[doc.code] !== currentUser?.name ? "Only assigned member can upload" : ""}
+                          title={isSectionChief ? "Section Chiefs cannot upload documents" : (isMember && docAssignments[doc.code] !== currentUser?.name) ? "Only assigned member can upload" : ""}
                         >
                           <Upload className="w-3.5 h-3.5 mr-2" />
                           {uploadedDocs[doc.code] ? 'RE-UPLOAD' : 'UPLOAD'}
@@ -365,8 +369,8 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Assign Primary Lead</p>
                 <select
-                  disabled={currentUser?.role !== 'Section Chief'}
-                  className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none ${currentUser?.role !== 'Section Chief' ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                  disabled={!canAssignLead}
+                  className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none ${!canAssignLead ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                   value={assignment}
                   onChange={(e) => handleAssignProject(e.target.value)}
                 >
@@ -377,8 +381,8 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
 
               <div className="pt-4 border-t border-gray-50 flex flex-col gap-3">
                 <button
-                  disabled={currentUser?.role !== 'Section Chief'}
-                  className={`btn btn-secondary w-full justify-center text-xs py-3 bg-[color:var(--dpwh-blue)] text-white font-bold ${currentUser?.role !== 'Section Chief' ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  disabled={!canAssignLead}
+                  className={`btn btn-secondary w-full justify-center text-xs py-3 bg-[color:var(--dpwh-blue)] text-white font-bold ${!canAssignLead ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <UserPlus className="w-4 h-4 mr-2" />
                   CONFIRM ASSIGNMENT
                 </button>

@@ -10,9 +10,12 @@
     display: flex;
     flex-direction: column;
     margin-left: 16rem;
-    /* Match sidebar width */
     position: relative;
-    transition: all 0.3s ease;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mainWrapperCollapsed {
+    margin-left: 5rem;
 }
 
 .header {

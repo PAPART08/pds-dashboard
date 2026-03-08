@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import styles from './page.module.css';
 import { supabase } from '@/lib/supabase';
+import { exportProjectsToExcel } from '@/lib/excel-export';
 
 // Define the Project interface based on our database and UI needs
 interface Project {
@@ -16,6 +17,7 @@ interface Project {
   status: string;
   createdAt: string;
   fiscalYear: string;
+  isIncludedInMasterList?: boolean;
 }
 
 export default function MasterList() {
@@ -37,6 +39,7 @@ export default function MasterList() {
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
 
   // --- Data Fetching ---
   const fetchProjects = async () => {
@@ -64,7 +67,8 @@ export default function MasterList() {
             stage: 'Preparation',
             status: 'Draft',
             createdAt: p.created_at,
-            fiscalYear: (p.start_year || 2025).toString()
+            fiscalYear: (p.start_year || 2025).toString(),
+            isIncludedInMasterList: p.is_included_in_master_list || false
           }));
         }
       }
@@ -78,12 +82,13 @@ export default function MasterList() {
         stage: 'Preparation',
         status: 'Draft',
         createdAt: p.createdAt || new Date().toISOString(),
-        fiscalYear: p.fiscalYear || '2025'
+        fiscalYear: p.fiscalYear || '2025',
+        isIncludedInMasterList: p.isIncludedInMasterList || false
       }));
 
-      const combined = [...supabaseData, ...formattedLocal].sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      const combined = [...supabaseData, ...formattedLocal]
+        .filter(p => p.isIncludedInMasterList === true)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setProjects(combined);
     } catch (err) {
@@ -198,6 +203,7 @@ export default function MasterList() {
     setIsStatusDropdownOpen(false);
     setIsLocationDropdownOpen(false);
     setIsYearDropdownOpen(false);
+    setIsExportDropdownOpen(false);
   };
 
   return (
@@ -205,15 +211,48 @@ export default function MasterList() {
       {/* Page Header */}
       <div className={styles.headerSection}>
         <div className={styles.headerTitleBox}>
-          <h1 className={styles.headerTitle}>RBP Master List (A-1)</h1>
-          <p className={styles.headerSubtitle}>Comprehensive view of all Regional Budget Proposals.</p>
+          <h1 className={styles.headerTitle}>RBP Master List</h1>
+          <p className={styles.headerSubtitle}>Comprehensive view of all active Regional Budget Proposals.</p>
         </div>
 
-        <div className={styles.headerActions}>
-          <Link href="/dashboard/rbp/new" className={styles.btnPrimary}>
-            <span className={`material-symbols-outlined ${styles.btnPrimaryIcon}`}>add</span>
-            Add New Project
-          </Link>
+        <div className={styles.headerActions} style={{ position: 'relative' }}>
+          <button
+            className={styles.btnPrimary}
+            onClick={(e) => { e.stopPropagation(); setIsExportDropdownOpen(!isExportDropdownOpen); }}
+          >
+            <span className={`material-symbols-outlined ${styles.btnPrimaryIcon}`}>download</span>
+            Export
+            <span className={`material-symbols-outlined ${styles.btnPrimaryIcon}`} style={{ marginLeft: '4px' }}>arrow_drop_down</span>
+          </button>
+
+          {isExportDropdownOpen && (
+            <div className={styles.dropdownMenu} style={{ right: 0, left: 'auto', minWidth: '180px', marginTop: '0.5rem' }}>
+              <button
+                className={styles.dropdownItem}
+                onClick={() => {
+                  exportProjectsToExcel(projects);
+                  setIsExportDropdownOpen(false);
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ marginRight: '8px', fontSize: '18px' }}>table_chart</span>
+                MYPS Import File
+              </button>
+              <button
+                className={styles.dropdownItem}
+                onClick={() => { alert('RDC Form A-1 format is pending.'); setIsExportDropdownOpen(false); }}
+              >
+                <span className="material-symbols-outlined" style={{ marginRight: '8px', fontSize: '18px' }}>description</span>
+                RDC Form A-1
+              </button>
+              <button
+                className={styles.dropdownItem}
+                onClick={() => { alert('RDC Form A-2 format is pending.'); setIsExportDropdownOpen(false); }}
+              >
+                <span className="material-symbols-outlined" style={{ marginRight: '8px', fontSize: '18px' }}>description</span>
+                RDC Form A-2
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

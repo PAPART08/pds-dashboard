@@ -10,6 +10,7 @@ const DUMMY_ACCOUNTS = [
     { email: 'chief@dpwh.gov.ph', username: 'chief', password: 'password123', role: 'Section Chief', name: 'Carlos Santos', route: '/dashboard' },
     { email: 'head@dpwh.gov.ph', username: 'head', password: 'password123', role: 'Unit Head', name: 'Antonio Reyes', route: '/dashboard/unit-head-task' },
     { email: 'user@dpwh.gov.ph', username: 'user', password: 'password123', role: 'Regular Member', name: 'Maria Dela Cruz', route: '/dashboard/user-task' },
+    { email: 'planning@dpwh.gov.ph', username: 'planning', password: 'password123', role: 'Planning Unit', name: 'James Rodriguez', route: '/dashboard/rbp-progress' },
 ];
 
 export default function Login() {

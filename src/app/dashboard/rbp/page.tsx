@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import styles from './page.module.css';
 import { supabase } from '@/lib/supabase';
-import { exportProjectsToExcel } from '@/lib/excel-export';
 import ImportModal from '@/components/ImportModal';
 
 interface Project {
@@ -16,6 +15,7 @@ interface Project {
   totalCost: number;
   status?: string;
   createdAt: string;
+  isIncludedInMasterList?: boolean;
 }
 
 export default function RBPStagePage() {
@@ -57,7 +57,8 @@ export default function RBPStagePage() {
             municipality: p.city_municipality || 'N/A',
             totalCost: p.project_amount || 0,
             status: 'Drafting',
-            createdAt: p.created_at
+            createdAt: p.created_at,
+            isIncludedInMasterList: p.is_included_in_master_list || false
           }));
         }
       }
@@ -70,7 +71,8 @@ export default function RBPStagePage() {
         municipality: p.municipality || 'N/A',
         totalCost: p.totalCost || 0,
         status: 'Drafting',
-        createdAt: p.createdAt || new Date().toISOString()
+        createdAt: p.createdAt || new Date().toISOString(),
+        isIncludedInMasterList: p.isIncludedInMasterList || false
       }));
 
       const combined = [...supabaseData, ...formattedLocal].sort((a, b) =>
@@ -111,6 +113,32 @@ export default function RBPStagePage() {
     } catch (err) {
       console.error('Delete failed:', err);
       alert('Delete failed');
+    }
+  };
+
+  const toggleMasterListInclusion = async (id: string, currentStatus: boolean) => {
+    try {
+      // Optimistic upate
+      setProjects(projects.map(p => p.id === id ? { ...p, isIncludedInMasterList: !currentStatus } : p));
+
+      // Local storage
+      const localProjects = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
+      const index = localProjects.findIndex((p: any) => p.id === id);
+      if (index !== -1) {
+        localProjects[index].isIncludedInMasterList = !currentStatus;
+        localStorage.setItem('rbp_projects', JSON.stringify(localProjects));
+      }
+
+      // Supabase
+      const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+
+      if (isSupabaseConfigured) {
+        await supabase.from('projects').update({ is_included_in_master_list: !currentStatus }).eq('id', id);
+      }
+    } catch (err) {
+      console.error('Failed to toggle master list inclusion', err);
+      alert('Update failed');
     }
   };
 
@@ -264,10 +292,6 @@ export default function RBPStagePage() {
             <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>upload</span>
             <span>Import</span>
           </button>
-          <button className={styles.btnFilter} onClick={() => exportProjectsToExcel(projects)}>
-            <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>download</span>
-            <span>Export RBP</span>
-          </button>
           <Link href="/dashboard/rbp/new" className={styles.btnEncode}>
             <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>add_circle</span>
             <span>Encode Project</span>
@@ -285,6 +309,7 @@ export default function RBPStagePage() {
                 <th className={styles.th}>Description</th>
                 <th className={styles.th}>Location</th>
                 <th className={styles.th} style={{ textAlign: 'right' }}>Cost (M)</th>
+                <th className={styles.th} style={{ textAlign: 'center' }}>Master List</th>
                 <th className={styles.th} style={{ textAlign: 'center' }}>Status</th>
                 <th className={styles.th} style={{ textAlign: 'right' }}>Actions</th>
               </tr>
@@ -315,6 +340,32 @@ export default function RBPStagePage() {
                     </td>
                     <td className={styles.td}>
                       <p className={styles.cost}>{project.totalCost?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </td>
+                    <td className={styles.td}>
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={project.isIncludedInMasterList || false}
+                            onChange={() => toggleMasterListInclusion(project.id, project.isIncludedInMasterList || false)}
+                            style={{ display: 'none' }}
+                          />
+                          <div
+                            style={{
+                              width: '36px', height: '20px', backgroundColor: project.isIncludedInMasterList ? 'var(--dpwh-blue)' : '#e5e7eb',
+                              borderRadius: '9999px', position: 'relative', transition: 'background-color 0.2s',
+                              display: 'flex', alignItems: 'center', padding: '2px'
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: '16px', height: '16px', backgroundColor: '#fff', borderRadius: '50%',
+                                transition: 'transform 0.2s', transform: project.isIncludedInMasterList ? 'translateX(16px)' : 'translateX(0)', boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                              }}
+                            />
+                          </div>
+                        </label>
+                      </div>
                     </td>
                     <td className={styles.td}>
                       <div className={styles.badgeWrapper}>

@@ -22,6 +22,7 @@ export default function ReviewQueuePage() {
     const fetchProjects = async () => {
       setIsLoading(true);
       try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
         const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
 
         const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -37,7 +38,8 @@ export default function ReviewQueuePage() {
               project: p.project_name || 'No Description',
               time: 'Recently',
               priority: p.tier || 'Medium',
-              doc: 'RBP'
+              doc: 'RBP',
+              assignedTo: null
             }));
           }
         }
@@ -48,10 +50,16 @@ export default function ReviewQueuePage() {
           project: p.projectDescription || 'No Description',
           time: 'Recently',
           priority: p.priorityTier || 'Medium',
-          doc: 'Local'
+          doc: 'Local',
+          assignedTo: p.assignedTo || null
         }));
 
-        const combined = [...supabaseData, ...formattedLocal];
+        let combined = [...supabaseData, ...formattedLocal];
+
+        if (currentUser?.role === 'Unit Head' && currentUser?.name) {
+          combined = combined.filter((p: any) => p.assignedTo === currentUser.name);
+        }
+
         setProjects(combined);
       } catch (err) {
         console.error('Error fetching review items:', err);

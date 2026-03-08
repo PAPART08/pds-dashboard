@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import styles from './layout.module.css';
 
@@ -8,10 +9,12 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
     return (
         <div className={styles.layout}>
-            <Sidebar />
-            <div className={styles.mainWrapper}>
+            <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
+            <div className={`${styles.mainWrapper} ${isSidebarCollapsed ? styles.mainWrapperCollapsed : ''}`}>
 
                 {/* Header: Premium Glass Panel */}
                 <header className={styles.header}>

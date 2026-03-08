@@ -67,4 +67,12 @@ export const EMPLOYEES: Employee[] = [
         user_type: 'User',
         restrictions: ['Scheduling']
     },
+    {
+        id: 'emp-08',
+        name: 'James Rodriguez',
+        position: 'Planning Unit',
+        unit: 'Planning',
+        user_type: 'User',
+        restrictions: ['RBP Encoding', 'Global Task Management']
+    },
 ];
