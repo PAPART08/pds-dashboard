@@ -39,11 +39,17 @@ export default function Login() {
         setError('');
         setIsSubmitting(true);
 
+        const cleanIdentifier = identifier.trim();
+        const cleanPassword = password.trim();
+
         try {
+            const finalEmail = cleanIdentifier.includes('@') ? cleanIdentifier : `${cleanIdentifier}@dpwh.gov.ph`;
+            console.log('Attempting login with:', { finalEmail, passwordLength: cleanPassword.length });
+
             // First attempt: Supabase Auth
             let { data, error: authError } = await supabase.auth.signInWithPassword({
-                email: identifier.includes('@') ? identifier : `${identifier}@dpwh.gov.ph`,
-                password: password,
+                email: finalEmail,
+                password: cleanPassword,
             });
 
             if (authError) {
