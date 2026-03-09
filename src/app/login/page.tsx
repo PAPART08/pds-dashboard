@@ -41,15 +41,31 @@ export default function Login() {
 
         try {
             // First attempt: Supabase Auth
-            const { data, error: authError } = await supabase.auth.signInWithPassword({
+            let { data, error: authError } = await supabase.auth.signInWithPassword({
                 email: identifier.includes('@') ? identifier : `${identifier}@dpwh.gov.ph`,
                 password: password,
             });
 
             if (authError) {
-                setError(authError.message === 'Invalid login credentials' ? 'Invalid credentials. Please try again.' : authError.message);
-                setIsSubmitting(false);
-                return;
+                // Handled cached stale session tokens commonly found in edge deployments
+                if (authError.message.includes('Refresh Token') || authError.message.includes('refresh token')) {
+                    console.log("Stale session detected, clearing and retrying...");
+                    await supabase.auth.signOut();
+
+                    const retry = await supabase.auth.signInWithPassword({
+                        email: identifier.includes('@') ? identifier : `${identifier}@dpwh.gov.ph`,
+                        password: password,
+                    });
+
+                    data = retry.data;
+                    authError = retry.error;
+                }
+
+                if (authError) {
+                    setError(authError.message === 'Invalid login credentials' ? 'Invalid credentials. Please try again.' : authError.message);
+                    setIsSubmitting(false);
+                    return;
+                }
             }
 
             if (data?.user) {

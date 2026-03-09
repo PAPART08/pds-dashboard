@@ -120,17 +120,28 @@ export default function TeamPage() {
 
     if (isSupabaseConfigured) {
       try {
-        await supabase
-          .from('employees')
-          .update({
-            user_type: selectedEmployee.user_type,
-            restrictions: selectedEmployee.restrictions,
-            username: selectedEmployee.username,
-            password: selectedEmployee.password
-          })
-          .eq('id', selectedEmployee.id);
+        const { updateTeamMember } = await import('@/app/actions/user');
+        const result = await updateTeamMember({
+          id: selectedEmployee.id,
+          name: selectedEmployee.name,
+          username: selectedEmployee.username,
+          email: selectedEmployee.email,
+          position: selectedEmployee.position,
+          unit: selectedEmployee.unit,
+          user_type: selectedEmployee.user_type,
+          restrictions: selectedEmployee.restrictions,
+          password: selectedEmployee.password
+        });
+
+        if (!result.success) {
+          console.error('Failed to update employee in Supabase', result.error);
+          alert(`Failed to update user: ${result.error}`);
+        } else {
+          // Optional: alert('User successfully updated.');
+        }
       } catch (err) {
-        console.error('Failed to update employee in Supabase', err);
+        console.error('Failed to update employee via Action', err);
+        alert('An unexpected error occurred while updating the user.');
       }
     }
 
@@ -152,12 +163,18 @@ export default function TeamPage() {
 
     if (isSupabaseConfigured) {
       try {
-        await supabase
-          .from('employees')
-          .delete()
-          .eq('id', selectedEmployee.id);
+        const { deleteTeamMember } = await import('@/app/actions/user');
+        const result = await deleteTeamMember(selectedEmployee.id);
+
+        if (!result.success) {
+          console.error('Failed to delete employee in Supabase', result.error);
+          alert(`Failed to delete user: ${result.error}`);
+        } else {
+          // Optional: alert('User successfully deleted.');
+        }
       } catch (err) {
-        console.error('Failed to delete employee in Supabase', err);
+        console.error('Failed to delete employee via Action', err);
+        alert('An unexpected error occurred while deleting the user.');
       }
     }
 

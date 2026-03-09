@@ -70,3 +70,93 @@ export async function createTeamMember(userData: any) {
         return { success: false, error: err.message || "An unexpected error occurred." };
     }
 }
+
+export async function updateTeamMember(userData: any) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+        return { success: false, error: "Missing Supabase configuration or Service Role Key." };
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    try {
+        // 1. Update Auth password if provided
+        if (userData.password) {
+            const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+                userData.id,
+                { password: userData.password }
+            );
+            if (authError) {
+                console.error("Supabase Auth Update Error:", authError);
+                return { success: false, error: authError.message };
+            }
+        }
+
+        // 2. Update the custom 'employees' table
+        const { error: dbError } = await supabaseAdmin
+            .from("employees")
+            .update({
+                name: userData.name,
+                username: userData.username,
+                email: userData.email,
+                position: userData.position,
+                unit: userData.unit,
+                user_type: userData.user_type,
+                restrictions: userData.restrictions,
+                password: userData.password, // Keep sync for existing logic
+            })
+            .eq("id", userData.id);
+
+        if (dbError) {
+            console.error("Supabase DB Update Error:", dbError);
+            return { success: false, error: dbError.message };
+        }
+
+        return { success: true };
+    } catch (err: any) {
+        console.error("Unexpected error updating user:", err);
+        return { success: false, error: err.message || "An unexpected error occurred." };
+    }
+}
+
+export async function deleteTeamMember(userId: string) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+        return { success: false, error: "Missing Supabase configuration or Service Role Key." };
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    try {
+        // 1. Delete from Supabase Auth
+        const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+        if (authError) {
+            console.error("Supabase Auth Delete Error:", authError);
+            return { success: false, error: authError.message };
+        }
+
+        // 2. Delete from 'employees' table
+        const { error: dbError } = await supabaseAdmin
+            .from("employees")
+            .delete()
+            .eq("id", userId);
+
+        if (dbError) {
+            console.error("Supabase DB Delete Error:", dbError);
+            return { success: false, error: dbError.message };
+        }
+
+        return { success: true };
+    } catch (err: any) {
+        console.error("Unexpected error deleting user:", err);
+        return { success: false, error: err.message || "An unexpected error occurred." };
+    }
+}
