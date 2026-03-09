@@ -276,31 +276,31 @@ export default function UserTaskDashboard() {
                         <table className="w-full text-left text-sm whitespace-nowrap">
                             <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-700">
                                 <tr>
-                                    <th className="px-5 py-3">Document ID</th>
+                                    <th className="px-5 py-3 w-[150px]">Document ID</th>
                                     <th className="px-5 py-3">Project Title</th>
-                                    <th className="px-5 py-3">Status</th>
-                                    <th className="px-5 py-3">Deadline</th>
-                                    <th className="px-5 py-3 text-center">Correction</th>
-                                    <th className="px-5 py-3 text-right">Action</th>
+                                    <th className="px-5 py-3 w-[180px]">Status</th>
+                                    <th className="px-5 py-3 w-[120px]">Deadline</th>
+                                    <th className="px-5 py-3 text-center w-[120px]">Correction</th>
+                                    <th className="px-5 py-3 text-right w-[100px]">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-700 text-slate-700 dark:text-slate-300">
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={5} className="px-5 py-4 text-center">Loading projects...</td>
+                                        <td colSpan={6} className="px-5 py-4 text-center">Loading projects...</td>
                                     </tr>
                                 ) : displayProjects.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-5 py-4 text-center">No projects available.</td>
+                                        <td colSpan={6} className="px-5 py-4 text-center">No projects available.</td>
                                     </tr>
                                 ) : displayProjects.map((doc) => (
                                     <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <td className="px-5 py-4 font-extrabold text-[#1e293b] dark:text-white tracking-wider">{doc.docId || doc.id.substring(0, 8)}</td>
+                                        <td className="px-5 py-4 font-extrabold text-[#1e293b] dark:text-white tracking-wider whitespace-normal break-words min-w-[150px]">{doc.docId || doc.id.substring(0, 8)}</td>
                                         <td className="px-5 py-4">
-                                            <div className="max-w-[200px] truncate" title={doc.title}>{doc.title}</div>
+                                            <div className="max-w-[180px] lg:max-w-[300px] whitespace-normal break-words" title={doc.title}>{doc.title}</div>
                                         </td>
-                                        <td className="px-5 py-4">
-                                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${doc.status === 'Approved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
+                                        <td className="px-5 py-4 whitespace-normal">
+                                            <span className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold leading-tight ${doc.status === 'Approved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
                                                 doc.status === 'Submitted' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
                                                     doc.status === 'Under Review' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400' :
                                                         doc.status === 'Returned' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' :
@@ -309,9 +309,11 @@ export default function UserTaskDashboard() {
                                                 {doc.status === 'Submitted' ? 'Submitted to Unit Head' : doc.status === 'Returned' ? 'Returned for Correction' : doc.status}
                                             </span>
                                         </td>
-                                        <td className="px-5 py-4 flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                                            {(doc.status === 'Drafting' || doc.status.includes('Pending') || doc.status === 'Returned') && <AlertCircle className="w-4 h-4 text-orange-500" />}
-                                            {doc.deadline ? new Date(doc.deadline).toLocaleDateString() : 'Not Set'}
+                                        <td className="px-5 py-4">
+                                            <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                                                {(doc.status === 'Drafting' || doc.status.includes('Pending') || doc.status === 'Returned') && <AlertCircle className="w-3.5 h-3.5 text-orange-500 shrink-0" />}
+                                                <span className="text-[11px]">{doc.deadline ? new Date(doc.deadline).toLocaleDateString() : 'Not Set'}</span>
+                                            </div>
                                         </td>
                                         <td className="px-5 py-4 text-center">
                                             {doc.status === 'Returned' && doc.projectId && doc.docCode && (
