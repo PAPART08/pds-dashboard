@@ -170,8 +170,8 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
 
     // Specifically filter Global Task List for Section Chief, it requires an Admin to manually toggle them
     if (item.href === '/dashboard/rbp/global-tasks') {
-      if (userRole === 'Section Chief' && !userRestrictions.includes('Global Task & Lead Assignment')) {
-        return false;
+      if (userRole === 'Section Chief') {
+        return true;
       }
     }
     return true;
