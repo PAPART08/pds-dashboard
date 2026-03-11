@@ -26,6 +26,8 @@ export default function RBPStagePage() {
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [hasLocalData, setHasLocalData] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -64,7 +66,66 @@ export default function RBPStagePage() {
 
   useEffect(() => {
     fetchProjects();
+    // Check for local development data to sync
+    const localData = localStorage.getItem('rbp_projects');
+    if (localData) {
+      try {
+        const parsed = JSON.parse(localData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setHasLocalData(true);
+        }
+      } catch (e) {
+        console.error("Error parsing local data", e);
+      }
+    }
   }, []);
+
+  const handleSyncLocalData = async () => {
+    const localData = localStorage.getItem('rbp_projects');
+    if (!localData) return;
+
+    if (!confirm("We found projects saved in your browser's local storage. Would you like to sync them to the Cloud (Supabase)? This will merge them with the current list.")) return;
+
+    setIsSyncing(true);
+    try {
+      const parsed = JSON.parse(localData);
+      
+      for (const p of parsed) {
+        const projectRecord = {
+          alternate_id: p.alternateId,
+          project_name: p.projectDescription,
+          project_amount: p.totalCost,
+          project_category: p.category,
+          thrust: p.thrust,
+          sub_program_code: p.subProgramCode,
+          implementing_office: p.io,
+          city_municipality: p.municipality,
+          district_engineering_office: p.deo,
+          legislative_district: p.ld,
+          operating_unit: p.ou,
+          region_wide: p.isRegionwide,
+          start_year: p.fiscalYear ? parseInt(p.fiscalYear) : null,
+          reporting_region: p.region,
+          rank: p.priorityRank ? parseInt(p.priorityRank) : null,
+          tier: p.priorityTier,
+          justification: p.justification
+        };
+        
+        await supabase.from('projects').insert([projectRecord]);
+      }
+
+      // Clear local storage after successful sync
+      localStorage.removeItem('rbp_projects');
+      setHasLocalData(false);
+      await fetchProjects();
+      alert("Local projects synchronized successfully!");
+    } catch (err) {
+      console.error("Sync failed:", err);
+      alert("Sync failed. Some projects might already exist or the data format is invalid.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleDelete = async (id: string, altId?: string) => {
     if (!confirm(`Are you sure you want to delete project ${altId || id}?`)) return;
@@ -183,6 +244,26 @@ export default function RBPStagePage() {
       <section className={styles.header}>
         <h1 className={styles.title}>RBP Stage</h1>
         <p className={styles.subtitle}>Manage and initialize project details for the RBP cycle.</p>
+        
+        {hasLocalData && (
+          <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(236, 113, 37, 0.1)', border: '1px solid var(--dpwh-orange)', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span className="material-symbols-outlined" style={{ color: 'var(--dpwh-orange)' }}>cloud_upload</span>
+                <div>
+                  <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)' }}>Found Local Project Data</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>You have projects saved in this browser's local storage (Bulk Entry data). Sync them to Supabase to make them visible to everyone.</p>
+                </div>
+             </div>
+             <button 
+               className={styles.btnEncode} 
+               onClick={handleSyncLocalData}
+               disabled={isSyncing}
+               style={{ padding: '0.5rem 1rem', fontSize: '0.75rem' }}
+             >
+               {isSyncing ? 'Syncing...' : 'Sync to Cloud'}
+             </button>
+          </div>
+        )}
       </section>
 
       {/* Control Bar */}
