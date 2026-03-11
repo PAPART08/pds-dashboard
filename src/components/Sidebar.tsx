@@ -86,12 +86,6 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           roles: ['Section Chief', 'Unit Head']
         },
         {
-          name: 'Project Tracker (SD)',
-          href: '/dashboard/rbp/25B00123',
-          icon: 'track_changes',
-          roles: ['Section Chief', 'Unit Head']
-        },
-        {
           name: 'Final Approvals',
           href: '/dashboard/approval',
           icon: 'approval',
