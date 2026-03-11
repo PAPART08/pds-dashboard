@@ -23,36 +23,21 @@ export default function ApprovalQueuePage() {
     const fetchProjects = async () => {
       setIsLoading(true);
       try {
-        const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
+        // Fetch exclusively from Supabase
+        const { data, error } = await supabase.from('projects').select('*');
+        if (error) throw error;
 
-        const isSupabaseConfigured = true;
-
-        let supabaseData: any[] = [];
-        if (isSupabaseConfigured) {
-          const { data, error } = await supabase.from('projects').select('*');
-          if (!error && data) {
-            supabaseData = data.map(p => ({
-              id: p.id,
-              alternateId: p.alternate_id,
-              name: p.project_name || 'No Description',
-              cost: (p.project_amount / 1000000).toFixed(1) + 'M',
-              status: 'Technically Vetted',
-              date: new Date(p.created_at).toLocaleDateString()
-            }));
-          }
+        if (data) {
+          const mappedData = data.map(p => ({
+            id: p.id,
+            alternateId: p.alternate_id,
+            name: p.project_name || 'No Description',
+            cost: (p.project_amount / 1000000).toFixed(1) + 'M',
+            status: 'Technically Vetted',
+            date: new Date(p.created_at).toLocaleDateString()
+          }));
+          setProjects(mappedData);
         }
-
-        const formattedLocal = localData.map((p: any) => ({
-          id: p.id,
-          alternateId: p.alternateId,
-          name: p.projectDescription || 'No Description',
-          cost: (p.totalCost / 1000000).toFixed(1) + 'M',
-          status: 'Technically Vetted',
-          date: new Date(p.createdAt || Date.now()).toLocaleDateString()
-        }));
-
-        const combined = [...supabaseData, ...formattedLocal];
-        setProjects(combined);
       } catch (err) {
         console.error('Error fetching approval items:', err);
       } finally {

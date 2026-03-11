@@ -24,76 +24,38 @@ export default function ReviewQueuePage() {
       setIsLoading(true);
       try {
         const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
+        
+        // Fetch only from Supabase
+        const { data, error } = await supabase.from('projects').select('*');
+        if (error) throw error;
 
-        const isSupabaseConfigured = true;
+        if (data) {
+          const mappedData = data.map(p => ({
+            id: p.id,
+            alternateId: p.alternate_id,
+            project: p.project_name || 'No Description',
+            time: 'Recently',
+            priority: p.tier || 'Medium',
+            doc: 'RBP',
+            assignedTo: p.assigned_to || null,
+            isIncludedInMasterList: p.is_included_in_master_list || false,
+            location: p.city_municipality || 'Unspecified',
+            costValue: p.project_amount || 0,
+            fiscalYear: (p.start_year || 2025).toString()
+          }));
 
-        let supabaseData: any[] = [];
-        if (isSupabaseConfigured) {
-          const { data, error } = await supabase.from('projects').select('*');
-          if (!error && data) {
-            supabaseData = data.map(p => ({
-              id: p.id,
-              alternateId: p.alternate_id,
-              project: p.project_name || 'No Description',
-              time: 'Recently',
-              priority: p.tier || 'Medium',
-              doc: 'RBP',
-              assignedTo: p.assigned_to || null,
-              isIncludedInMasterList: p.is_included_in_master_list || false,
-              location: p.city_municipality || 'Unspecified',
-              costValue: p.project_amount || 0,
-              fiscalYear: (p.start_year || 2025).toString()
-            }));
+          // Only projects approved for Master List
+          const masterBase = mappedData.filter(p => p.isIncludedInMasterList === true);
+          setMasterListCount(masterBase.length);
+
+          // Review Queue filtering
+          let queueItems = [...masterBase];
+          if (currentUser?.role === 'Unit Head' || currentUser?.position === 'Unit Head' || currentUser?.user_type === 'Admin') {
+            const nameToMatch = currentUser.name;
+            queueItems = queueItems.filter((p: any) => p.assignedTo === nameToMatch || currentUser?.user_type === 'Admin');
           }
+          setProjects(queueItems);
         }
-
-        const formattedLocal = localData.map((p: any) => ({
-          id: p.id,
-          alternateId: p.alternateId,
-          project: p.projectDescription || 'No Description',
-          time: 'Recently',
-          priority: p.priorityTier || 'Medium',
-          doc: 'Local',
-          assignedTo: p.assignedTo || null,
-          isIncludedInMasterList: p.isIncludedInMasterList || false,
-          location: p.municipality || 'Unspecified',
-          costValue: p.totalCost || 0,
-          fiscalYear: p.fiscalYear || '2025'
-        }));
-
-        // Combine and de-duplicate by ID
-        const seenIds = new Set();
-        const combined: any[] = [];
-
-        // Prefer local storage
-        formattedLocal.forEach((p: any) => {
-          if (!seenIds.has(p.id)) {
-            seenIds.add(p.id);
-            combined.push(p);
-          }
-        });
-
-        // Add supabase projects
-        supabaseData.forEach((p: any) => {
-          if (!seenIds.has(p.id)) {
-            seenIds.add(p.id);
-            combined.push(p);
-          }
-        });
-
-        // Only projects approved for Master List
-        const masterBase = combined.filter(p => p.isIncludedInMasterList === true);
-        setMasterListCount(masterBase.length);
-
-        // Review Queue: Start with master base, then filter by assignment if Unit Head
-        let queueItems = [...masterBase];
-        if (currentUser?.role === 'Unit Head' || currentUser?.position === 'Unit Head' || currentUser?.user_type === 'Admin') {
-          const nameToMatch = currentUser.name;
-          queueItems = queueItems.filter((p: any) => p.assignedTo === nameToMatch || currentUser?.user_type === 'Admin');
-        }
-        setProjects(queueItems);
-
       } catch (err) {
         console.error('Error fetching review items:', err);
       } finally {

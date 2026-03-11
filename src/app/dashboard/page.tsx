@@ -109,35 +109,20 @@ export default function DashboardPage() {
         const fetchProjects = async () => {
             setIsLoading(true);
             try {
-                // Fetch from LocalStorage
-                const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-                const formattedLocal = localData.map((p: any) => ({
-                    id: p.id,
-                    category: p.category || 'N/A',
-                    status: p.status || 'Drafting',
-                    stage: p.stage || 'RBP'
-                }));
+                // Fetch from Supabase exclusively
+                const { data, error } = await supabase.from('projects').select('id, category, status, stage');
+                
+                if (error) throw error;
 
-                // Fetch from Supabase
-                let supabaseData: Project[] = [];
-                const isSupabaseConfigured = true;
-
-                if (isSupabaseConfigured) {
-                    const { data, error } = await supabase.from('projects').select('id, category, status, stage');
-                    if (!error && data) {
-                        supabaseData = data.map(p => ({
-                            id: p.id,
-                            category: p.category,
-                            status: p.status || 'Drafting',
-                            stage: p.stage || 'Unknown'
-                        }));
-                    }
+                if (data) {
+                    const mappedData = data.map(p => ({
+                        id: p.id,
+                        category: p.category || 'N/A',
+                        status: p.status || 'Drafting',
+                        stage: p.stage || 'RBP'
+                    }));
+                    setProjects(mappedData);
                 }
-
-                const combined = [...formattedLocal, ...supabaseData];
-                // simple deduplication by ID
-                const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
-                setProjects(unique);
             } catch (err) {
                 console.error('Error fetching dashboard data:', err);
             } finally {

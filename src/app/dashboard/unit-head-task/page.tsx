@@ -36,79 +36,39 @@ export default function UnitHeadDashboard() {
         const fetchProjects = async () => {
             setIsLoading(true);
             try {
-                const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
                 const savedUser = localStorage.getItem('currentUser');
                 const currentUser = savedUser ? JSON.parse(savedUser) : null;
                 const currentUserName = currentUser?.name || '';
 
-                const isSupabaseConfigured = true;
+                const { data, error } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-                let supabaseData: any[] = [];
-                if (isSupabaseConfigured) {
-                    const { data, error } = await supabase
-                        .from('projects')
-                        .select('*')
-                        .order('created_at', { ascending: false });
+                if (error) throw error;
 
-                    if (!error && data) {
-                        supabaseData = data.map(p => ({
-                            id: p.id,
-                            alternateId: p.alternate_id,
-                            title: p.project_name || 'Untitled Project',
-                            location: p.city_municipality || 'Unspecified Location',
-                            costValue: p.project_amount || 0,
-                            stage: 'Preparation',
-                            status: p.status || 'Draft',
-                            createdAt: p.created_at,
-                            fiscalYear: (p.start_year || 2025).toString(),
-                            assignedTo: p.assigned_to,
-                            deadline: p.deadline
-                        }));
-                    }
+                if (data) {
+                    const mappedData = data.map(p => ({
+                        id: p.id,
+                        alternateId: p.alternate_id,
+                        title: p.project_name || 'Untitled Project',
+                        location: p.city_municipality || 'Unspecified Location',
+                        costValue: p.project_amount || 0,
+                        stage: 'Preparation',
+                        status: p.status || 'Draft',
+                        createdAt: p.created_at,
+                        fiscalYear: (p.start_year || 2025).toString(),
+                        assignedTo: p.assigned_to,
+                        deadline: p.deadline
+                    }));
+
+                    const filtered = mappedData.filter(p => {
+                        const role = currentUser?.role || currentUser?.position;
+                        return p.assignedTo === currentUserName || role === 'Admin' || role === 'Section Chief';
+                    });
+
+                    setProjects(filtered);
                 }
-
-                const formattedLocal = localDataRaw.map((p: any) => ({
-                    id: p.id,
-                    alternateId: p.alternateId,
-                    title: p.projectDescription || 'No Description',
-                    location: p.municipality || 'Unspecified',
-                    costValue: p.totalCost || 0,
-                    stage: 'Preparation',
-                    status: p.status || 'Draft',
-                    createdAt: p.createdAt || new Date().toISOString(),
-                    fiscalYear: p.fiscalYear || '2025',
-                    assignedTo: p.assignedTo,
-                    deadline: p.deadline
-                }));
-
-                // Combine and de-duplicate by ID
-                const seenIds = new Set();
-                const combined: Project[] = [];
-
-                // Prefer formatted local data
-                formattedLocal.forEach((p: Project) => {
-                    if (!seenIds.has(p.id)) {
-                        seenIds.add(p.id);
-                        combined.push(p);
-                    }
-                });
-
-                // Add supabase projects not in local
-                supabaseData.forEach((p: Project) => {
-                    if (!seenIds.has(p.id)) {
-                        seenIds.add(p.id);
-                        combined.push(p);
-                    }
-                });
-
-                const filtered = combined.filter(p => {
-                    const role = currentUser?.role || currentUser?.position;
-                    return p.assignedTo === currentUserName || role === 'Admin' || role === 'Section Chief';
-                }).sort((a, b) =>
-                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                );
-
-                setProjects(filtered);
             } catch (err) {
                 console.error('Error fetching projects:', err);
             } finally {

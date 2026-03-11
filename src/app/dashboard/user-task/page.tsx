@@ -39,122 +39,76 @@ export default function UserTaskDashboard() {
         const fetchProjects = async () => {
             setIsLoading(true);
             try {
-                const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-
-                const isSupabaseConfigured = true;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let supabaseData: any[] = [];
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let rawSupabaseData: any[] = [];
-
-                if (isSupabaseConfigured) {
-                    const { data, error } = await supabase
-                        .from('projects')
-                        .select('*')
-                        .order('created_at', { ascending: false });
-
-                    if (!error && data) {
-                        rawSupabaseData = data;
-                        supabaseData = data.map(p => ({
-                            id: p.id,
-                            alternateId: p.alternate_id,
-                            title: p.project_name || 'Untitled Project',
-                            location: p.city_municipality || 'Unspecified Location',
-                            costValue: p.project_amount || 0,
-                            stage: 'Preparation',
-                            status: p.status || 'Draft',
-                            createdAt: p.created_at,
-                            fiscalYear: (p.start_year || 2025).toString()
-                        }));
-                    }
-                }
-
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const formattedLocal = localDataRaw.map((p: any) => ({
-                    id: p.id,
-                    alternateId: p.alternateId,
-                    title: p.projectDescription || 'No Description',
-                    location: p.municipality || 'Unspecified',
-                    costValue: p.totalCost || 0,
-                    stage: 'Preparation',
-                    status: p.status || 'Draft',
-                    createdAt: p.createdAt || new Date().toISOString(),
-                    fiscalYear: p.fiscalYear || '2025'
-                }));
-
-                const combinedList = [...supabaseData, ...formattedLocal].sort((a, b) =>
-                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                );
-
-                // Get current user's name to filter assignments
+                // Get current user's name
                 const savedUser = localStorage.getItem('currentUser');
                 const currentUserName = savedUser ? JSON.parse(savedUser).name : '';
 
-                // Combine document assignments from BOTH Supabase and Local
-                const allProjectsForExtraction = [...supabaseData.map(p => {
-                    // Find original supabase record for raw fields
-                    const raw = rawSupabaseData.find((d: any) => d.id === p.id);
-                    return {
-                        ...p,
-                        docAssignments: raw?.doc_assignments || {},
-                        docDeadlines: raw?.doc_deadlines || {},
-                        docStatuses: raw?.status === 'Approved' ? {} : (raw?.doc_statuses || {})
-                    };
-                }), ...localDataRaw];
+                // Fetch projects from Supabase
+                const { data, error } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-                // For each project, check if this user has specific document assignments
-                const seenTaskKeys = new Set();
-                const userAssignedTasks: Project[] = [];
+                if (error) throw error;
 
-                allProjectsForExtraction.forEach((p: any) => {
-                    const docAssignments = p.docAssignments || {};
-                    Object.entries(docAssignments).forEach(([code, assignedName]) => {
-                        if (assignedName === currentUserName) {
-                            const taskKey = `${p.id}-${code}`;
-                            if (seenTaskKeys.has(taskKey)) return;
-                            seenTaskKeys.add(taskKey);
+                if (data) {
+                    const userAssignedTasks: Project[] = [];
+                    data.forEach((p: any) => {
+                        const docAssignments = p.doc_assignments || {};
+                        const docStatuses = p.doc_statuses || {};
+                        const docDeadlines = p.doc_deadlines || {};
+                        const docUploads = p.doc_uploads || {};
 
-                            const corrCount = p.docCorrections?.[code] || 0;
-                            const docIdSuffix = corrCount > 0 ? `_Correction_No.${corrCount}` : '';
-                            userAssignedTasks.push({
-                                id: taskKey,
-                                docId: `${p.alternateId || p.id.substring(0, 8).toUpperCase()}-${code}${docIdSuffix}`,
-                                title: p.projectDescription || p.project_name || 'Untitled Project',
-                                location: p.municipality || p.city_municipality || 'Unspecified',
-                                costValue: p.totalCost || p.project_amount || 0,
-                                stage: 'Preparation',
-                                status: p.docStatuses?.[code] || (p.uploadedDocs?.[code] ? 'Submitted' : 'Drafting'),
-                                createdAt: p.createdAt || p.created_at || new Date().toISOString(),
-                                fiscalYear: p.fiscalYear || (p.start_year || 2025).toString(),
-                                type: 'Assigned Document',
-                                deadline: p.docDeadlines?.[code],
-                                projectId: p.id,
-                                docCode: code
-                            });
-                        }
-                    });
-                });
+                        Object.entries(docAssignments).forEach(([code, assignedName]) => {
+                            if (assignedName === currentUserName) {
+                                const taskKey = `${p.id}-${code}`;
+                                
+                                // Status logic: use doc_statuses if set, else check doc_uploads, else default
+                                let status = docStatuses[code];
+                                if (!status) {
+                                    status = docUploads[code] ? 'Submitted' : 'Drafting';
+                                }
 
-                // Fallback: If no real assignments found, and it's a demo, show placeholder assignments
-                if (userAssignedTasks.length === 0 && currentUserName === 'Maria Dela Cruz') {
-                    const sdList = ['PR', 'DUPA', 'SD-01'];
-                    sdList.forEach(sd => {
-                        userAssignedTasks.push({
-                            id: `demo-${sd}`,
-                            docId: `27B00123-${sd}`,
-                            title: 'Bridge Replacement Project - Demo',
-                            location: 'Silago, Southern Leyte',
-                            costValue: 12500000,
-                            stage: 'Preparation',
-                            status: 'Drafting',
-                            createdAt: new Date().toISOString(),
-                            fiscalYear: '2025',
-                            type: 'Demo Task'
+                                userAssignedTasks.push({
+                                    id: taskKey,
+                                    docId: `${p.alternate_id || p.id.substring(0, 8).toUpperCase()}-${code}`,
+                                    title: p.project_name || 'Untitled Project',
+                                    location: p.city_municipality || 'Unspecified',
+                                    costValue: p.project_amount || 0,
+                                    stage: 'Preparation',
+                                    status: status,
+                                    createdAt: p.created_at,
+                                    fiscalYear: (p.start_year || 2025).toString(),
+                                    type: 'Assigned Document',
+                                    deadline: docDeadlines[code],
+                                    projectId: p.id,
+                                    docCode: code
+                                });
+                            }
                         });
                     });
-                }
 
-                setProjects(userAssignedTasks);
+                    // Fallback for demo
+                    if (userAssignedTasks.length === 0 && currentUserName === 'Maria Dela Cruz') {
+                        const sdList = ['PR', 'DUPA', 'SD-01'];
+                        sdList.forEach(sd => {
+                            userAssignedTasks.push({
+                                id: `demo-${sd}`,
+                                docId: `27B00123-${sd}`,
+                                title: 'Bridge Replacement Project - Demo',
+                                location: 'Silago, Southern Leyte',
+                                costValue: 12500000,
+                                stage: 'Preparation',
+                                status: 'Drafting',
+                                createdAt: new Date().toISOString(),
+                                fiscalYear: '2025',
+                                type: 'Demo Task'
+                            });
+                        });
+                    }
+
+                    setProjects(userAssignedTasks);
+                }
             } catch (err) {
                 console.error('Error fetching projects:', err);
             } finally {
@@ -167,61 +121,48 @@ export default function UserTaskDashboard() {
 
     // Calculate dynamic counts based on project data
     const today = new Date().toISOString().split('T')[0];
-
-    // "Due Today" - Projects with deadline today (or simple count of draft/pending if no dates)
-    const dueTodayCount = projects.filter(p => (p as any).deadline === today || p.status === 'Draft' || p.status.includes('Pending')).length;
-
-    // "Upcoming Task" - Projects with future deadlines or "Preparation"
-    const upcomingCount = projects.filter(p => ((p as any).deadline && (p as any).deadline > today) || p.status === 'Preparation').length;
-
-    // "Overview Task" - Total projects assigned
+    const dueTodayCount = projects.filter(p => p.deadline === today || p.status === 'Draft' || p.status === 'Drafting' || p.status.includes('Pending')).length;
+    const upcomingCount = projects.filter(p => (p.deadline && p.deadline > today) || p.status === 'Preparation').length;
     const completedCount = projects.length;
+    const displayProjects = projects.slice(0, 5); 
 
-    const displayProjects = projects.slice(0, 5); // Just show top 5 for dashboard
-
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, projectId: string, docCode: string, fullDocId: string) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, projectId: string, docCode: string, fullDocId: string) => {
         const file = e.target.files?.[0];
         if (!file || !projectId || !docCode) return;
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const base64String = event.target?.result as string;
+        // For demo/simplicity, we still use object URL locally for immediate feedback/viewing
+        const url = URL.createObjectURL(file);
+        sessionStorage.setItem(`pdf_${projectId}_${docCode}`, url);
 
-            // Save the file globally
-            localStorage.setItem(`pdf_${projectId}_${docCode}`, base64String);
+        try {
+            // Update Supabase with the new status and upload info
+            // Fetch current doc_statuses and doc_uploads first to ensure we don't overwrite others
+            const { data: p, error: fError } = await supabase.from('projects').select('doc_statuses, doc_uploads').eq('id', projectId).single();
+            if (fError) throw fError;
 
-            // Update the project status specifically
-            try {
-                const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-                const projectIndex = localDataRaw.findIndex((p: any) => p.id === projectId || p.alternateId === projectId.substring(0, 8).toUpperCase());
+            const newStatuses = { ...(p.doc_statuses || {}), [docCode]: 'Submitted' };
+            const newUploads = { ...(p.doc_uploads || {}), [docCode]: file.name || 'document.pdf' };
 
-                if (projectIndex !== -1) {
-                    if (!localDataRaw[projectIndex].docStatuses) localDataRaw[projectIndex].docStatuses = {};
-                    localDataRaw[projectIndex].docStatuses[docCode] = 'Submitted';
+            const { error: uError } = await supabase.from('projects').update({
+                doc_statuses: newStatuses,
+                doc_uploads: newUploads
+            }).eq('id', projectId);
 
-                    if (!localDataRaw[projectIndex].uploadedDocs) localDataRaw[projectIndex].uploadedDocs = {};
-                    localDataRaw[projectIndex].uploadedDocs[docCode] = true;
+            if (uError) throw uError;
 
-                    localStorage.setItem('rbp_projects', JSON.stringify(localDataRaw));
-
-                    // Update local state to reflect change immediately
-                    setProjects(prevProjects => prevProjects.map(p => {
-                        if (p.id === fullDocId) {
-                            return { ...p, status: 'Submitted' };
-                        }
-                        return p;
-                    }));
-
-                    alert("Document successfully uploaded.");
-                } else {
-                    alert("Project not found in local storage. Upload successful temporarily.");
+            // Update local state
+            setProjects(prevProjects => prevProjects.map(p => {
+                if (p.id === fullDocId) {
+                    return { ...p, status: 'Submitted' };
                 }
-            } catch (err) {
-                console.error("Error updating local storage:", err);
-                alert("Document successfully uploaded.");
-            }
-        };
-        reader.readAsDataURL(file);
+                return p;
+            }));
+
+            alert("Document successfully uploaded and synced.");
+        } catch (err) {
+            console.error("Error updating Supabase:", err);
+            alert("Upload failed to sync with database.");
+        }
     };
 
 

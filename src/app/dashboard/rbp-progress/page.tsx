@@ -28,43 +28,24 @@ export default function RBPProgressDashboard() {
         const fetchProjects = async () => {
             setIsLoading(true);
             try {
-                const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
+                // Fetch from Supabase exclusively
+                const { data, error } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-                const isSupabaseConfigured = true;
+                if (error) throw error;
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let supabaseData: any[] = [];
-                if (isSupabaseConfigured) {
-                    const { data, error } = await supabase
-                        .from('projects')
-                        .select('*')
-                        .order('created_at', { ascending: false });
-
-                    if (!error && data) {
-                        supabaseData = data.map(p => ({
-                            id: p.id,
-                            category: p.category || 'N/A',
-                            status: p.status || 'Draft',
-                            stage: 'Preparation',
-                            createdAt: p.created_at
-                        }));
-                    }
+                if (data) {
+                    const mappedData = data.map(p => ({
+                        id: p.id,
+                        category: p.category || 'N/A',
+                        status: p.status || 'Draft',
+                        stage: 'Preparation',
+                        createdAt: p.created_at
+                    }));
+                    setProjects(mappedData);
                 }
-
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const formattedLocal = localDataRaw.map((p: any) => ({
-                    id: p.id,
-                    category: p.category || 'N/A',
-                    status: p.status || 'Draft',
-                    stage: 'Preparation',
-                    createdAt: p.createdAt || new Date().toISOString()
-                }));
-
-                const combined = [...supabaseData, ...formattedLocal].sort((a, b) =>
-                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                );
-
-                setProjects(combined);
             } catch (err) {
                 console.error('Error fetching projects:', err);
             } finally {

@@ -3,6 +3,7 @@
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import {
     ChevronLeft,
     MousePointer2,
@@ -83,55 +84,56 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
         } else if (savedUrlSession) {
             setPdfUrl(savedUrlSession);
         }
-    }, [id, docCode]);
-
-    const handleApprove = () => {
-        // Save to project data
+    }, [id, docCode]);    const handleApprove = async () => {
         try {
-            const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-            const projectIndex = localDataRaw.findIndex((p: any) => p.id === id || p.alternateId === id.substring(0, 8).toUpperCase());
-            if (projectIndex !== -1) {
-                if (!localDataRaw[projectIndex].docStatuses) localDataRaw[projectIndex].docStatuses = {};
-                localDataRaw[projectIndex].docStatuses[docCode as string] = 'Approved';
-                localStorage.setItem('rbp_projects', JSON.stringify(localDataRaw));
-            }
-        } catch (e) {
-            console.error("Failed to approve doc", e);
+            // First, fetch existing doc_statuses to merge
+            const { data: p, error: fError } = await supabase.from('projects').select('doc_statuses').eq('id', id).single();
+            if (fError) throw fError;
+
+            const newStatuses = { ...(p.doc_statuses || {}), [docCode as string]: 'Approved' };
+
+            const { error: uError } = await supabase.from('projects').update({
+                doc_statuses: newStatuses
+            }).eq('id', id);
+
+            if (uError) throw uError;
+
+            alert("Document Approved & Sent to Chief.");
+            setComments([...comments, { id: Date.now(), user: 'You', role: 'Reviewer', text: 'Document Approved & Sent to Chief.', time: 'Just now', isResolved: true }]);
+            setTimeout(() => router.push(`/dashboard/rbp/${id}`), 1000);
+        } catch (err) {
+            console.error("Failed to approve doc", err);
+            alert("Approval failed to sync with database.");
         }
-
-        alert("Document Approved & Sent to Chief.");
-        setComments([...comments, { id: Date.now(), user: 'You', role: 'Reviewer', text: 'Document Approved & Sent to Chief.', time: 'Just now', isResolved: true }]);
-        setTimeout(() => router.push(`/dashboard/rbp/${id}`), 1000);
     };
-
-    const handleReturn = () => {
-        // Increment correction count & alter status
+;    const handleReturn = async () => {
         try {
-            const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-            const projectIndex = localDataRaw.findIndex((p: any) => p.id === id || p.alternateId === id.substring(0, 8).toUpperCase());
-            if (projectIndex !== -1) {
-                if (!localDataRaw[projectIndex].docCorrections) localDataRaw[projectIndex].docCorrections = {};
-                if (!localDataRaw[projectIndex].docStatuses) localDataRaw[projectIndex].docStatuses = {};
+            // Fetch existing data for merging
+            const { data: p, error: fError } = await supabase.from('projects').select('doc_statuses, doc_uploads').eq('id', id).single();
+            if (fError) throw fError;
 
-                const currentCorrections = localDataRaw[projectIndex].docCorrections[docCode as string] || 0;
-                localDataRaw[projectIndex].docCorrections[docCode as string] = currentCorrections + 1;
-                localDataRaw[projectIndex].docStatuses[docCode as string] = 'Returned';
+            const newStatuses = { ...(p.doc_statuses || {}), [docCode as string]: 'Returned' };
 
-                localStorage.setItem('rbp_projects', JSON.stringify(localDataRaw));
+            const { error: uError } = await supabase.from('projects').update({
+                doc_statuses: newStatuses
+            }).eq('id', id);
 
-                // Auto-save annotations when returning
-                localStorage.setItem(`pds_annotations_${id}_${docCode}`, JSON.stringify(paths));
-            }
-        } catch (e) {
-            console.error("Failed to append correction logs", e);
+            if (uError) throw uError;
+
+            // Save annotations local to browser for now
+            localStorage.setItem(`pds_annotations_${id}_${docCode}`, JSON.stringify(paths));
+
+            alert("Document Returned to Compiler with Corrections.");
+            const updatedComments = [...comments, { id: Date.now(), user: 'You', role: 'Reviewer', text: 'Document Returned for Corrections.', time: 'Just now', isResolved: false }];
+            setComments(updatedComments);
+            localStorage.setItem(`pds_comments_${id}_${docCode}`, JSON.stringify(updatedComments));
+            setTimeout(() => router.push(`/dashboard/rbp/${id}`), 1000);
+        } catch (err) {
+            console.error("Failed to append correction logs", err);
+            alert("Return operation failed to sync.");
         }
-
-        alert("Document Returned to Compiler with Corrections.");
-        const updatedComments = [...comments, { id: Date.now(), user: 'You', role: 'Reviewer', text: 'Document Returned for Corrections.', time: 'Just now', isResolved: false }];
-        setComments(updatedComments);
-        localStorage.setItem(`pds_comments_${id}_${docCode}`, JSON.stringify(updatedComments));
-        setTimeout(() => router.push(`/dashboard/rbp/${id}`), 1000);
     };
+;
 
     const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
         setNumPages(numPages);

@@ -75,19 +75,31 @@ export default function Login() {
             }
 
             if (data?.user) {
-                // If Supabase login successful, fetch profile details if exists
-                const { data: profile } = await supabase
-                    .from('employees')
-                    .select('*')
-                    .eq('id', data.user.id)
-                    .single();
+                // Determine base info from dummy accounts if applicable (for demo purposes)
+                const demoAccount = DUMMY_ACCOUNTS.find(acc => acc.email.toLowerCase() === finalEmail.toLowerCase());
+
+                // Try to fetch profile details if exists
+                let profile: any = null;
+                try {
+                    const profileRes = await supabase
+                        .from('employees')
+                        .select('*')
+                        .eq('id', data.user.id)
+                        .maybeSingle();
+                    profile = profileRes.data;
+                } catch (e) {
+                    console.error("Profile fetch error:", e);
+                }
+
+                const finalRole = profile?.position || demoAccount?.role || 'Regular Member';
+                const finalName = profile?.name || demoAccount?.name || data.user.user_metadata?.full_name || 'Authenticated User';
 
                 const userData = {
                     email: data.user.email,
-                    name: profile?.name || data.user.user_metadata?.full_name || 'Authenticated User',
-                    role: profile?.position || 'User',
-                    user_type: profile?.user_type || 'User',
-                    route: getRedirectRoute(profile?.position || 'User')
+                    name: finalName,
+                    role: finalRole,
+                    user_type: profile?.user_type || (finalRole === 'Admin' ? 'Admin' : 'User'),
+                    route: getRedirectRoute(finalRole)
                 };
 
                 localStorage.setItem('currentUser', JSON.stringify(userData));

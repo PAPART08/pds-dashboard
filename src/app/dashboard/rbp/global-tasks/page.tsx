@@ -60,62 +60,30 @@ export default function GlobalTaskListPage() {
     const fetchProjects = async () => {
         setIsLoading(true);
         try {
-            // 1. Fetch from local storage
-            const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-            
-            // 2. Fetch from Supabase
-            const isSupabaseConfigured = true;
+            const { data, error } = await supabase
+                .from('projects')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-            let supabaseData: Project[] = [];
-            if (isSupabaseConfigured) {
-                const { data, error } = await supabase
-                    .from('projects')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+            if (error) throw error;
 
-                if (!error && data) {
-                    supabaseData = data.map(p => ({
-                        id: p.id,
-                        alternateId: p.alternate_id || p.id.substring(0, 8).toUpperCase(),
-                        projectDescription: p.project_name || 'No Description',
-                        municipality: p.city_municipality || 'Unspecified',
-                        totalCost: p.project_amount || 0,
-                        status: p.status || 'PROPOSED',
-                        assignedTo: p.assigned_to || '',
-                        deadline: p.deadline || '',
-                        isIncludedInMasterList: p.is_included_in_master_list || false,
-                        createdAt: p.created_at
-                    }));
-                }
+            if (data) {
+                const mappedData = data.map(p => ({
+                    id: p.id,
+                    alternateId: p.alternate_id || p.id.substring(0, 8).toUpperCase(),
+                    projectDescription: p.project_name || 'No Description',
+                    municipality: p.city_municipality || 'Unspecified',
+                    totalCost: p.project_amount || 0,
+                    status: p.status || 'PROPOSED',
+                    assignedTo: p.assigned_to || '',
+                    deadline: p.deadline || '',
+                    isIncludedInMasterList: p.is_included_in_master_list || false,
+                    createdAt: p.created_at
+                }));
+
+                const filtered = mappedData.filter(p => p.isIncludedInMasterList === true);
+                setProjects(filtered);
             }
-
-            const formattedLocal = localData.map((p: any) => ({
-                id: p.id,
-                alternateId: p.alternateId || p.id.substring(0, 8).toUpperCase(),
-                projectDescription: p.projectDescription || p.project_name || 'No Description',
-                municipality: p.municipality || p.city_municipality || 'Unspecified',
-                totalCost: p.totalCost || p.project_amount || 0,
-                status: p.status || 'Draft',
-                assignedTo: p.assignedTo || '',
-                deadline: p.deadline || '',
-                isIncludedInMasterList: p.isIncludedInMasterList || false,
-                createdAt: p.createdAt || p.created_at || new Date().toISOString()
-            }));
-
-            // Combine and avoid duplicates by ID
-            const seenIds = new Set();
-            const combined: Project[] = [];
-
-            [...supabaseData, ...formattedLocal].forEach(p => {
-                if (!seenIds.has(p.id)) {
-                    seenIds.add(p.id);
-                    combined.push(p);
-                }
-            });
-
-            const filtered = combined.filter(p => p.isIncludedInMasterList === true);
-            filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setProjects(filtered);
         } catch (err) {
             console.error('Error fetching projects:', err);
         } finally {
@@ -133,39 +101,22 @@ export default function GlobalTaskListPage() {
             const projectToSave = projects.find(p => p.id === projectId);
             if (!projectToSave) return;
 
-            // 1. Update Local Storage
-            const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-            const index = localData.findIndex((p: any) => p.id === projectId);
+            const { error } = await supabase
+                .from('projects')
+                .update({
+                    assigned_to: projectToSave.assignedTo,
+                    deadline: projectToSave.deadline
+                })
+                .eq('id', projectId);
 
-            if (index !== -1) {
-                localData[index].assignedTo = projectToSave.assignedTo;
-                localData[index].deadline = projectToSave.deadline;
-                localStorage.setItem('rbp_projects', JSON.stringify(localData));
-            }
-
-            // 2. Update Supabase
-            const isSupabaseConfigured = true;
-
-            if (isSupabaseConfigured) {
-                const { error } = await supabase
-                    .from('projects')
-                    .update({
-                        assigned_to: projectToSave.assignedTo,
-                        deadline: projectToSave.deadline
-                    })
-                    .eq('id', projectId);
-
-                if (error) {
-                    console.error('Supabase update error:', error);
-                    alert('Saved locally, but failed to sync with Supabase.');
-                }
-            }
+            if (error) throw error;
 
             // Feedback
             setTimeout(() => setIsSaving(null), 500);
         } catch (err) {
             console.error('Error saving changes:', err);
             setIsSaving(null);
+            alert('Failed to save changes to Supabase.');
         }
     };
 

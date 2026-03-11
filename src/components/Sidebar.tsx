@@ -62,16 +62,22 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
       label: 'Regional Budget Proposal',
       items: [
         {
+          name: 'Overall Progress',
+          href: '/dashboard/rbp-progress',
+          icon: 'analytics',
+          roles: ['Section Chief', 'Planning Unit']
+        },
+        {
           name: 'Project Detail Entry',
           href: '/dashboard/rbp',
           icon: 'inventory_2',
-          roles: ['Section Chief', 'Planning Unit']
+          roles: ['Section Chief', 'Planning Unit', 'Unit Head', 'Unit Member', 'Regular Member']
         },
         {
           name: 'Global Task List',
           href: '/dashboard/rbp/global-tasks',
           icon: 'list_alt',
-          roles: ['Section Chief', 'Planning Unit']
+          roles: ['Section Chief', 'Planning Unit', 'Unit Head']
         },
         {
           name: 'Master List',
@@ -80,7 +86,7 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           roles: ['Section Chief', 'Planning Unit']
         },
         {
-          name: 'Technical Review',
+          name: 'Technical Review Queue',
           href: '/dashboard/rbp/review',
           icon: 'assignment_turned_in',
           roles: ['Section Chief', 'Unit Head']
@@ -101,7 +107,7 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           name: 'GAA Overview',
           href: '/dashboard/gaa',
           icon: 'engineering',
-          roles: ['Section Chief', 'Unit Head', 'Planning Unit', 'Unit Member']
+          roles: ['Section Chief', 'Unit Head', 'Planning Unit', 'Unit Member', 'Regular Member']
         },
         {
           name: 'Financial Targets',
@@ -113,7 +119,7 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           name: 'Physical Progress',
           href: '/dashboard/gaa/progress',
           icon: 'bar_chart',
-          roles: ['Section Chief', 'Unit Head', 'Unit Member']
+          roles: ['Section Chief', 'Unit Head', 'Unit Member', 'Regular Member']
         },
       ]
     },
@@ -125,7 +131,7 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           name: 'Team & Permissions',
           href: '/dashboard/team',
           icon: 'groups',
-          roles: ['Admin']
+          roles: ['Admin', 'Section Chief']
         },
         {
           name: 'Settings',
@@ -138,7 +144,7 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
   };
 
   const adminItems = [
-    { name: 'Team & Permissions', href: '/dashboard/team', icon: 'groups', roles: ['Section Chief', 'Admin'] },
+    { name: 'Team & Permissions', href: '/dashboard/team', icon: 'groups', roles: ['Admin', 'Section Chief'] },
   ];
 
   const filteredItems = isLoaded ? navConfig[activeStage].items.filter(item => {

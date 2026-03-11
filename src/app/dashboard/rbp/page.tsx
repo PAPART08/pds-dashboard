@@ -34,71 +34,27 @@ export default function RBPStagePage() {
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      // 1. Fetch from localStorage
-      const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      // 2. Fetch from Supabase
-      const isSupabaseConfigured = true;
+      if (error) throw error;
 
-      let supabaseData: Project[] = [];
-      if (isSupabaseConfigured) {
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (!error && data) {
-          supabaseData = data.map(p => ({
-            id: p.id,
-            alternateId: p.alternate_id,
-            projectDescription: p.project_name || 'No Description',
-            category: p.project_category || 'N/A',
-            municipality: p.city_municipality || 'N/A',
-            totalCost: p.project_amount || 0,
-            status: 'Drafting',
-            createdAt: p.created_at,
-            isIncludedInMasterList: p.is_included_in_master_list || false
-          }));
-        }
+      if (data) {
+        const formatted = data.map(p => ({
+          id: p.id,
+          alternateId: p.alternate_id,
+          projectDescription: p.project_name || 'No Description',
+          category: p.project_category || 'N/A',
+          municipality: p.city_municipality || 'N/A',
+          totalCost: p.project_amount || 0,
+          status: p.status || 'Drafting',
+          createdAt: p.created_at,
+          isIncludedInMasterList: p.is_included_in_master_list || false
+        }));
+        setProjects(formatted);
       }
-
-      const formattedLocal = localDataRaw.map((p: any) => ({
-        id: p.id,
-        alternateId: p.alternateId,
-        projectDescription: p.projectDescription || 'No Description',
-        category: p.category || 'N/A',
-        municipality: p.municipality || 'N/A',
-        totalCost: p.totalCost || 0,
-        status: p.status || 'Drafting',
-        createdAt: p.createdAt || new Date().toISOString(),
-        isIncludedInMasterList: p.isIncludedInMasterList || false
-      }));
-
-      // Combine and de-duplicate by ID
-      const seenIds = new Set();
-      const combined: Project[] = [];
-
-      // Process local first (usually has more recent UI-only updates)
-      formattedLocal.forEach((p: Project) => {
-        if (!seenIds.has(p.id)) {
-          seenIds.add(p.id);
-          combined.push(p);
-        }
-      });
-
-      // Then add supabase projects not already in local
-      supabaseData.forEach((p: Project) => {
-        if (!seenIds.has(p.id)) {
-          seenIds.add(p.id);
-          combined.push(p);
-        }
-      });
-
-      combined.sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-
-      setProjects(combined);
     } catch (err) {
       console.error('Error fetching projects:', err);
     } finally {
@@ -114,18 +70,8 @@ export default function RBPStagePage() {
     if (!confirm(`Are you sure you want to delete project ${altId || id}?`)) return;
 
     try {
-      // Delete from local storage
-      const localProjects = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-      const filtered = localProjects.filter((p: any) => p.id !== id);
-      localStorage.setItem('rbp_projects', JSON.stringify(filtered));
-
-      // Delete from Supabase
-      const isSupabaseConfigured = true;
-
-      if (isSupabaseConfigured) {
-        const { error } = await supabase.from('projects').delete().eq('id', id);
-        if (error) console.error('Supabase delete error:', error);
-      }
+      const { error } = await supabase.from('projects').delete().eq('id', id);
+      if (error) throw error;
 
       await fetchProjects();
     } catch (err) {
@@ -139,23 +85,10 @@ export default function RBPStagePage() {
       // Optimistic upate
       setProjects(projects.map(p => p.id === id ? { ...p, isIncludedInMasterList: !currentStatus } : p));
 
-      // Local storage
-      const localProjects = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-      const index = localProjects.findIndex((p: any) => p.id === id);
-      if (index !== -1) {
-        localProjects[index].isIncludedInMasterList = !currentStatus;
-        localStorage.setItem('rbp_projects', JSON.stringify(localProjects));
-      }
-
       // Supabase
-      const isSupabaseConfigured = true;
-
-      if (isSupabaseConfigured) {
-        const { error } = await supabase.from('projects').update({ is_included_in_master_list: !currentStatus }).eq('id', id);
-        if (error) {
-          console.error('Supabase update error:', error);
-          // Don't alert here as local storage still works, but log it
-        }
+      const { error } = await supabase.from('projects').update({ is_included_in_master_list: !currentStatus }).eq('id', id);
+      if (error) {
+        throw error;
       }
       
       alert(currentStatus ? 'Project removed from Master List' : 'Project added to Master List and Global Tasks');
@@ -167,61 +100,35 @@ export default function RBPStagePage() {
 
   const handleImport = async (importedProjects: any[], strategy: 'merge' | 'overwrite' | 'replace') => {
     try {
-      const localProjects = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-      let newList: any[] = [];
-
       if (strategy === 'replace') {
-        newList = importedProjects;
-      } else if (strategy === 'overwrite') {
-        const existingMap = new Map(localProjects.map((p: any) => [p.alternateId, p]));
-        importedProjects.forEach(p => {
-          existingMap.set(p.alternateId, p);
-        });
-        newList = Array.from(existingMap.values());
-      } else {
-        // Merge
-        const existingIds = new Set(localProjects.map((p: any) => p.alternateId));
-        const toAdd = importedProjects.filter(p => !existingIds.has(p.alternateId));
-        newList = [...localProjects, ...toAdd];
+        await supabase.from('projects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       }
 
-      localStorage.setItem('rbp_projects', JSON.stringify(newList));
+      for (const p of importedProjects) {
+        const projectRecord = {
+          alternate_id: p.alternateId,
+          project_name: p.projectDescription,
+          project_amount: p.totalCost,
+          project_category: p.category,
+          thrust: p.thrust,
+          sub_program_code: p.subProgramCode,
+          implementing_office: p.io,
+          city_municipality: p.municipality,
+          district_engineering_office: p.deo,
+          legislative_district: p.ld,
+          operating_unit: p.ou,
+          region_wide: p.isRegionwide,
+          start_year: parseInt(p.fiscalYear),
+          reporting_region: p.region,
+          rank: p.priorityRank ? parseInt(p.priorityRank) : null,
+          tier: p.priorityTier,
+          justification: p.justification
+        };
 
-      // Supabase Sync (Simplified for now)
-      const isSupabaseConfigured = true;
-
-      if (isSupabaseConfigured) {
-        if (strategy === 'replace') {
-          await supabase.from('projects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        }
-
-        for (const p of importedProjects) {
-          const projectRecord = {
-            alternate_id: p.alternateId,
-            project_name: p.projectDescription,
-            project_amount: p.totalCost,
-            project_category: p.category,
-            thrust: p.thrust,
-            sub_program_code: p.subProgramCode,
-            implementing_office: p.io,
-            city_municipality: p.municipality,
-            district_engineering_office: p.deo,
-            legislative_district: p.ld,
-            operating_unit: p.ou,
-            region_wide: p.isRegionwide,
-            start_year: parseInt(p.fiscalYear),
-            reporting_region: p.region,
-            rank: p.priorityRank ? parseInt(p.priorityRank) : null,
-            tier: p.priorityTier,
-            justification: p.justification
-          };
-
-          if (strategy === 'overwrite') {
-            const { error } = await supabase.from('projects').upsert(projectRecord, { onConflict: 'alternate_id' });
-            // We should also handle components/details...
-          } else {
-            await supabase.from('projects').insert([projectRecord]);
-          }
+        if (strategy === 'overwrite') {
+          await supabase.from('projects').upsert(projectRecord, { onConflict: 'alternate_id' });
+        } else {
+          await supabase.from('projects').insert([projectRecord]);
         }
       }
 

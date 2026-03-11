@@ -45,71 +45,34 @@ export default function MasterList() {
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
+      // Fetch exclusively from Supabase
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      const isSupabaseConfigured = true;
+      if (error) throw error;
 
-      let supabaseData: any[] = [];
-      if (isSupabaseConfigured) {
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .order('created_at', { ascending: false });
+      if (data) {
+        const mappedData = data.map(p => ({
+          id: p.id,
+          alternateId: p.alternate_id,
+          title: p.project_name || 'Untitled Project',
+          location: p.city_municipality || 'Unspecified Location',
+          costValue: p.project_amount || 0,
+          stage: 'Preparation',
+          status: p.status || 'Draft',
+          createdAt: p.created_at,
+          fiscalYear: (p.start_year || 2025).toString(),
+          isIncludedInMasterList: p.is_included_in_master_list || false
+        }));
 
-        if (!error && data) {
-          supabaseData = data.map(p => ({
-            id: p.id,
-            alternateId: p.alternate_id,
-            title: p.project_name || 'Untitled Project',
-            location: p.city_municipality || 'Unspecified Location',
-            costValue: p.project_amount || 0,
-            stage: 'Preparation',
-            status: 'Draft',
-            createdAt: p.created_at,
-            fiscalYear: (p.start_year || 2025).toString(),
-            isIncludedInMasterList: p.is_included_in_master_list || false
-          }));
-        }
+        const finalSelection = mappedData
+          .filter(p => p.isIncludedInMasterList === true)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        setProjects(finalSelection);
       }
-
-      const formattedLocal = localDataRaw.map((p: any) => ({
-        id: p.id,
-        alternateId: p.alternateId,
-        title: p.projectDescription || 'No Description',
-        location: p.municipality || 'Unspecified',
-        costValue: p.totalCost || 0,
-        stage: 'Preparation',
-        status: p.status || 'Draft',
-        createdAt: p.createdAt || new Date().toISOString(),
-        fiscalYear: p.fiscalYear || '2025',
-        isIncludedInMasterList: p.isIncludedInMasterList || false
-      }));
-
-      // Combine and de-duplicate by ID
-      const seenIds = new Set();
-      const combined: Project[] = [];
-
-      // Prefer local storage for display if it exists (usually has more metadata)
-      formattedLocal.forEach((p: Project) => {
-        if (!seenIds.has(p.id)) {
-          seenIds.add(p.id);
-          combined.push(p);
-        }
-      });
-
-      // Add supabase projects that aren't in local storage
-      supabaseData.forEach((p: Project) => {
-        if (!seenIds.has(p.id)) {
-          seenIds.add(p.id);
-          combined.push(p);
-        }
-      });
-
-      const finalSelection = combined
-        .filter(p => p.isIncludedInMasterList === true)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-      setProjects(finalSelection);
     } catch (err) {
       console.error('Error fetching projects:', err);
     } finally {
@@ -125,22 +88,14 @@ export default function MasterList() {
     if (!confirm(`Are you sure you want to delete project ${altId || id}?`)) return;
 
     try {
-      // 1. Local storage delete
-      const localProjects = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-      const filtered = localProjects.filter((p: any) => p.id !== id);
-      localStorage.setItem('rbp_projects', JSON.stringify(filtered));
-
-      // 2. Supabase delete
-      const isSupabaseConfigured = true;
-
-      if (isSupabaseConfigured) {
-        await supabase.from('projects').delete().eq('id', id);
-      }
+      // Supabase delete exclusively
+      const { error } = await supabase.from('projects').delete().eq('id', id);
+      if (error) throw error;
 
       fetchProjects();
     } catch (err) {
       console.error('Delete failed:', err);
-      alert('Delete failed');
+      alert('Delete failed to sync with database.');
     }
   };
 

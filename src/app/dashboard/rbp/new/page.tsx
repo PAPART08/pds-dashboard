@@ -109,17 +109,7 @@ export default function NewProjectEntry() {
 
   const loadProject = async (id: string) => {
     try {
-      // Try local storage first
-      const localProjects = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-      const localP = localProjects.find((p: any) => p.id === id);
-      if (localP) {
-        setFormData(localP);
-        setComponents(localP.components || []);
-        setSpecificDetails(localP.specificDetails || []);
-        return;
-      }
-
-      // Try Supabase
+      // Fetch from Supabase
       const { data: project, error: pError } = await supabase.from('projects').select('*').eq('id', id).single();
       if (pError) throw pError;
 
@@ -210,38 +200,6 @@ export default function NewProjectEntry() {
   const handleSave = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Check if Supabase is properly configured
-      const isSupabaseConfigured = true;
-
-      if (!isSupabaseConfigured) {
-        console.warn('Supabase not configured. Using localStorage fallback.');
-
-        const projectId = formData.id || crypto.randomUUID();
-        const newProject = {
-          ...formData,
-          id: projectId,
-          components,
-          specificDetails,
-          totalCost,
-          createdAt: formData.id ? (formData as any).createdAt : new Date().toISOString()
-        };
-
-        const existingProjects = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-        let updatedList;
-        if (formData.id) {
-          updatedList = existingProjects.map((p: any) => p.id === formData.id ? newProject : p);
-        } else {
-          updatedList = [...existingProjects, newProject];
-        }
-        localStorage.setItem('rbp_projects', JSON.stringify(updatedList));
-
-        alert(formData.id ? 'Project updated locally!' : 'Project saved locally!');
-        if (!formData.id) {
-          setFormData(prev => ({ ...prev, id: projectId }));
-        }
-        return;
-      }
-
       // 1. Prepare Project Record
       const projectRecord = {
         alternate_id: formData.alternateId,
@@ -346,24 +304,7 @@ export default function NewProjectEntry() {
       alert('Project saved successfully to Supabase!');
     } catch (err: any) {
       console.error('Save failed:', err, JSON.stringify(err));
-
-      // Secondary fallback on error
-      if (err.message?.includes('failed to fetch') || err.name === 'TypeError') {
-        const newProject = {
-          ...formData, // Already contains id if exists
-          id: formData.id || crypto.randomUUID(),
-          components,
-          specificDetails,
-          totalCost,
-          error: err.message,
-          createdAt: new Date().toISOString()
-        };
-        const existingProjects = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-        localStorage.setItem('rbp_projects', JSON.stringify([...existingProjects, newProject]));
-        alert('Supabase connection failed. Project saved locally instead.');
-      } else {
-        alert('Error saving project: ' + err.message);
-      }
+      alert('Error saving project: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -995,14 +936,17 @@ export default function NewProjectEntry() {
           </button>
           <button
             className={styles.btnDanger}
-            onClick={() => {
+            onClick={async () => {
               if (formData.id) {
-                // We need a local way to delete too, but let's just use the dashboard for now or add it here
-                if (confirm('Are you sure you want to delete this project?')) {
-                  const localProjects = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-                  const filtered = localProjects.filter((p: any) => p.id !== formData.id);
-                  localStorage.setItem('rbp_projects', JSON.stringify(filtered));
-                  window.location.href = '/dashboard/rbp';
+                if (confirm('Are you sure you want to delete this project from the database?')) {
+                  try {
+                    const { error } = await supabase.from('projects').delete().eq('id', formData.id);
+                    if (error) throw error;
+                    window.location.href = '/dashboard/rbp';
+                  } catch (err) {
+                    console.error('Delete failed:', err);
+                    alert('Failed to delete project from Supabase.');
+                  }
                 }
               }
             }}

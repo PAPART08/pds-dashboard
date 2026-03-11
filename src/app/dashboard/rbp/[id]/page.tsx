@@ -40,33 +40,17 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
   useEffect(() => {
     const fetchTeam = async () => {
       try {
-        const isSupabaseConfigured = true;
-
-        let fetchedMembers: string[] = [];
-
-        if (isSupabaseConfigured) {
-          const { data, error } = await supabase.from('employees').select('name').order('created_at', { ascending: true });
-          if (!error && data && data.length > 0) {
-            fetchedMembers = data.map((d: any) => d.name);
-          }
+        const { data, error } = await supabase.from('employees').select('name').order('created_at', { ascending: true });
+        if (!error && data && data.length > 0) {
+          setTeamMembers(data.map((d: any) => d.name));
+        } else {
+          setTeamMembers(EMPLOYEES.map(e => e.name));
         }
-
-        if (fetchedMembers.length === 0) {
-          const savedTeam = localStorage.getItem('pds_team');
-          if (savedTeam) {
-            fetchedMembers = JSON.parse(savedTeam).map((e: any) => e.name);
-          } else {
-            fetchedMembers = EMPLOYEES.map(e => e.name);
-          }
-        }
-
-        setTeamMembers(fetchedMembers);
       } catch (err) {
         console.error('Error fetching team members:', err);
         setTeamMembers(EMPLOYEES.map(e => e.name));
       }
     };
-
     fetchTeam();
   }, []);
 
@@ -74,50 +58,24 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
     const fetchProject = async () => {
       setIsLoading(true);
       try {
-        const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-        const localP = localData.find((p: any) => p.id === id);
-        if (localP) {
-          console.log('Found local project:', localP);
-          setProject({
-            id: localP.id,
-            alternateId: localP.alternateId || localP.id.substring(0, 8).toUpperCase(),
-            name: localP.projectDescription || localP.project_name || 'No Description',
-            cost: localP.totalCost || localP.projectAmount || 0,
-            status: localP.status || 'Drafting',
-            subProgramCode: localP.subProgramCode || localP.sub_program_code,
-            thrust: localP.thrust
-          });
-          setAssignment(localP.assignedTo || '');
-          setDocAssignments(localP.docAssignments || {});
-          setUploadedDocs(localP.uploadedDocs || {});
-          setDocDeadlines(localP.docDeadlines || {});
-          setIsLoading(false);
-          return;
-        }
+        const { data, error } = await supabase.from('projects').select('*').eq('id', id).single();
+        if (error) throw error;
 
-        if (true) {
-          const { data, error } = await supabase.from('projects').select('*').eq('id', id).single();
-          if (!error && data) {
-            setProject({
-              id: data.id,
-              alternateId: data.alternate_id || data.id.substring(0, 8).toUpperCase(),
-              name: data.project_name,
-              cost: data.project_amount || 0,
-              status: data.status || 'Drafting',
-              subProgramCode: data.sub_program_code,
-              thrust: data.thrust,
-              deadline: data.deadline
-            });
-            setAssignment(data.assigned_to || '');
-            setDocAssignments(data.doc_assignments || {});
-            setDocDeadlines(data.doc_deadlines || {});
-            // Merge with local uploaded docs if any
-            const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-            const localP = localData.find((p: any) => p.id === id);
-            if (localP && localP.uploadedDocs) {
-              setUploadedDocs(localP.uploadedDocs);
-            }
-          }
+        if (data) {
+          setProject({
+            id: data.id,
+            alternateId: data.alternate_id || data.id.substring(0, 8).toUpperCase(),
+            name: data.project_name,
+            cost: data.project_amount || 0,
+            status: data.status || 'Drafting',
+            subProgramCode: data.sub_program_code,
+            thrust: data.thrust,
+            deadline: data.deadline
+          });
+          setAssignment(data.assigned_to || '');
+          setDocAssignments(data.doc_assignments || {});
+          setDocDeadlines(data.doc_deadlines || {});
+          setUploadedDocs(data.doc_uploads || {});
         }
       } catch (err) {
         console.error('Error fetching project detail:', err);
@@ -130,15 +88,6 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
 
   const handleAssignProject = async (name: string) => {
     setAssignment(name);
-    // 1. Local Storage
-    const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-    const index = localData.findIndex((p: any) => p.id === id);
-    if (index !== -1) {
-      localData[index].assignedTo = name;
-      localStorage.setItem('rbp_projects', JSON.stringify(localData));
-    }
-
-    // 2. Supabase
     try {
       const { error } = await supabase
         .from('projects')
@@ -154,15 +103,6 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
     const newDocAssignments = { ...docAssignments, [docCode]: name };
     setDocAssignments(newDocAssignments);
 
-    // 1. Local Storage
-    const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-    const index = localData.findIndex((p: any) => p.id === id);
-    if (index !== -1) {
-      localData[index].docAssignments = newDocAssignments;
-      localStorage.setItem('rbp_projects', JSON.stringify(localData));
-    }
-
-    // 2. Supabase
     try {
       const { error } = await supabase
         .from('projects')
@@ -174,17 +114,23 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
     }
   };
 
-  const handleUploadDoc = (docCode: string, file: File) => {
-    // We will just store the object URL for the uploaded file in local storage for demo purposes
+  const handleUploadDoc = async (docCode: string, file: File) => {
+    // For demo/simplicity, we still use object URL locally for viewing
+    // But we record the action/metadata in Supabase for sync tracking
     const url = URL.createObjectURL(file);
-    const newUploadedDocs = { ...uploadedDocs, [docCode]: url };
+    const newUploadedDocs = { ...uploadedDocs, [docCode]: file.name || 'document.pdf' };
     setUploadedDocs(newUploadedDocs);
-    const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-    const index = localData.findIndex((p: any) => p.id === id);
-    if (index !== -1) {
-      localData[index].uploadedDocs = newUploadedDocs;
-      localStorage.setItem('rbp_projects', JSON.stringify(localData));
+    
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ doc_uploads: newUploadedDocs })
+        .eq('id', id);
+      if (error) throw error;
+    } catch (err) {
+      console.error('Supabase sync error (Doc Upload):', err);
     }
+    
     // Set a flag in session storage temporarily to pass the URL to the review screen
     sessionStorage.setItem(`pdf_${id}_${docCode}`, url);
   };
@@ -201,15 +147,6 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
     const newDocDeadlines = { ...docDeadlines, [docCode]: date };
     setDocDeadlines(newDocDeadlines);
 
-    // 1. Local Storage
-    const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-    const index = localData.findIndex((p: any) => p.id === id);
-    if (index !== -1) {
-      localData[index].docDeadlines = newDocDeadlines;
-      localStorage.setItem('rbp_projects', JSON.stringify(localData));
-    }
-
-    // 2. Supabase
     try {
       const { error } = await supabase
         .from('projects')
