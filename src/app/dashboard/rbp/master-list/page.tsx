@@ -79,17 +79,37 @@ export default function MasterList() {
         location: p.municipality || 'Unspecified',
         costValue: p.totalCost || 0,
         stage: 'Preparation',
-        status: 'Draft',
+        status: p.status || 'Draft',
         createdAt: p.createdAt || new Date().toISOString(),
         fiscalYear: p.fiscalYear || '2025',
         isIncludedInMasterList: p.isIncludedInMasterList || false
       }));
 
-      const combined = [...supabaseData, ...formattedLocal]
+      // Combine and de-duplicate by ID
+      const seenIds = new Set();
+      const combined: Project[] = [];
+
+      // Prefer local storage for display if it exists (usually has more metadata)
+      formattedLocal.forEach((p: Project) => {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          combined.push(p);
+        }
+      });
+
+      // Add supabase projects that aren't in local storage
+      supabaseData.forEach((p: Project) => {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          combined.push(p);
+        }
+      });
+
+      const finalSelection = combined
         .filter(p => p.isIncludedInMasterList === true)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      setProjects(combined);
+      setProjects(finalSelection);
     } catch (err) {
       console.error('Error fetching projects:', err);
     } finally {

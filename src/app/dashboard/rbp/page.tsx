@@ -69,12 +69,32 @@ export default function RBPStagePage() {
         category: p.category || 'N/A',
         municipality: p.municipality || 'N/A',
         totalCost: p.totalCost || 0,
-        status: 'Drafting',
+        status: p.status || 'Drafting',
         createdAt: p.createdAt || new Date().toISOString(),
         isIncludedInMasterList: p.isIncludedInMasterList || false
       }));
 
-      const combined = [...supabaseData, ...formattedLocal].sort((a, b) =>
+      // Combine and de-duplicate by ID
+      const seenIds = new Set();
+      const combined: Project[] = [];
+
+      // Process local first (usually has more recent UI-only updates)
+      formattedLocal.forEach((p: Project) => {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          combined.push(p);
+        }
+      });
+
+      // Then add supabase projects not already in local
+      supabaseData.forEach((p: Project) => {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          combined.push(p);
+        }
+      });
+
+      combined.sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
@@ -131,8 +151,14 @@ export default function RBPStagePage() {
       const isSupabaseConfigured = true;
 
       if (isSupabaseConfigured) {
-        await supabase.from('projects').update({ is_included_in_master_list: !currentStatus }).eq('id', id);
+        const { error } = await supabase.from('projects').update({ is_included_in_master_list: !currentStatus }).eq('id', id);
+        if (error) {
+          console.error('Supabase update error:', error);
+          // Don't alert here as local storage still works, but log it
+        }
       }
+      
+      alert(currentStatus ? 'Project removed from Master List' : 'Project added to Master List and Global Tasks');
     } catch (err) {
       console.error('Failed to toggle master list inclusion', err);
       alert('Update failed');
