@@ -42,9 +42,11 @@ export default function UserTaskDashboard() {
                 const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
 
                 const isSupabaseConfigured = true;
-
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let supabaseData: any[] = [];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                let rawSupabaseData: any[] = [];
+
                 if (isSupabaseConfigured) {
                     const { data, error } = await supabase
                         .from('projects')
@@ -52,6 +54,7 @@ export default function UserTaskDashboard() {
                         .order('created_at', { ascending: false });
 
                     if (!error && data) {
+                        rawSupabaseData = data;
                         supabaseData = data.map(p => ({
                             id: p.id,
                             alternateId: p.alternate_id,
@@ -87,26 +90,42 @@ export default function UserTaskDashboard() {
                 const savedUser = localStorage.getItem('currentUser');
                 const currentUserName = savedUser ? JSON.parse(savedUser).name : '';
 
-                // Extract specific document assignments for this user
-                const userAssignedTasks: Project[] = [];
+                // Combine document assignments from BOTH Supabase and Local
+                const allProjectsForExtraction = [...supabaseData.map(p => {
+                    // Find original supabase record for raw fields
+                    const raw = rawSupabaseData.find((d: any) => d.id === p.id);
+                    return {
+                        ...p,
+                        docAssignments: raw?.doc_assignments || {},
+                        docDeadlines: raw?.doc_deadlines || {},
+                        docStatuses: raw?.status === 'Approved' ? {} : (raw?.doc_statuses || {})
+                    };
+                }), ...localDataRaw];
 
                 // For each project, check if this user has specific document assignments
-                localDataRaw.forEach((p: any) => {
+                const seenTaskKeys = new Set();
+                const userAssignedTasks: Project[] = [];
+
+                allProjectsForExtraction.forEach((p: any) => {
                     const docAssignments = p.docAssignments || {};
                     Object.entries(docAssignments).forEach(([code, assignedName]) => {
                         if (assignedName === currentUserName) {
+                            const taskKey = `${p.id}-${code}`;
+                            if (seenTaskKeys.has(taskKey)) return;
+                            seenTaskKeys.add(taskKey);
+
                             const corrCount = p.docCorrections?.[code] || 0;
                             const docIdSuffix = corrCount > 0 ? `_Correction_No.${corrCount}` : '';
                             userAssignedTasks.push({
-                                id: `${p.id}-${code}`,
+                                id: taskKey,
                                 docId: `${p.alternateId || p.id.substring(0, 8).toUpperCase()}-${code}${docIdSuffix}`,
-                                title: p.projectDescription || 'Untitled Project',
-                                location: p.municipality || 'Unspecified',
-                                costValue: p.totalCost || 0,
+                                title: p.projectDescription || p.project_name || 'Untitled Project',
+                                location: p.municipality || p.city_municipality || 'Unspecified',
+                                costValue: p.totalCost || p.project_amount || 0,
                                 stage: 'Preparation',
                                 status: p.docStatuses?.[code] || (p.uploadedDocs?.[code] ? 'Submitted' : 'Drafting'),
-                                createdAt: p.createdAt || new Date().toISOString(),
-                                fiscalYear: p.fiscalYear || '2025',
+                                createdAt: p.createdAt || p.created_at || new Date().toISOString(),
+                                fiscalYear: p.fiscalYear || (p.start_year || 2025).toString(),
                                 type: 'Assigned Document',
                                 deadline: p.docDeadlines?.[code],
                                 projectId: p.id,

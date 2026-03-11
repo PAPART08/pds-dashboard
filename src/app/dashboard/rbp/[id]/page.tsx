@@ -95,9 +95,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
           return;
         }
 
-        const isSupabaseConfigured = true;
-
-        if (isSupabaseConfigured) {
+        if (true) {
           const { data, error } = await supabase.from('projects').select('*').eq('id', id).single();
           if (!error && data) {
             setProject({
@@ -107,9 +105,18 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
               cost: data.project_amount || 0,
               status: data.status || 'Drafting',
               subProgramCode: data.sub_program_code,
-              thrust: data.thrust
+              thrust: data.thrust,
+              deadline: data.deadline
             });
-            // Fetch assignments if possible...
+            setAssignment(data.assigned_to || '');
+            setDocAssignments(data.doc_assignments || {});
+            setDocDeadlines(data.doc_deadlines || {});
+            // Merge with local uploaded docs if any
+            const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
+            const localP = localData.find((p: any) => p.id === id);
+            if (localP && localP.uploadedDocs) {
+              setUploadedDocs(localP.uploadedDocs);
+            }
           }
         }
       } catch (err) {
@@ -121,26 +128,49 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
     fetchProject();
   }, [id]);
 
-  const handleAssignProject = (name: string) => {
+  const handleAssignProject = async (name: string) => {
     setAssignment(name);
-    // Persist to local storage
+    // 1. Local Storage
     const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
     const index = localData.findIndex((p: any) => p.id === id);
     if (index !== -1) {
       localData[index].assignedTo = name;
       localStorage.setItem('rbp_projects', JSON.stringify(localData));
     }
+
+    // 2. Supabase
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ assigned_to: name })
+        .eq('id', id);
+      if (error) throw error;
+    } catch (err) {
+      console.error('Supabase sync error (Project Assignment):', err);
+    }
   };
 
-  const handleAssignDoc = (docCode: string, name: string) => {
+  const handleAssignDoc = async (docCode: string, name: string) => {
     const newDocAssignments = { ...docAssignments, [docCode]: name };
     setDocAssignments(newDocAssignments);
-    // Persist to local storage
+
+    // 1. Local Storage
     const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
     const index = localData.findIndex((p: any) => p.id === id);
     if (index !== -1) {
       localData[index].docAssignments = newDocAssignments;
       localStorage.setItem('rbp_projects', JSON.stringify(localData));
+    }
+
+    // 2. Supabase
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ doc_assignments: newDocAssignments })
+        .eq('id', id);
+      if (error) throw error;
+    } catch (err) {
+      console.error('Supabase sync error (Doc Assignment):', err);
     }
   };
 
@@ -161,7 +191,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
 
   const documents = getRequiredDocs(project?.subProgramCode, project?.thrust);
 
-  const handleUpdateDocDeadline = (docCode: string, date: string) => {
+  const handleUpdateDocDeadline = async (docCode: string, date: string) => {
     // Validation: must not pass project deadline
     if (project?.deadline && date > project.deadline) {
       alert(`Error: Document deadline cannot pass project target date (${project.deadline})`);
@@ -171,12 +201,23 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
     const newDocDeadlines = { ...docDeadlines, [docCode]: date };
     setDocDeadlines(newDocDeadlines);
 
-    // Persist
+    // 1. Local Storage
     const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
     const index = localData.findIndex((p: any) => p.id === id);
     if (index !== -1) {
       localData[index].docDeadlines = newDocDeadlines;
       localStorage.setItem('rbp_projects', JSON.stringify(localData));
+    }
+
+    // 2. Supabase
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ doc_deadlines: newDocDeadlines })
+        .eq('id', id);
+      if (error) throw error;
+    } catch (err) {
+      console.error('Supabase sync error (Doc Deadline):', err);
     }
   };
 
