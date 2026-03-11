@@ -81,13 +81,34 @@ export default function UnitHeadDashboard() {
                     deadline: p.deadline
                 }));
 
-                const combined = [...supabaseData, ...formattedLocal].filter(p => {
-                    return p.assignedTo === currentUserName || currentUser?.role === 'Admin' || currentUser?.role === 'Section Chief';
+                // Combine and de-duplicate by ID
+                const seenIds = new Set();
+                const combined: Project[] = [];
+
+                // Prefer formatted local data
+                formattedLocal.forEach((p: Project) => {
+                    if (!seenIds.has(p.id)) {
+                        seenIds.add(p.id);
+                        combined.push(p);
+                    }
+                });
+
+                // Add supabase projects not in local
+                supabaseData.forEach((p: Project) => {
+                    if (!seenIds.has(p.id)) {
+                        seenIds.add(p.id);
+                        combined.push(p);
+                    }
+                });
+
+                const filtered = combined.filter(p => {
+                    const role = currentUser?.role || currentUser?.position;
+                    return p.assignedTo === currentUserName || role === 'Admin' || role === 'Section Chief';
                 }).sort((a, b) =>
                     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                 );
 
-                setProjects(combined);
+                setProjects(filtered);
             } catch (err) {
                 console.error('Error fetching projects:', err);
             } finally {

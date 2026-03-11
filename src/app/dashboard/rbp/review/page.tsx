@@ -39,7 +39,7 @@ export default function ReviewQueuePage() {
               time: 'Recently',
               priority: p.tier || 'Medium',
               doc: 'RBP',
-              assignedTo: null,
+              assignedTo: p.assigned_to || null,
               isIncludedInMasterList: p.is_included_in_master_list || false,
               location: p.city_municipality || 'Unspecified',
               costValue: p.project_amount || 0,
@@ -88,8 +88,9 @@ export default function ReviewQueuePage() {
 
         // Review Queue: Start with master base, then filter by assignment if Unit Head
         let queueItems = [...masterBase];
-        if (currentUser?.role === 'Unit Head' && currentUser?.name) {
-          queueItems = queueItems.filter((p: any) => p.assignedTo === currentUser.name);
+        if (currentUser?.role === 'Unit Head' || currentUser?.position === 'Unit Head' || currentUser?.user_type === 'Admin') {
+          const nameToMatch = currentUser.name;
+          queueItems = queueItems.filter((p: any) => p.assignedTo === nameToMatch || currentUser?.user_type === 'Admin');
         }
         setProjects(queueItems);
 
