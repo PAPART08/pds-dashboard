@@ -120,20 +120,30 @@ export default function UnitHeadDashboard() {
     }, []);
 
     const today = new Date().toISOString().split('T')[0];
-    const pendingTasks = projects.filter(p => p.status === 'Draft' || p.status.includes('Pending'));
-    const dueTodayCount = projects.filter(p => p.deadline === today).length || pendingTasks.length;
+    const pendingTasks = projects.filter(p => {
+        const s = p.status?.toUpperCase() || '';
+        return s.includes('DRAFT') || s.includes('PENDING') || s.includes('PROPOSED') || s === 'RETURNED';
+    });
+    const dueTodayCount = projects.filter(p => (p as any).deadline === today).length || pendingTasks.length;
 
-    const inProgressTasks = projects.filter(p => p.status === 'Under Review' || p.status.includes('Review'));
-    const upcomingCount = projects.filter(p => p.deadline && p.deadline > today).length || inProgressTasks.length;
+    const inProgressTasks = projects.filter(p => {
+        const s = p.status?.toUpperCase() || '';
+        return s.includes('REVIEW');
+    });
+    const upcomingCount = projects.filter(p => (p as any).deadline && (p as any).deadline > today).length || inProgressTasks.length;
 
     const completedCount = projects.length;
 
-    const displayProjects = projects.filter(p =>
-        p.status === 'Under Review' ||
-        p.status.includes('Review') ||
-        p.status === 'Draft' ||
-        p.status.includes('Pending')
-    ).slice(0, 5);
+    const displayProjects = projects.filter(p => {
+        const s = p.status?.toUpperCase() || '';
+        return (
+            s.includes('REVIEW') ||
+            s.includes('DRAFT') ||
+            s.includes('PENDING') ||
+            s.includes('PROPOSED') ||
+            s === 'RETURNED'
+        );
+    }).slice(0, 5);
 
     return (
         <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50 dark:bg-slate-900 animate-fade-in font-sans flex flex-col xl:flex-row gap-6 xl:gap-8">
