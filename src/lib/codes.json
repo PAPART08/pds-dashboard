@@ -62,7 +62,7 @@
       "Quezon City 1st District Engineering Office",
       "Quezon City 2nd District Engineering Office",
       "South Manila District Engineering Office",
-      "Las Piñas-Muntinlupa District Engineering Office",
+      "Las Pi\u00f1as-Muntinlupa District Engineering Office",
       "Metro Manila 2nd District Engineering Office"
     ],
     "Region VI": [
@@ -396,7 +396,7 @@
       "SAN QUINTIN (ABRA)",
       "SAN ISIDRO (ABRA)",
       "PIDIGAN (ABRA)",
-      "PEÑARRUBIA (ABRA)",
+      "PE\u00d1ARRUBIA (ABRA)",
       "BANGUED (CAPITAL) (ABRA)",
       "BUCAY (ABRA)",
       "TAYUM (ABRA)",
@@ -799,14 +799,14 @@
       "SANTA PRAXEDES (CAGAYAN)",
       "PIAT (CAGAYAN)",
       "RIZAL (CAGAYAN)",
-      "SANTO NIÑO (FAIRE) (CAGAYAN)",
+      "SANTO NI\u00d1O (FAIRE) (CAGAYAN)",
       "CALAYAN (CAGAYAN)"
     ],
     "Cagayan 3rd District Engineering Office": [
       "IGUIG (CAGAYAN)",
       "TUGUEGARAO CITY (CAPITAL) (CAGAYAN)",
       "ENRILE (CAGAYAN)",
-      "PEÑABLANCA (CAGAYAN)",
+      "PE\u00d1ABLANCA (CAGAYAN)",
       "TUAO (CAGAYAN)",
       "SOLANA (CAGAYAN)",
       "AMULUNG (CAGAYAN)"
@@ -949,7 +949,7 @@
       "PANGANTUCAN (BUKIDNON)"
     ],
     "Bulacan 3rd District Engineering Office": [
-      "DOÑA REMEDIOS TRINIDAD (BULACAN)",
+      "DO\u00d1A REMEDIOS TRINIDAD (BULACAN)",
       "SAN ILDEFONSO (BULACAN)",
       "SAN MIGUEL (BULACAN)",
       "SAN RAFAEL (BULACAN)"
@@ -958,7 +958,7 @@
       "TALUGTUG (NUEVA ECIJA)",
       "RIZAL (NUEVA ECIJA)",
       "LLANERA (NUEVA ECIJA)",
-      "SCIENCE CITY OF MUÑOZ (NUEVA ECIJA)",
+      "SCIENCE CITY OF MU\u00d1OZ (NUEVA ECIJA)",
       "LUPAO (NUEVA ECIJA)",
       "SAN JOSE CITY (NUEVA ECIJA)",
       "CARRANGLAN (NUEVA ECIJA)",
@@ -985,7 +985,7 @@
       "CITY OF GAPAN (NUEVA ECIJA)",
       "SAN ISIDRO (NUEVA ECIJA)",
       "CABIAO (NUEVA ECIJA)",
-      "PEÑARANDA (NUEVA ECIJA)",
+      "PE\u00d1ARANDA (NUEVA ECIJA)",
       "SAN LEONARDO (NUEVA ECIJA)",
       "JAEN (NUEVA ECIJA)",
       "SAN ANTONIO (NUEVA ECIJA)"
@@ -1100,7 +1100,7 @@
     "Cavite 2nd District Engineering Office": [
       "GENERAL EMILIO AGUINALDO (CAVITE)",
       "ALFONSO (CAVITE)",
-      "MENDEZ (MENDEZ-NUÑEZ) (CAVITE)",
+      "MENDEZ (MENDEZ-NU\u00d1EZ) (CAVITE)",
       "TAGAYTAY CITY (CAVITE)",
       "MAGALLANES (CAVITE)",
       "NAIC (CAVITE)",
@@ -1111,7 +1111,7 @@
       "GEN. MARIANO ALVAREZ (CAVITE)",
       "CARMONA (CAVITE)",
       "SILANG (CAVITE)",
-      "CITY OF DASMARIÑAS (CAVITE)",
+      "CITY OF DASMARI\u00d1AS (CAVITE)",
       "BACOOR CITY (CAVITE)"
     ],
     "Laguna 1st District Engineering Office": [
@@ -1135,9 +1135,9 @@
     "Laguna 2nd District Engineering Office": [
       "BAY (LAGUNA)",
       "CABUYAO CITY (LAGUNA)",
-      "LOS BAÑOS (LAGUNA)",
+      "LOS BA\u00d1OS (LAGUNA)",
       "CITY OF SAN PEDRO (LAGUNA)",
-      "CITY OF BIÑAN (LAGUNA)",
+      "CITY OF BI\u00d1AN (LAGUNA)",
       "CITY OF CALAMBA (LAGUNA)",
       "CITY OF STA. ROSA (LONE DISTRICT)"
     ],
@@ -1235,13 +1235,13 @@
       "ALCANTARA (CEBU)",
       "BADIAN (CEBU)"
     ],
-    "Las Piñas-Muntinlupa District Engineering Office": [
-      "CITY OF LAS PIÑAS (METROPOLITAN MANILA)",
+    "Las Pi\u00f1as-Muntinlupa District Engineering Office": [
+      "CITY OF LAS PI\u00d1AS (METROPOLITAN MANILA)",
       "CITY OF MUNTINLUPA (METROPOLITAN MANILA)"
     ],
     "Metro Manila 2nd District Engineering Office": [
       "CITY OF MAKATI (METROPOLITAN MANILA)",
-      "CITY OF PARAÑAQUE (METROPOLITAN MANILA)"
+      "CITY OF PARA\u00d1AQUE (METROPOLITAN MANILA)"
     ],
     "Palawan 1st District Engineering Office": [
       "BUSUANGA (PALAWAN)",
@@ -1263,7 +1263,7 @@
     "Palawan 2nd District Engineering Office": [
       "RIZAL (MARCOS) (PALAWAN)",
       "QUEZON (PALAWAN)",
-      "SOFRONIO ESPAÑOLA (PALAWAN)",
+      "SOFRONIO ESPA\u00d1OLA (PALAWAN)",
       "BALABAC (PALAWAN)",
       "NARRA (PALAWAN)",
       "BATARAZA (PALAWAN)",
@@ -1362,8 +1362,8 @@
     ],
     "Zamboanga del Norte 1st District Engineering Office": [
       "POLANCO (ZAMBOANGA DEL NORTE)",
-      "SERGIO OSMEÑA SR. (ZAMBOANGA DEL NORTE)",
-      "PIÑAN (NEW PIÑAN) (ZAMBOANGA DEL NORTE)",
+      "SERGIO OSME\u00d1A SR. (ZAMBOANGA DEL NORTE)",
+      "PI\u00d1AN (NEW PI\u00d1AN) (ZAMBOANGA DEL NORTE)",
       "MUTIA (ZAMBOANGA DEL NORTE)",
       "LA LIBERTAD (ZAMBOANGA DEL NORTE)",
       "RIZAL (ZAMBOANGA DEL NORTE)",
@@ -1484,7 +1484,7 @@
       "TIGAON (CAMARINES SUR)",
       "GOA (CAMARINES SUR)",
       "SAN JOSE (CAMARINES SUR)",
-      "SAGÑAY (CAMARINES SUR)",
+      "SAG\u00d1AY (CAMARINES SUR)",
       "CARAMOAN (CAMARINES SUR)",
       "PRESENTACION (PARUBCAN) (CAMARINES SUR)",
       "LAGONOY (CAMARINES SUR)",
@@ -1569,7 +1569,7 @@
     ],
     "Davao de Oro 1st District Engineering Office": [
       "LAAK (SAN VICENTE) (DAVAO DE ORO)",
-      "MABINI (DOÑA ALICIA) (DAVAO DE ORO)",
+      "MABINI (DO\u00d1A ALICIA) (DAVAO DE ORO)",
       "MACO (DAVAO DE ORO)",
       "MAWAB (DAVAO DE ORO)",
       "NABUNTURAN (CAPITAL) (DAVAO DE ORO)",
@@ -1659,7 +1659,7 @@
       "BANATE (ILOILO)",
       "CITY OF PASSI (ILOILO)",
       "SAN ENRIQUE (ILOILO)",
-      "DUEÑAS (ILOILO)",
+      "DUE\u00d1AS (ILOILO)",
       "DINGLE (ILOILO)",
       "ANILAO (ILOILO)",
       "DUMANGAS (ILOILO)",
@@ -1942,7 +1942,7 @@
       "ALMAGRO (SAMAR (WESTERN SAMAR))",
       "PAGSANGHAN (SAMAR (WESTERN SAMAR))",
       "TARANGNAN (SAMAR (WESTERN SAMAR))",
-      "SANTO NIÑO (SAMAR (WESTERN SAMAR))",
+      "SANTO NI\u00d1O (SAMAR (WESTERN SAMAR))",
       "TAGAPUL-AN (SAMAR (WESTERN SAMAR))",
       "SANTA MARGARITA (SAMAR (WESTERN SAMAR))",
       "GANDARA (SAMAR (WESTERN SAMAR))"
@@ -2186,7 +2186,7 @@
     ],
     "South Cotabato 2nd District Engineering Office": [
       "NORALA (SOUTH COTABATO)",
-      "SANTO NIÑO (SOUTH COTABATO)",
+      "SANTO NI\u00d1O (SOUTH COTABATO)",
       "T'BOLI (SOUTH COTABATO)",
       "CITY OF KORONADAL (CAPITAL) (SOUTH COTABATO)",
       "BANGA (SOUTH COTABATO)",
@@ -2790,7 +2790,7 @@
     "Quezon City 1st District Engineering Office",
     "Quezon City 2nd District Engineering Office",
     "South Manila District Engineering Office",
-    "Las Piñas-Muntinlupa District Engineering Office",
+    "Las Pi\u00f1as-Muntinlupa District Engineering Office",
     "Metro Manila 2nd District Engineering Office",
     "Aklan District Engineering Office",
     "Antique District Engineering Office",
@@ -2962,5 +2962,1573 @@
     "Tacloban City District Engineering Office",
     "Southern Leyte 1st District Engineering Office",
     "Southern Leyte 2nd District Engineering Office"
-  ]
+  ],
+  "deo_to_ld": {
+    "0": [
+      "0"
+    ],
+    "Basilan District Engineering Office": [
+      "BASILAN (LONE DISTRICT)"
+    ],
+    "Lanao del Sur 1st District Engineering Office": [
+      "LANAO DEL SUR (FIRST DISTRICT)"
+    ],
+    "Lanao del Sur 2nd District Engineering Office": [
+      "LANAO DEL SUR (SECOND DISTRICT)"
+    ],
+    "Maguindanao 1st District Engineering Office": [
+      "MAGUINDANAO DEL NORTE (LONE DISTRICT)"
+    ],
+    "Maguindanao 2nd District Engineering Office": [
+      "MAGUINDANAO DEL SUR (LONE DISTRICT)"
+    ],
+    "Marawi City Sub-District Engineering Office": [
+      "LANAO DEL SUR (FIRST DISTRICT)"
+    ],
+    "Tawi-Tawi District Engineering Office": [
+      "TAWI-TAWI (LONE DISTRICT)"
+    ],
+    "Abra District Engineering Office": [
+      "ABRA (LONE DISTRICT)"
+    ],
+    "Apayao 1st District Engineering Office": [
+      "APAYAO (LONE DISTRICT)"
+    ],
+    "Apayao 2nd District Engineering Office": [
+      "APAYAO (LONE DISTRICT)"
+    ],
+    "Baguio City District Engineering Office": [
+      "BAGUIO CITY (LONE DISTRICT)"
+    ],
+    "Benguet 1st District Engineering Office": [
+      "BENGUET (LONE DISTRICT)"
+    ],
+    "Benguet 2nd District Engineering Office": [
+      "BENGUET (LONE DISTRICT)"
+    ],
+    "Ifugao 1st District Engineering Office": [
+      "IFUGAO (LONE DISTRICT)"
+    ],
+    "Ifugao 2nd District Engineering Office": [
+      "IFUGAO (LONE DISTRICT)"
+    ],
+    "Lower Kalinga District Engineering Office": [
+      "KALINGA (LONE DISTRICT)"
+    ],
+    "Mountain Province 1st District Engineering Office": [
+      "MOUNTAIN PROVINCE (LONE DISTRICT)"
+    ],
+    "Mountain Province 2nd District Engineering Office": [
+      "MOUNTAIN PROVINCE (LONE DISTRICT)"
+    ],
+    "Upper Kalinga District Engineering Office": [
+      "KALINGA (LONE DISTRICT)"
+    ],
+    "Agusan del Norte District Engineering Office": [
+      "AGUSAN DEL NORTE (LONE DISTRICT)"
+    ],
+    "Malabon-Navotas District Engineering Office": [
+      "MALABON CITY (LONE DISTRICT)",
+      "NAVOTAS CITY (LONE DISTRICT)"
+    ],
+    "Metro Manila 1st District Engineering Office": [
+      "PASIG CITY (LONE DISTRICT)",
+      "CITY OF MANDALUYONG (LONE DISTRICT)",
+      "CITY OF MARIKINA (FIRST DISTRICT)",
+      "CITY OF MARIKINA (SECOND DISTRICT)",
+      "SAN JUAN CITY (LONE DISTRICT)",
+      "TAGUIG CITY (FIRST DISTRICT)",
+      "TAGUIG CITY (SECOND DISTRICT)"
+    ],
+    "Aklan District Engineering Office": [
+      "AKLAN (FIRST DISTRICT)",
+      "AKLAN (SECOND DISTRICT)"
+    ],
+    "Metro Manila 3rd District Engineering Office": [
+      "VALENZUELA CITY (FIRST DISTRICT)",
+      "VALENZUELA CITY (SECOND DISTRICT)",
+      "CALOOCAN CITY (FIRST DISTRICT)",
+      "CALOOCAN CITY (SECOND DISTRICT)",
+      "CALOOCAN CITY (THIRD DISTRICT)"
+    ],
+    "North Manila District Engineering Office": [
+      "MANILA CITY (FOURTH DISTRICT)",
+      "MANILA CITY (SECOND DISTRICT)",
+      "MANILA CITY (THIRD DISTRICT)",
+      "MANILA CITY (SIXTH DISTRICT)",
+      "MANILA CITY (FIRST DISTRICT)"
+    ],
+    "Quezon City 1st District Engineering Office": [
+      "QUEZON CITY (FIRST DISTRICT)",
+      "QUEZON CITY (SECOND DISTRICT)",
+      "QUEZON CITY (FIFTH DISTRICT)",
+      "QUEZON CITY (SIXTH DISTRICT)"
+    ],
+    "Quezon City 2nd District Engineering Office": [
+      "QUEZON CITY (THIRD DISTRICT)",
+      "QUEZON CITY (FOURTH DISTRICT)"
+    ],
+    "South Manila District Engineering Office": [
+      "MANILA CITY (FIFTH DISTRICT)",
+      "MANILA CITY (SIXTH DISTRICT)",
+      "PASAY CITY (LONE DISTRICT)"
+    ],
+    "Bacolod City District Engineering Office": [
+      "BACOLOD CITY (LONE DISTRICT)"
+    ],
+    "Negros Occidental 1st District Engineering Office": [
+      "NEGROS OCCIDENTAL (THIRD DISTRICT)",
+      "NEGROS OCCIDENTAL (SECOND DISTRICT)"
+    ],
+    "Negros Occidental 5th District Engineering Office": [
+      "NEGROS OCCIDENTAL (FIRST DISTRICT)"
+    ],
+    "Negros Occidental 2nd District Engineering Office": [
+      "NEGROS OCCIDENTAL (FIFTH DISTRICT)"
+    ],
+    "Negros Occidental 3rd District Engineering Office": [
+      "NEGROS OCCIDENTAL (SIXTH DISTRICT)"
+    ],
+    "Negros Occidental 4th District Engineering Office": [
+      "NEGROS OCCIDENTAL (FOURTH DISTRICT)"
+    ],
+    "Negros Oriental 1st District Engineering Office": [
+      "NEGROS ORIENTAL (FIRST DISTRICT)"
+    ],
+    "Negros Oriental 2nd District Engineering Office": [
+      "NEGROS ORIENTAL (SECOND DISTRICT)"
+    ],
+    "Negros Oriental 3rd District Engineering Office": [
+      "NEGROS ORIENTAL (THIRD DISTRICT)"
+    ],
+    "Siquijor District Engineering Office": [
+      "SIQUIJOR (LONE DISTRICT)"
+    ],
+    "Ilocos Norte 1st District Engineering Office": [
+      "ILOCOS NORTE (FIRST DISTRICT)"
+    ],
+    "Ilocos Norte 2nd District Engineering Office": [
+      "ILOCOS NORTE (SECOND DISTRICT)"
+    ],
+    "Ilocos Sur 1st District Engineering Office": [
+      "ILOCOS SUR (FIRST DISTRICT)"
+    ],
+    "Ilocos Sur 2nd District Engineering Office": [
+      "ILOCOS SUR (SECOND DISTRICT)"
+    ],
+    "La Union 1st District Engineering Office": [
+      "LA UNION (FIRST DISTRICT)"
+    ],
+    "La Union 2nd District Engineering Office": [
+      "LA UNION (SECOND DISTRICT)"
+    ],
+    "Pangasinan 1st District Engineering Office": [
+      "PANGASINAN (FIRST DISTRICT)"
+    ],
+    "Pangasinan 2nd District Engineering Office": [
+      "PANGASINAN (SECOND DISTRICT)",
+      "PANGASINAN (FOURTH DISTRICT)"
+    ],
+    "Pangasinan 3rd District Engineering Office": [
+      "PANGASINAN (SIXTH DISTRICT)",
+      "PANGASINAN (FIFTH DISTRICT)"
+    ],
+    "Pangasinan 4th District Engineering Office": [
+      "PANGASINAN (THIRD DISTRICT)"
+    ],
+    "Batanes District Engineering Office": [
+      "BATANES (LONE DISTRICT)"
+    ],
+    "Cagayan 1st District Engineering Office": [
+      "CAGAYAN (FIRST DISTRICT)"
+    ],
+    "Cagayan 2nd District Engineering Office": [
+      "CAGAYAN (SECOND DISTRICT)"
+    ],
+    "Cagayan 3rd District Engineering Office": [
+      "CAGAYAN (THIRD DISTRICT)"
+    ],
+    "Isabela 1st District Engineering Office": [
+      "ISABELA (FIRST DISTRICT)"
+    ],
+    "Isabela 3rd District Engineering Office": [
+      "ISABELA (SECOND DISTRICT)",
+      "ISABELA (THIRD DISTRICT)"
+    ],
+    "Isabela 4th District Engineering Office": [
+      "ISABELA (FOURTH DISTRICT)",
+      "ISABELA (SIXTH DISTRICT)"
+    ],
+    "Bataan 3rd District Engineering Office": [
+      "BATAAN (THIRD DISTRICT)"
+    ],
+    "Nueva Vizcaya 2nd District Engineering Office": [
+      "NUEVA VIZCAYA (LONE DISTRICT)"
+    ],
+    "Nueva Vizcaya District Engineering Office": [
+      "NUEVA VIZCAYA (LONE DISTRICT)"
+    ],
+    "Quirino District Engineering Office": [
+      "QUIRINO (LONE DISTRICT)"
+    ],
+    "Aurora District Engineering Office": [
+      "AURORA (LONE DISTRICT)"
+    ],
+    "Bataan 1st District Engineering Office": [
+      "BATAAN (FIRST DISTRICT)"
+    ],
+    "Bataan 2nd District Engineering Office": [
+      "BATAAN (SECOND DISTRICT)"
+    ],
+    "Batangas 2nd District Engineering Office": [
+      "BATANGAS (FIFTH DISTRICT)",
+      "BATANGAS (SECOND DISTRICT)"
+    ],
+    "Batangas 4th District Engineering Office": [
+      "BATANGAS (SIXTH DISTRICT)",
+      "BATANGAS (FOURTH DISTRICT)"
+    ],
+    "Bulacan 1st District Engineering Office": [
+      "BULACAN (SECOND DISTRICT)",
+      "BULACAN (FIRST DISTRICT)",
+      "BULACAN (FIFTH DISTRICT)"
+    ],
+    "Bulacan 2nd District Engineering Office": [
+      "BULACAN (FOURTH DISTRICT)",
+      "BULACAN (SIXTH DISTRICT)",
+      "CITY OF SAN JOSE DEL MONTE (LONE DISTRICT)"
+    ],
+    "Bukidnon 4th District Engineering Office": [
+      "BUKIDNON (FOURTH DISTRICT)"
+    ],
+    "Bulacan 3rd District Engineering Office": [
+      "BULACAN (THIRD DISTRICT)"
+    ],
+    "Nueva Ecija 1st District Engineering Office": [
+      "NUEVA ECIJA (SECOND DISTRICT)",
+      "NUEVA ECIJA (FIRST DISTRICT)"
+    ],
+    "Nueva Ecija 2nd District Engineering Office": [
+      "NUEVA ECIJA (THIRD DISTRICT)",
+      "NUEVA ECIJA (FOURTH DISTRICT)"
+    ],
+    "Pampanga 1st District Engineering Office": [
+      "PAMPANGA (FOURTH DISTRICT)",
+      "PAMPANGA (THIRD DISTRICT)"
+    ],
+    "Pampanga 2nd District Engineering Office": [
+      "PAMPANGA (SECOND DISTRICT)"
+    ],
+    "Pampanga 3rd District Engineering Office": [
+      "PAMPANGA (FIRST DISTRICT)"
+    ],
+    "Tarlac 2nd District Engineering Office": [
+      "TARLAC (THIRD DISTRICT)"
+    ],
+    "Tarlac District Engineering Office": [
+      "TARLAC (FIRST DISTRICT)",
+      "TARLAC (SECOND DISTRICT)"
+    ],
+    "Zambales 1st District Engineering Office": [
+      "ZAMBALES (SECOND DISTRICT)"
+    ],
+    "Zambales 2nd District Engineering Office": [
+      "ZAMBALES (FIRST DISTRICT)"
+    ],
+    "Batangas 3rd District Engineering Office": [
+      "BATANGAS (THIRD DISTRICT)"
+    ],
+    "Batangas 1st District Engineering Office": [
+      "BATANGAS (FIRST DISTRICT)"
+    ],
+    "Cavite 1st District Engineering Office": [
+      "CAVITE (FIRST DISTRICT)",
+      "CAVITE (SEVENTH DISTRICT)",
+      "CAVITE (SIXTH DISTRICT)",
+      "CAVITE (THIRD DISTRICT)"
+    ],
+    "Butuan City District Engineering Office": [
+      "BUTUAN CITY (LONE DISTRICT)"
+    ],
+    "Cavite 2nd District Engineering Office": [
+      "CAVITE (EIGHTH DISTRICT)"
+    ],
+    "Cavite 3rd District Engineering Office": [
+      "CAVITE (FIFTH DISTRICT)",
+      "CAVITE (FOURTH DISTRICT)",
+      "CAVITE (SECOND DISTRICT)"
+    ],
+    "Laguna 1st District Engineering Office": [
+      "LAGUNA (FOURTH DISTRICT)"
+    ],
+    "Laguna 2nd District Engineering Office": [
+      "LAGUNA (SECOND DISTRICT)",
+      "LAGUNA (FIRST DISTRICT)",
+      "CITY OF BI\u00d1AN (LONE DISTRICT)",
+      "CITY OF CALAMBA (LONE DISTRICT)",
+      "CITY OF SANTA ROSA (LONE DISTRICT)"
+    ],
+    "Laguna 3rd District Engineering Office": [
+      "LAGUNA (THIRD DISTRICT)"
+    ],
+    "Quezon 1st District Engineering Office": [
+      "QUEZON (FIRST DISTRICT)"
+    ],
+    "Quezon 2nd District Engineering Office": [
+      "QUEZON (SECOND DISTRICT)"
+    ],
+    "Quezon 3rd District Engineering Office": [
+      "QUEZON (THIRD DISTRICT)"
+    ],
+    "Quezon 4th District Engineering Office": [
+      "QUEZON (FOURTH DISTRICT)"
+    ],
+    "Rizal 1st District Engineering Office": [
+      "RIZAL (FIRST DISTRICT)",
+      "ANTIPOLO CITY (SECOND DISTRICT)",
+      "ANTIPOLO CITY (FIRST DISTRICT)"
+    ],
+    "Rizal 2nd District Engineering Office": [
+      "RIZAL (SECOND DISTRICT)",
+      "RIZAL (THIRD DISTRICT)",
+      "RIZAL (FOURTH DISTRICT)"
+    ],
+    "Marinduque District Engineering Office": [
+      "MARINDUQUE (LONE DISTRICT)"
+    ],
+    "Cebu 7th District Engineering Office": [
+      "CEBU (SEVENTH DISTRICT)"
+    ],
+    "Las Pi\u00f1as-Muntinlupa District Engineering Office": [
+      "CITY OF LAS PI\u00d1AS (LONE DISTRICT)",
+      "CITY OF MUNTINLUPA (LONE DISTRICT)"
+    ],
+    "Metro Manila 2nd District Engineering Office": [
+      "CITY OF MAKATI (FIRST DISTRICT)",
+      "CITY OF MAKATI (SECOND DISTRICT)",
+      "CITY OF PARA\u00d1AQUE (FIRST DISTRICT)",
+      "CITY OF PARA\u00d1AQUE (SECOND DISTRICT)"
+    ],
+    "Palawan 1st District Engineering Office": [
+      "PALAWAN (FIRST DISTRICT)"
+    ],
+    "Palawan 2nd District Engineering Office": [
+      "PALAWAN (SECOND DISTRICT)"
+    ],
+    "Romblon District Engineering Office": [
+      "ROMBLON (LONE DISTRICT)"
+    ],
+    "Cotabato 3rd District Engineering Office": [
+      "COTABATO (THIRD DISTRICT)"
+    ],
+    "Davao de Oro 2nd District Engineering Office": [
+      "DAVAO DE ORO (FIRST DISTRICT)"
+    ],
+    "Sulu 1st District Engineering Office": [
+      "SULU (FIRST DISTRICT)"
+    ],
+    "Sulu 2nd District Engineering Office": [
+      "SULU (SECOND DISTRICT)"
+    ],
+    "Zamboanga City 1st District Engineering Office": [
+      "ZAMBOANGA CITY (FIRST DISTRICT)"
+    ],
+    "Zamboanga City 2nd District Engineering Office": [
+      "ZAMBOANGA CITY (SECOND DISTRICT)"
+    ],
+    "Isabela City District Engineering Office": [
+      "BASILAN (LONE DISTRICT)"
+    ],
+    "Zamboanga del Norte 2nd District Engineering Office": [
+      "ZAMBOANGA DEL NORTE (SECOND DISTRICT)"
+    ],
+    "Zamboanga del Norte 3rd District Engineering Office": [
+      "ZAMBOANGA DEL NORTE (THIRD DISTRICT)"
+    ],
+    "Zamboanga del Norte 4th District Engineering Office": [
+      "ZAMBOANGA DEL NORTE (THIRD DISTRICT)"
+    ],
+    "Zamboanga del Norte 1st District Engineering Office": [
+      "ZAMBOANGA DEL NORTE (FIRST DISTRICT)"
+    ],
+    "Zamboanga del Sur 1st District Engineering Office": [
+      "ZAMBOANGA DEL SUR (FIRST DISTRICT)"
+    ],
+    "Zamboanga del Sur 2nd District Engineering Office": [
+      "ZAMBOANGA DEL SUR (SECOND DISTRICT)"
+    ],
+    "Zamboanga Sibugay 1st District Engineering Office": [
+      "ZAMBOANGA SIBUGAY (FIRST DISTRICT)"
+    ],
+    "Zamboanga Sibugay 2nd District Engineering Office": [
+      "ZAMBOANGA SIBUGAY (SECOND DISTRICT)"
+    ],
+    "Albay 1st District Engineering Office": [
+      "ALBAY (FIRST DISTRICT)"
+    ],
+    "Albay 2nd District Engineering Office": [
+      "ALBAY (SECOND DISTRICT)"
+    ],
+    "Albay 3rd District Engineering Office": [
+      "ALBAY (THIRD DISTRICT)"
+    ],
+    "Camarines Norte District Engineering Office": [
+      "CAMARINES NORTE (FIRST DISTRICT)"
+    ],
+    "Camarines Norte Sub-District Engineering Office": [
+      "CAMARINES NORTE (SECOND DISTRICT)"
+    ],
+    "Camarines Sur 2nd District Engineering Office": [
+      "CAMARINES SUR (SECOND DISTRICT)"
+    ],
+    "Camarines Sur 3rd District Engineering Office": [
+      "CAMARINES SUR (THIRD DISTRICT)"
+    ],
+    "Camarines Sur 4th District Engineering Office": [
+      "CAMARINES SUR (FOURTH DISTRICT)"
+    ],
+    "Camarines Sur 5th District Engineering Office": [
+      "CAMARINES SUR (FIFTH DISTRICT)"
+    ],
+    "Camarines Sur 1st District Engineering Office": [
+      "CAMARINES SUR (FIRST DISTRICT)"
+    ],
+    "Catanduanes District Engineering Office": [
+      "CATANDUANES (LONE DISTRICT)"
+    ],
+    "Masbate 2nd District Engineering Office": [
+      "MASBATE (SECOND DISTRICT)"
+    ],
+    "Masbate 3rd District Engineering Office": [
+      "MASBATE (THIRD DISTRICT)"
+    ],
+    "Masbate 1st District Engineering Office": [
+      "MASBATE (FIRST DISTRICT)"
+    ],
+    "Sorsogon 2nd District Engineering Office": [
+      "SORSOGON (SECOND DISTRICT)"
+    ],
+    "Sorsogon District Engineering Office": [
+      "SORSOGON (FIRST DISTRICT)"
+    ],
+    "Davao de Oro 1st District Engineering Office": [
+      "DAVAO DE ORO (SECOND DISTRICT)"
+    ],
+    "Davao del Sur District Engineering Office": [
+      "DAVAO DEL SUR (LONE DISTRICT)"
+    ],
+    "Antique District Engineering Office": [
+      "ANTIQUE (LONE DISTRICT)"
+    ],
+    "Capiz 1st District Engineering Office": [
+      "CAPIZ (FIRST DISTRICT)"
+    ],
+    "Capiz 2nd District Engineering Office": [
+      "CAPIZ (SECOND DISTRICT)"
+    ],
+    "Guimaras District Engineering Office": [
+      "GUIMARAS (LONE DISTRICT)"
+    ],
+    "Iloilo 1st District Engineering Office": [
+      "ILOILO (FIRST DISTRICT)"
+    ],
+    "Iloilo 6th District Engineering Office": [
+      "ILOILO (THIRD DISTRICT)"
+    ],
+    "Iloilo 2nd District Engineering Office": [
+      "ILOILO (FOURTH DISTRICT)"
+    ],
+    "Iloilo 3rd District Engineering Office": [
+      "ILOILO (FIFTH DISTRICT)"
+    ],
+    "Iloilo 4th District Engineering Office": [
+      "ILOILO (SECOND DISTRICT)"
+    ],
+    "Iloilo City District Engineering Office": [
+      "ILOILO CITY (LONE DISTRICT)"
+    ],
+    "Bohol 1st District Engineering Office": [
+      "BOHOL (FIRST DISTRICT)"
+    ],
+    "Bohol 2nd District Engineering Office": [
+      "BOHOL (SECOND DISTRICT)"
+    ],
+    "Bohol 3rd District Engineering Office": [
+      "BOHOL (THIRD DISTRICT)"
+    ],
+    "Cebu 4th District Engineering Office": [
+      "CEBU (FOURTH DISTRICT)"
+    ],
+    "Cebu 1st District Engineering Office": [
+      "CEBU (FIRST DISTRICT)"
+    ],
+    "Cebu 3rd District Engineering Office": [
+      "CEBU (THIRD DISTRICT)"
+    ],
+    "Cebu 2nd District Engineering Office": [
+      "CEBU (SECOND DISTRICT)"
+    ],
+    "Davao Occidental District Engineering Office": [
+      "DAVAO OCCIDENTAL (LONE DISTRICT)"
+    ],
+    "Cebu 5th District Engineering Office": [
+      "CEBU (FIFTH DISTRICT)"
+    ],
+    "Dinagat Islands District Engineering Office": [
+      "DINAGAT ISLANDS (LONE DISTRICT)"
+    ],
+    "Cebu 6th District Engineering Office": [
+      "CEBU (SIXTH DISTRICT)",
+      "LAPU-LAPU CITY (OPON) (LONE DISTRICT)",
+      "MANDAUE CITY (LONE DISTRICT)"
+    ],
+    "Cebu City District Engineering Office": [
+      "CEBU CITY (FIRST DISTRICT)",
+      "CEBU CITY (SECOND DISTRICT)"
+    ],
+    "Biliran District Engineering Office": [
+      "BILIRAN (LONE DISTRICT)"
+    ],
+    "Eastern Samar District Engineering Office": [
+      "EASTERN SAMAR (LONE DISTRICT)"
+    ],
+    "Leyte 1st District Engineering Office": [
+      "LEYTE (FIRST DISTRICT)"
+    ],
+    "Leyte 2nd District Engineering Office": [
+      "LEYTE (SECOND DISTRICT)"
+    ],
+    "Leyte 3rd District Engineering Office": [
+      "LEYTE (THIRD DISTRICT)"
+    ],
+    "Leyte 4th District Engineering Office": [
+      "LEYTE (FOURTH DISTRICT)"
+    ],
+    "Leyte 5th District Engineering Office": [
+      "LEYTE (FIFTH DISTRICT)"
+    ],
+    "Northern Samar 1st District Engineering Office": [
+      "NORTHERN SAMAR (FIRST DISTRICT)"
+    ],
+    "Northern Samar 2nd District Engineering Office": [
+      "NORTHERN SAMAR (SECOND DISTRICT)"
+    ],
+    "Samar 1st District Engineering Office": [
+      "SAMAR (FIRST DISTRICT)"
+    ],
+    "Samar 2nd District Engineering Office": [
+      "SAMAR (SECOND DISTRICT)"
+    ],
+    "South Cotabato 1st District Engineering Office": [
+      "GENERAL SANTOS CITY LONE",
+      "SOUTH COTABATO (FIRST DISTRICT)"
+    ],
+    "Isabela 2nd District Engineering Office": [
+      "ISABELA (FIFTH DISTRICT)"
+    ],
+    "Tacloban City District Engineering Office": [
+      "LEYTE (FIRST DISTRICT)"
+    ],
+    "Bukidnon 1st District Engineering Office": [
+      "BUKIDNON (SECOND DISTRICT)"
+    ],
+    "Bukidnon 2nd District Engineering Office": [
+      "BUKIDNON (THIRD DISTRICT)"
+    ],
+    "Bukidnon 3rd District Engineering Office": [
+      "BUKIDNON (FIRST DISTRICT)"
+    ],
+    "Mindoro Occidental District Engineering Office": [
+      "OCCIDENTAL MINDORO (LONE DISTRICT)"
+    ],
+    "Cagayan de Oro City 1st District Engineering Office": [
+      "CAGAYAN DE ORO CITY (FIRST DISTRICT)"
+    ],
+    "Cagayan de Oro City 2nd District Engineering Office": [
+      "CAGAYAN DE ORO CITY (SECOND DISTRICT)"
+    ],
+    "Camiguin District Engineering Office": [
+      "CAMIGUIN (LONE DISTRICT)"
+    ],
+    "Lanao del Norte 1st District Engineering Office": [
+      "LANAO DEL NORTE (FIRST DISTRICT)"
+    ],
+    "Lanao del Norte 2nd District Engineering Office": [
+      "LANAO DEL NORTE (SECOND DISTRICT)"
+    ],
+    "Iligan City District Engineering Office": [
+      "ILIGAN CITY (LONE DISTRICT)"
+    ],
+    "Misamis Occidental 1st District Engineering Office": [
+      "MISAMIS OCCIDENTAL (FIRST DISTRICT)"
+    ],
+    "Misamis Occidental 2nd District Engineering Office": [
+      "MISAMIS OCCIDENTAL (SECOND DISTRICT)"
+    ],
+    "Misamis Oriental 1st District Engineering Office": [
+      "MISAMIS ORIENTAL (FIRST DISTRICT)"
+    ],
+    "Misamis Oriental 2nd District Engineering Office": [
+      "MISAMIS ORIENTAL (SECOND DISTRICT)"
+    ],
+    "Davao City 3rd District Engineering Office": [
+      "DAVAO CITY (SECOND DISTRICT)"
+    ],
+    "Mindoro Oriental District Engineering Office": [
+      "ORIENTAL MINDORO (FIRST DISTRICT)"
+    ],
+    "Davao City 2nd District Engineering Office": [
+      "DAVAO CITY (THIRD DISTRICT)"
+    ],
+    "Davao City District Engineering Office": [
+      "DAVAO CITY (FIRST DISTRICT)"
+    ],
+    "Davao del Norte District Engineering Office": [
+      "DAVAO DEL NORTE (FIRST DISTRICT)"
+    ],
+    "Davao del Norte 2nd District Engineering Office": [
+      "DAVAO DEL NORTE (SECOND DISTRICT)"
+    ],
+    "Southern Mindoro District Engineering Office": [
+      "ORIENTAL MINDORO (SECOND DISTRICT)"
+    ],
+    "Palawan 3rd District Engineering Office": [
+      "PALAWAN (THIRD DISTRICT)"
+    ],
+    "Davao Oriental 1st District Engineering Office": [
+      "DAVAO ORIENTAL (FIRST DISTRICT)"
+    ],
+    "Davao Oriental 2nd District Engineering Office": [
+      "DAVAO ORIENTAL (SECOND DISTRICT)"
+    ],
+    "Cotabato 2nd District Engineering Office": [
+      "COTABATO (SECOND DISTRICT)"
+    ],
+    "South Cotabato 2nd District Engineering Office": [
+      "SOUTH COTABATO (THIRD DISTRICT)",
+      "SOUTH COTABATO (SECOND DISTRICT)"
+    ],
+    "Cotabato 1st District Engineering Office": [
+      "COTABATO (FIRST DISTRICT)"
+    ],
+    "Cotabato City District Engineering Office": [
+      "MAGUINDANAO DEL NORTE (LONE DISTRICT)"
+    ],
+    "Sarangani District Engineering Office": [
+      "SARANGANI (LONE DISTRICT)"
+    ],
+    "Southern Leyte 1st District Engineering Office": [
+      "SOUTHERN LEYTE (FIRST DISTRICT)"
+    ],
+    "Sultan Kudarat 1st District Engineering Office": [
+      "SULTAN KUDARAT (FIRST DISTRICT)"
+    ],
+    "Sultan Kudarat 2nd District Engineering Office": [
+      "SULTAN KUDARAT (SECOND DISTRICT)"
+    ],
+    "Southern Leyte 2nd District Engineering Office": [
+      "SOUTHERN LEYTE (SECOND DISTRICT)"
+    ],
+    "Agusan del Sur 1st District Engineering Office": [
+      "AGUSAN DEL SUR (FIRST DISTRICT)"
+    ],
+    "Agusan del Sur 2nd District Engineering Office": [
+      "AGUSAN DEL SUR (SECOND DISTRICT)"
+    ],
+    "Surigao del Norte 2nd District Engineering Office": [
+      "SURIGAO DEL NORTE (SECOND DISTRICT)"
+    ],
+    "Surigao del Norte 1st District Engineering Office": [
+      "SURIGAO DEL NORTE (FIRST DISTRICT)"
+    ],
+    "Surigao del Sur 1st District Engineering Office": [
+      "SURIGAO DEL SUR (FIRST DISTRICT)"
+    ],
+    "Surigao del Sur 2nd District Engineering Office": [
+      "SURIGAO DEL SUR (SECOND DISTRICT)"
+    ]
+  },
+  "thrust_infra": {
+    "-": [
+      "-"
+    ],
+    "Asset Preservation - Construction / Upgrading / Rehabilitation of Drainage along National Roads - Primary Roads": [
+      "Roads"
+    ],
+    "Asset Preservation - Construction / Upgrading / Rehabilitation of Drainage along National Roads - Secondary Roads": [
+      "Roads"
+    ],
+    "Asset Preservation - Construction / Upgrading / Rehabilitation of Drainage along National Roads - Tertiary Roads": [
+      "Roads"
+    ],
+    "Asset Preservation - Preventive Maintenance - Primary Roads": [
+      "Roads"
+    ],
+    "Asset Preservation - Preventive Maintenance - Secondary Roads": [
+      "Roads"
+    ],
+    "Asset Preservation - Preventive Maintenance - Tertiary Roads": [
+      "Roads"
+    ],
+    "Asset Preservation - Rehabilitation/ Reconstruction of Roads with Slips, Slope Collapse, and Landslide - Primary Roads": [
+      "Roads"
+    ],
+    "Asset Preservation - Rehabilitation/ Reconstruction of Roads with Slips, Slope Collapse, and Landslide - Secondary Roads": [
+      "Roads"
+    ],
+    "Asset Preservation - Rehabilitation/ Reconstruction of Roads with Slips, Slope Collapse, and Landslide - Tertiary Roads": [
+      "Roads"
+    ],
+    "Asset Preservation - Rehabilitation/ Reconstruction/ Upgrading of Damaged Paved Roads - Primary Roads": [
+      "Roads"
+    ],
+    "Asset Preservation - Rehabilitation/ Reconstruction/ Upgrading of Damaged Paved Roads - Secondary Roads": [
+      "Roads"
+    ],
+    "Asset Preservation - Rehabilitation/ Reconstruction/ Upgrading of Damaged Paved Roads - Tertiary Roads": [
+      "Roads"
+    ],
+    "Network Development - Road Widening - Primary Roads": [
+      "Roads"
+    ],
+    "Network Development - Road Widening - Secondary Roads": [
+      "Roads"
+    ],
+    "Network Development - Road Widening - Tertiary Roads": [
+      "Roads"
+    ],
+    "Network Development - Paving of Unpaved Roads - Primary Roads": [
+      "Roads"
+    ],
+    "Network Development - Paving of Unpaved Roads - Secondary Roads": [
+      "Roads"
+    ],
+    "Network Development - Paving of Unpaved Roads - Tertiary Roads": [
+      "Roads"
+    ],
+    "Network Development - Off-Carriageway Improvement - Primary Roads": [
+      "Roads"
+    ],
+    "Network Development - Off-Carriageway Improvement - Secondary Roads": [
+      "Roads"
+    ],
+    "Network Development - Off-Carriageway Improvement - Tertiary Roads": [
+      "Roads"
+    ],
+    "Network Development - Construction of By-Pass and Diversion Roads": [
+      "Roads",
+      "Bridges"
+    ],
+    "Network Development - Construction of Flyovers/ Interchanges/ Underpasses/ Long Span Bridges": [
+      "Bridges",
+      "Roads"
+    ],
+    "Network Development - Construction of Missing Links/ New Roads": [
+      "Roads",
+      "Bridges"
+    ],
+    "Bridge - Construction of New Bridges": [
+      "Bridges"
+    ],
+    "Bridge - Rehabilitation/ Major Repair of Permanent Bridges": [
+      "Bridges"
+    ],
+    "Bridge - Replacement of Bridges (Temporary to Permanent)": [
+      "Bridges"
+    ],
+    "Bridge - Replacement of Permanent Weak Bridges": [
+      "Bridges"
+    ],
+    "Bridge - Retrofitting/ Strengthening of Permanent Bridges": [
+      "Bridges"
+    ],
+    "Bridge - Widening of Permanent Bridges": [
+      "Bridges"
+    ],
+    "Buildings and Other Structures - Multipurpose / Facilities - National Building Program": [
+      "Multi Purpose Buildings",
+      "Other Buildings"
+    ],
+    "Construction/ Rehabilitation of Flood Mitigation Facilities within Major River Basins and Principal Rivers": [
+      "Flood Control Structures",
+      "Waterway"
+    ],
+    "Convergence and Special Support Program - Construction/ Rehabilitation of Water Supply/ Septage and Sewerage/ Rainwater Collector System - Rain Water Collectors": [
+      "Rain Water Collector"
+    ],
+    "Convergence and Special Support Program - Construction/ Rehabilitation of Water Supply/ Septage and Sewerage/ Rainwater Collector System - Septage and Sewerage": [
+      "Septage and Sewerage Plants"
+    ],
+    "Convergence and Special Support Program - Construction/ Rehabilitation of Water Supply/ Septage and Sewerage/ Rainwater Collector System - Water Supply": [
+      "Water Supply Systems"
+    ],
+    "Convergence and Special Support Program - Construction/ Improvement of Access Roads leading to Airports (Kalsada Tungo sa Paliparan, Riles at Daungan Program - KATUPARAN)": [
+      "Roads",
+      "Bridges"
+    ],
+    "Convergence and Special Support Program - Construction/ Improvement of Access Roads leading to Declared Tourism Destinations (Tourism Road Infrastructure Program - TRIP)": [
+      "Roads",
+      "Bridges"
+    ],
+    "Convergence and Special Support Program - Construction/ Improvement of Access Roads leading to Seaports (Kalsada Tungo sa Paliparan, Riles at Daungan Program - KATUPARAN)": [
+      "Roads",
+      "Bridges"
+    ],
+    "Convergence and Special Support Program - Construction/ Improvement of Access Roads leading to Trades, Industries and Economic Zones (Roads Leveraging Linkages for Industry and Trade Infrastructure Program - ROLL-IT)": [
+      "Roads",
+      "Bridges"
+    ],
+    "Convergence and Special Support Program - Construction/Improvement of Various Infrastructures in Support of National Security (Tatag ng Imprastraktura para sa Kapayapaan at Seguridad Program - TIKAS)": [
+      "Other Buildings"
+    ],
+    "Convergence and Special Support Program - Improvement of Capacity of Provincial Bridges along Provincial Roads (Provincial Bridges for Economic Development - PROBRED)": [
+      "Roads",
+      "Bridges"
+    ],
+    "Convergence and Special Support Program - Construction/ Improvement of Access Roads leading to Railway Stations (Kalsada Tungo sa Paliparan, Riles at Daungan Program - KATUPARAN)": [
+      "Roads"
+    ],
+    "Construction/ Maintenance of Flood Mitigation Structures and Drainage Systems": [
+      "Flood Control Structures"
+    ],
+    "Sustainable Infrastructure Projects Alleviating Gaps (SIPAG) - Access Roads and/or Bridges from the National Road/s leading to Major/ Strategic Public Buildings/ Facilities": [
+      "Roads",
+      "Bridges"
+    ],
+    "Sustainable Infrastructure Projects Alleviating Gaps (SIPAG) - Access Roads and/or Bridges from the National Roads connecting to Indigenous People (IP) Communities": [
+      "Roads",
+      "Bridges"
+    ],
+    "Sustainable Infrastructure Projects Alleviating Gaps (SIPAG) - Interjurisdictional Roads and/or Bridges (or, roads that traverse multiple LGU jurisdictions)": [
+      "Roads",
+      "Bridges"
+    ],
+    "Sustainable Infrastructure Projects Alleviating Gaps (SIPAG) - Coastal Roads/Causeway for environmental protection/conservation": [
+      "Roads"
+    ],
+    "Sustainable Infrastructure Projects Alleviating Gaps (SIPAG) - Flood Mitigation Structures protecting Public Infrastructures/Facilities": [
+      "Flood Control Structures",
+      "Waterway"
+    ],
+    "Sustainable Infrastructure Projects Alleviating Gaps (SIPAG) - Multi-Purpose Buildings/ Facilities to support Social Services": [
+      "Multi Purpose Buildings"
+    ],
+    "Basic Infrastructure Program (BIP) - Access Roads and/or Bridges from the National Road/s leading to Major/ Strategic Public Buildings/ Facilities": [
+      "Roads",
+      "Bridges"
+    ],
+    "Basic Infrastructure Program (BIP) - Access Roads and/or Bridges from the National Roads connecting to Indigenous People (IP) Communities": [
+      "Roads",
+      "Bridges"
+    ],
+    "Basic Infrastructure Program (BIP) - Interjurisdictional Roads and/or Bridges (or, roads that traverse multiple LGU jurisdictions)": [
+      "Roads",
+      "Bridges"
+    ],
+    "Basic Infrastructure Program (BIP) - Coastal Roads/Causeway for environmental protection/conservation": [
+      "Roads"
+    ],
+    "Basic Infrastructure Program (BIP) - Flood Mitigation Structures protecting Public Infrastructures/Facilities": [
+      "Flood Control Structures",
+      "Waterway"
+    ],
+    "Basic Infrastructure Program (BIP) - Multi-Purpose Buildings/ Facilities to support Social Services": [
+      "Multi Purpose Buildings"
+    ],
+    "Basic Infrastructure Program (BIP) - Major/Strategic Public Buildings/Facilities Structural and Resilience Program": [
+      "Multi Purpose Buildings",
+      "School Buildings"
+    ],
+    "Basic Infrastructure Program (BIP) - Evacuation Centers/ Quarantine Facilities/ Public Health Facilities": [
+      "Multi Purpose Buildings",
+      "Hospitals"
+    ],
+    "Sustainable Infrastructure Projects Alleviating Gaps (SIPAG) - Evacuation Centers/ Quarantine Facilities/ Public Health Facilities": [
+      "Multi Purpose Buildings"
+    ],
+    "Sustainable Infrastructure Projects Alleviating Gaps (SIPAG) - Major/Strategic Public Buildings/Facilities Structural and Resilience Program": [
+      "Multi Purpose Buildings"
+    ],
+    "Basic Infrastructure Program (BIP) - Public Water Supply System (Level II or III)": [
+      "Water Supply Systems"
+    ],
+    "Special Road Fund - Motor Vehicle Users Charge (MVUC) as per R.A. 11239": [
+      "Roads"
+    ]
+  },
+  "infra_to_tow": {
+    "-": [
+      "-"
+    ],
+    "Accessibility Facility": [
+      "Construction of Accessibility Facility",
+      "Rehabilitation/Major Repair of Accessibility Facility"
+    ],
+    "Bridges": [
+      "Construction of Bailey Bridge",
+      "Construction of Concrete Bridge",
+      "Construction of Bridge Approach",
+      "Construction of Flyover",
+      "Construction of Interchange",
+      "Construction of Steel Bridge",
+      "Construction of Viaduct",
+      "Rehabilitation / Major Repair of Bridge",
+      "Replacement of Bridge",
+      "Retrofitting / Strengthening of Bridge",
+      "Widening of Bridge",
+      "Construction of Parallel Bridge"
+    ],
+    "Flood Control Structures": [
+      "Construction of Cutoff Channel",
+      "Construction of Dike",
+      "Construction of Drainage Structure",
+      "Construction of Flood Gate / Sluice Gate",
+      "Construction of Flood Mitigation Facility",
+      "Construction of Flood Mitigation Structure",
+      "Construction of Groundsill",
+      "Construction of Retarding Basin",
+      "Construction of Revetment",
+      "Construction of Sabo Dam",
+      "Construction of Slope Protection Structure",
+      "Construction of Spur Dike",
+      "Repair/Maintenance of Flood Control Structures",
+      "Construction of Waterway",
+      "Embankment",
+      "Rehabilitation / Major Repair of Drainage Structure",
+      "Rehabilitation / Major Repair of Flood Control Structure",
+      "Rehabilitation / Major Repair of Flood Mitigation Facility",
+      "Rehabilitation / Major Repair of Slope Protection Structure",
+      "Upgrading of Drainage Structure"
+    ],
+    "Hospitals": [
+      "Construction of Barangay Health Station",
+      "Construction of Hospital",
+      "Rehabilitation / Major Repair of Rural Health Unit",
+      "Rehabilitation / Major Repair of Barangay Health Station",
+      "Construction of Rural Health Unit",
+      "Rehabilitation / Major Repair of Hospital"
+    ],
+    "Multi Purpose Buildings": [
+      "Construction of Multi Purpose Building",
+      "Construction of Evacuation Center",
+      "Construction of Other Building",
+      "Construction of Other Facilities",
+      "Rehabilitation / Major Repair of Multi Purpose Building",
+      "Rehabilitation / Major Repair of Facilities",
+      "Rehabilitation / Major Repair of Evacuation Center",
+      "Retrofitting / Strengthening of Building",
+      "Rehabilitation / Major Repair of Other Building"
+    ],
+    "Other Buildings": [
+      "Construction of Other Building",
+      "Construction of Other Facilities",
+      "Repair/Rehabilitation of Other Buildings"
+    ],
+    "Rain Water Collector": [
+      "Construction of Rain Water Collector"
+    ],
+    "Roads": [
+      "Construction of Asphalt Road",
+      "Construction of Concrete Road",
+      "Construction of Drainage Structure along Road",
+      "Construction of Gravel Road",
+      "Construction of Road Slope Protection Structure",
+      "Construction of Underpass",
+      "Construction of Tunnel",
+      "Off-Carriageway Improvement: Construction of Bike Lanes",
+      "Off-Carriageway Improvement: Construction of Laybys",
+      "Off-Carriageway Improvement: Construction of Loading and Unloading Bays",
+      "Off-Carriageway Improvement: Construction of Turnouts",
+      "Off-Carriageway Improvement: Flaring of Intersections / Improvement of Intersections",
+      "Off-Carriageway Improvement: Construction of Traffic Island",
+      "Off-Carriageway Improvement: Paving of Shoulders",
+      "Off-Carriageway Improvement: Construction of Sidewalk",
+      "Off-Carriageway Improvement: Construction of Median/Center Island",
+      "Preventive Maintenance of Road: Asphalt Overlay",
+      "Preventive Maintenance of Road: Concrete Reblocking",
+      "Rehabilitation / Major Repair of Drainage Structure along Road",
+      "Reconstruction to Concrete Pavement",
+      "Reconstruction: Raising of Grade",
+      "Rehabilitation of Paved Road",
+      "Rehabilitation / Major Repair of Road Slope Protection Structure",
+      "Road Safety: Pavement Markings",
+      "Road Safety: Guardrails",
+      "Road Safety: Road Signs",
+      "Road Safety: Pavement of Markings",
+      "Road Safety: Pedestrian Overpass",
+      "Road Safety: Roadway Lighting",
+      "Road Safety: Traffic Signals",
+      "Road Safety: Solar / Reflectorized Pavement Studs",
+      "Upgrading of Drainage Structure along Road",
+      "Paving of Unpaved Roads",
+      "Additional Lane Width",
+      "Road Widening"
+    ],
+    "ROW": [
+      "ROW Acquisition"
+    ],
+    "School Buildings": [
+      "Construction of 1-Storey Classrooms",
+      "Construction of 2-Storey Classrooms",
+      "Construction of 3-Storey Classrooms",
+      "Construction of 4-Storey Classrooms",
+      "Construction of Classrooms",
+      "Construction of School Buildings",
+      "Rehabilitation / Major Repair of 1-Storey Classrooms",
+      "Rehabilitation / Major Repair of 2-Storey Classrooms",
+      "Rehabilitation / Major Repair of School  Buildings"
+    ],
+    "Septage and Sewerage Plants": [
+      "Construction of Septage / Sewerage Plants",
+      "Rehabilitation / Major Repair of Septage / Sewerage Plants"
+    ],
+    "Water Supply Systems": [
+      "Construction of Water Supply Systems",
+      "Rehabilitation of Water Supply Systems"
+    ],
+    "Waterway": [
+      "Channelization",
+      "Dredging / Desilting"
+    ]
+  },
+  "barangays": {
+    "ANAHAWAN": [
+      "Amagusan",
+      "Calintaan",
+      "Canlabian",
+      "Capacuhan",
+      "Cogon",
+      "Kagingkingan",
+      "Lewing",
+      "Lo-ok",
+      "Mahalo",
+      "Mainit",
+      "Manigawong",
+      "Poblacion",
+      "San Vicente",
+      "Tagup-on"
+    ],
+    "BONTOC": [
+      "Anahao",
+      "Banahao",
+      "Baugo",
+      "Beniton",
+      "Buenavista",
+      "Bunga",
+      "Casao",
+      "Catmon",
+      "Catoogan",
+      "Cawayanan",
+      "Dao",
+      "Divisoria",
+      "Esperanza",
+      "Guinsangaan",
+      "Hibagwan",
+      "Hilaan",
+      "Himakilo",
+      "Hitawos",
+      "Lanao",
+      "Lawgawan",
+      "Mahayahay",
+      "Malbago",
+      "Mauylab",
+      "Olisihan",
+      "Paku",
+      "Pamahawan",
+      "Pamigsian",
+      "Pangi",
+      "Poblacion",
+      "Pong-on",
+      "Sampongon",
+      "San Ramon",
+      "San Vicente",
+      "Santa Cruz",
+      "Santo Ni\u00f1o",
+      "Taa",
+      "Talisay",
+      "Taytagan",
+      "Tuburan",
+      "Union"
+    ],
+    "CITY OF MAASIN (Capital)": [
+      "Abgao",
+      "Acasia",
+      "Asuncion",
+      "Bactul I",
+      "Bactul II",
+      "Badiang",
+      "Bagtican",
+      "Basak",
+      "Bato I",
+      "Bato II",
+      "Batuan",
+      "Baugo",
+      "Bilibol",
+      "Bogo",
+      "Cabadiangan",
+      "Cabulihan",
+      "Cagnituan",
+      "Cambooc",
+      "Cansirong",
+      "Canturing",
+      "Canyuom",
+      "Combado",
+      "Dongon",
+      "Gawisan",
+      "Guadalupe",
+      "Hanginan",
+      "Hantag",
+      "Hinapu Daku",
+      "Hinapu Gamay",
+      "Ibarra",
+      "Isagani",
+      "Laboon",
+      "Lanao",
+      "Lib-og",
+      "Libertad",
+      "Libhu",
+      "Lonoy",
+      "Lunas",
+      "Mahayahay",
+      "Malapoc Norte",
+      "Malapoc Sur",
+      "Mambajao",
+      "Manhilo",
+      "Mantahan",
+      "Maria Clara",
+      "Matin-ao",
+      "Nasaug",
+      "Nati",
+      "Nonok Norte",
+      "Nonok Sur",
+      "Panan-awan",
+      "Pansaan",
+      "Pasay",
+      "Pinascohan",
+      "Rizal",
+      "San Agustin",
+      "San Isidro",
+      "San Jose",
+      "San Rafael",
+      "Santa Cruz",
+      "Santa Rosa",
+      "Santo Ni\u00f1o",
+      "Santo Rosario",
+      "Soro-soro",
+      "Tagnipa",
+      "Tam-is",
+      "Tawid",
+      "Tigbawan",
+      "Tomoy-tomoy",
+      "Tunga-tunga"
+    ],
+    "HINUNANGAN": [
+      "Ambacon",
+      "Badiangon",
+      "Bangcas A",
+      "Bangcas B",
+      "Biasong",
+      "Bugho",
+      "Calag-itan",
+      "Calayugan",
+      "Calinao",
+      "Canipaan",
+      "Catublian",
+      "Ilaya",
+      "Ingan",
+      "Labrador",
+      "Libas",
+      "Lumbog",
+      "Manalog",
+      "Manlico",
+      "Matin-ao",
+      "Nava",
+      "Nueva Esperanza",
+      "Otama",
+      "Palongpong",
+      "Panalaron",
+      "Patong",
+      "Poblacion",
+      "Pondol",
+      "Salog",
+      "Salvacion",
+      "San Pablo Island",
+      "San Pedro Island",
+      "Santo Ni\u00f1o I",
+      "Santo Ni\u00f1o II",
+      "Tahusan",
+      "Talisay",
+      "Tawog",
+      "Toptop",
+      "Tuburan",
+      "Union",
+      "Upper Bantawon"
+    ],
+    "HINUNDAYAN": [
+      "Amaga",
+      "Ambao",
+      "An-an",
+      "Baculod",
+      "Biasong",
+      "Bugho",
+      "Cabulisan",
+      "Cat-iwing",
+      "District I",
+      "District II",
+      "District III",
+      "Hubasan",
+      "Lungsodaan",
+      "Navalita",
+      "Plaridel",
+      "Sabang",
+      "Sagbok"
+    ],
+    "LIBAGON": [
+      "Biasong",
+      "Bogasong",
+      "Cawayan",
+      "Gakat",
+      "Jubas",
+      "Magkasag",
+      "Mayuga",
+      "Nahaong",
+      "Nahulid",
+      "Otikon",
+      "Pangi",
+      "Punta",
+      "Talisay",
+      "Tigbao"
+    ],
+    "LILOAN": [
+      "Amaga",
+      "Anilao",
+      "Bahay",
+      "Cagbungalon",
+      "Calian",
+      "Caligangan",
+      "Candayuman",
+      "Catig",
+      "Estela",
+      "Fatima",
+      "Gud-an",
+      "Guintoylan",
+      "Himayangan",
+      "Ilag",
+      "Magaupas",
+      "Malangsa",
+      "Molopolo",
+      "Pandan",
+      "Poblacion",
+      "Pres. Quezon",
+      "President Roxas",
+      "San Isidro",
+      "San Roque",
+      "Tabugon"
+    ],
+    "LIMASAWA": [
+      "Cabulihan",
+      "Lugsongan",
+      "Magallanes",
+      "San Agustin",
+      "San Bernardo",
+      "Triana"
+    ],
+    "MACROHON": [
+      "Aguinaldo",
+      "Amparo",
+      "Asuncion",
+      "Bagong Silang",
+      "Buscayan",
+      "Cambaro",
+      "Canlusay",
+      "Danao",
+      "Flordeliz",
+      "Guadalupe",
+      "Ichon",
+      "Ilihan",
+      "Laray",
+      "Lower Villa Jacinta",
+      "Mabini",
+      "Mohon",
+      "Molopolo",
+      "Rizal",
+      "Salvador",
+      "San Isidro",
+      "San Joaquin",
+      "San Roque",
+      "San Vicente",
+      "San Vicente Poblacion",
+      "Santa Cruz",
+      "Santo Ni\u00f1o",
+      "Santo Rosario",
+      "Sindangan",
+      "Upper Ichon",
+      "Upper Villa Jacinta"
+    ],
+    "MALITBOG": [
+      "Abgao",
+      "Asuncion",
+      "Aurora",
+      "Benit",
+      "Caaga",
+      "Cabul-anonan",
+      "Cadaruhan",
+      "Cadaruhan Sur",
+      "Candatag",
+      "Cantamuac",
+      "Caraatan",
+      "Concepcion",
+      "Fatima",
+      "Guinabonan",
+      "Iba",
+      "Juangon",
+      "Kauswagan",
+      "Lambonao",
+      "Mahayahay",
+      "Maningning",
+      "Maujo",
+      "New Katipunan",
+      "Pancil",
+      "Pasil",
+      "Sabang",
+      "San Antonio",
+      "San Isidro",
+      "San Jose",
+      "San Roque",
+      "San Vicente",
+      "Sangahon",
+      "Santa Cruz",
+      "Santo Ni\u00f1o",
+      "Taliwa",
+      "Tigbawan I",
+      "Tigbawan II",
+      "Timba"
+    ],
+    "PADRE BURGOS": [
+      "Buenavista",
+      "Bunga",
+      "Cantutang",
+      "Dinahugan",
+      "Laca",
+      "Lungsodaan",
+      "Poblacion",
+      "San Juan",
+      "Santa Sofia",
+      "Santo Rosario",
+      "Tangkaan"
+    ],
+    "PINTUYAN": [
+      "Badiang",
+      "Balongbalong",
+      "Buenavista",
+      "Bulawan",
+      "Canlawis",
+      "Catbawan",
+      "Caubang",
+      "Cogon",
+      "Dan-an",
+      "Lobo",
+      "Mainit",
+      "Manglit",
+      "Nueva Estrella Norte",
+      "Nueva Estrella Sur",
+      "Poblacion Ibabao",
+      "Poblacion Ubos",
+      "Pociano D. Equipilag",
+      "Ponod",
+      "San Roque",
+      "Santa Cruz",
+      "Son-ok I",
+      "Son-ok II",
+      "Tautag"
+    ],
+    "SAINT BERNARD": [
+      "Atuyan",
+      "Ayahag",
+      "Bantawon",
+      "Bolodbolod",
+      "Cabagawan",
+      "Carnaga",
+      "Catmon",
+      "Guinsaugon",
+      "Himatagon",
+      "Himbangan",
+      "Himos-onan",
+      "Hinabian",
+      "Hindag-an",
+      "Kauswagan",
+      "Libas",
+      "Lipanto",
+      "Magatas",
+      "Magbagacay",
+      "Mahayag",
+      "Mahayahay",
+      "Malibago",
+      "Malinao",
+      "Nueva Esperanza",
+      "Panian",
+      "San Isidro",
+      "Santa Cruz",
+      "Sug-angon",
+      "Tabontabon",
+      "Tambis I",
+      "Tambis II"
+    ],
+    "SAN FRANCISCO": [
+      "Anislagon",
+      "Bongawisan",
+      "Bongbong",
+      "Cahayag",
+      "Causi",
+      "Central",
+      "Dakit",
+      "Gabi",
+      "Habay",
+      "Malico",
+      "Marayag",
+      "Napantao",
+      "Pasanon",
+      "Pinamudlan",
+      "Punta",
+      "Santa Cruz",
+      "Santa Paz Norte",
+      "Santa Paz Sur",
+      "Sudmon",
+      "Tinaan",
+      "Tuno",
+      "Ubos"
+    ],
+    "SAN JUAN (CABALIAN)": [
+      "Agay-ay",
+      "Basak",
+      "Bobon A",
+      "Bobon B",
+      "Dayanog",
+      "Garrido",
+      "Minoyho",
+      "Osao",
+      "Pong-oy",
+      "San Jose",
+      "San Roque",
+      "San Vicente",
+      "Santa Cruz",
+      "Santa Filomena",
+      "Santo Ni\u00f1o",
+      "Somoje",
+      "Sua",
+      "Timba"
+    ],
+    "SAN RICARDO": [
+      "Benit",
+      "Bitoon",
+      "Cabutan",
+      "Camang",
+      "Esperanza",
+      "Esperanza Dos",
+      "Inolinan",
+      "Kinachawa",
+      "Looc",
+      "Pinut-an",
+      "Poblacion",
+      "San Antonio",
+      "San Ramon",
+      "Saub",
+      "Timba"
+    ],
+    "SILAGO": [
+      "Balagawan",
+      "Catmon",
+      "Hingatungan",
+      "Imelda",
+      "Katipunan",
+      "Laguma",
+      "Mercedes",
+      "Pob. District I",
+      "Pob. District II",
+      "Puntana",
+      "Salvacion",
+      "Sap-ang",
+      "Sudmon",
+      "Tuba-on",
+      "Tubod"
+    ],
+    "SOGOD": [
+      "Benit",
+      "Buac Daku",
+      "Buac Gamay",
+      "Cabadbaran",
+      "Concepcion",
+      "Consolacion",
+      "Dagsa",
+      "Hibod-hibod",
+      "Hindangan",
+      "Hipantag",
+      "Javier",
+      "Kahupian",
+      "Kanangkaan",
+      "Kauswagan",
+      "La Purisima Concepcion",
+      "Libas",
+      "Lum-an",
+      "Mabicay",
+      "Mac",
+      "Magatas",
+      "Mahayahay",
+      "Malinao",
+      "Maria Plana",
+      "Milagroso",
+      "Olisihan",
+      "Pancho Villa",
+      "Pandan",
+      "Rizal",
+      "Salvacion",
+      "San Francisco Mabuhay",
+      "San Isidro",
+      "San Jose",
+      "San Juan",
+      "San Miguel",
+      "San Pedro",
+      "San Roque",
+      "San Vicente",
+      "Santa Maria",
+      "Suba",
+      "Tampoong",
+      "Zone I",
+      "Zone II",
+      "Zone III",
+      "Zone IV",
+      "Zone V"
+    ],
+    "TOMAS OPPUS": [
+      "Anahawan",
+      "Banday",
+      "Biasong",
+      "Bogo",
+      "Cabascan",
+      "Camansi",
+      "Cambite",
+      "Canlupao",
+      "Carnaga",
+      "Cawayan",
+      "Higosoan",
+      "Hinagtikan",
+      "Hinapo",
+      "Hugpa",
+      "Iniguihan Pob.",
+      "Looc",
+      "Luan",
+      "Maanyag",
+      "Mag-ata",
+      "Mapgap",
+      "Maslog",
+      "Punong",
+      "Rizal",
+      "San Agustin",
+      "San Antonio",
+      "San Isidro",
+      "San Miguel",
+      "San Roque",
+      "Tinago"
+    ]
+  }
 }

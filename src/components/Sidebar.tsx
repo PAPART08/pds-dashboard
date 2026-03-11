@@ -62,24 +62,6 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
       label: 'Regional Budget Proposal',
       items: [
         {
-          name: 'My Tasks',
-          href: '/dashboard/user-task',
-          icon: 'task',
-          roles: ['Unit Member', 'Planning Unit']
-        },
-        {
-          name: 'Unit Head Tasks',
-          href: '/dashboard/unit-head-task',
-          icon: 'assignment_ind',
-          roles: ['Unit Head']
-        },
-        {
-          name: 'RBP Progress Overview',
-          href: '/dashboard/rbp-progress',
-          icon: 'donut_large',
-          roles: ['Section Chief', 'Planning Unit']
-        },
-        {
           name: 'Project Detail Entry',
           href: '/dashboard/rbp',
           icon: 'inventory_2',
@@ -181,8 +163,20 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
     item.roles.includes(userRole as any)
   ) : [];
 
+  const isMostSpecificMatch = (href: string) => {
+    if (pathname === href) return true;
+    if (href !== '/dashboard' && pathname.startsWith(`${href}/`)) {
+      // Check if there's a longer, more specific matching href in our nav items
+      const hasLongerMatch = filteredItems.some(
+        (i) => i.href !== href && i.href.length > href.length && (pathname === i.href || pathname.startsWith(`${i.href}/`))
+      );
+      return !hasLongerMatch;
+    }
+    return false;
+  };
+
   const renderLink = (item: { name: string; href: string; icon: string }) => {
-    const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+    const isActive = isMostSpecificMatch(item.href);
     const activeColor = activeStage === 'RBP' ? 'var(--dpwh-blue)' : activeStage === 'GAA' ? 'var(--dpwh-orange)' : '#4b5563';
 
     const itemStyle = isActive ? { backgroundColor: activeColor, borderColor: 'rgba(255,255,255,0.2)' } : {};
@@ -277,15 +271,17 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           </Link>
         </div>
 
-        <div className={styles.navSection}>
-          {!isCollapsed && (
-            <div className={styles.navSectionHeader}>
-              <div className={styles.navDot} style={{ backgroundColor: navConfig[activeStage].color }}></div>
-              <p className={styles.navSectionLabel}>{navConfig[activeStage].label}</p>
-            </div>
-          )}
-          {filteredItems.map(renderLink)}
-        </div>
+        {filteredItems.length > 0 && (
+          <div className={styles.navSection}>
+            {!isCollapsed && (
+              <div className={styles.navSectionHeader}>
+                <div className={styles.navDot} style={{ backgroundColor: navConfig[activeStage].color }}></div>
+                <p className={styles.navSectionLabel}>{navConfig[activeStage].label}</p>
+              </div>
+            )}
+            {filteredItems.map(renderLink)}
+          </div>
+        )}
 
         {filteredAdminItems.length > 0 && (
           <div className={styles.navSection}>

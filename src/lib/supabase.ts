@@ -8,7 +8,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Create a single supabase client for interacting with your database
+const isBrowser = typeof window !== 'undefined';
+
 export const supabase = createClient(
     supabaseUrl || 'https://placeholder.supabase.co',
-    supabaseAnonKey || 'placeholder'
+    supabaseAnonKey || 'placeholder',
+    {
+        auth: {
+            persistSession: isBrowser,
+            autoRefreshToken: isBrowser,
+            detectSessionInUrl: isBrowser
+        }
+    }
 );

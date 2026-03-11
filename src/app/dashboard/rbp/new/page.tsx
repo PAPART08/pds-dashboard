@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import codes from '@/lib/codes.json';
 import { exportToExcel } from '@/lib/excel-export';
+import infraCodes from '@/lib/infra_codes.json';
 import { THRUST_TO_SUB_PROGRAM } from '@/lib/thrust-mapping';
 import styles from './page.module.css';
 
@@ -18,6 +19,7 @@ export default function NewProjectEntry() {
     deo: '',
     ld: '',
     municipality: '',
+    barangay: '',
     ou: '',
     io: '',
     isRegionwide: false,
@@ -52,14 +54,38 @@ export default function NewProjectEntry() {
   const regions = useMemo(() => codes.regions || [], []);
   const deos = useMemo(() => formData.region ? (codes.deos as any)[formData.region] || [] : [], [formData.region]);
   const municipalities = useMemo(() => formData.deo ? (codes.municipalities as any)[formData.deo] || [] : [], [formData.deo]);
+  const barangays = useMemo(() => {
+    if (!formData.municipality) return [];
+    const rawBrgys = (codes as any).barangays || {};
+
+    // Direct match (if ever it exactly matches)
+    if (rawBrgys[formData.municipality]) return rawBrgys[formData.municipality];
+
+    // Fallback fuzzy matching for RIF formats (e.g. "CITY OF MAASIN (CAPITAL) (SOUTHERN LEYTE)")
+    const normalized = formData.municipality.toLowerCase();
+
+    // Specific hardcoded matches for common variations
+    if (normalized.includes('maasin')) return rawBrgys['CITY OF MAASIN (Capital)'] || rawBrgys['CITY OF MAASIN'] || [];
+
+    for (const key of Object.keys(rawBrgys)) {
+      // Extract base name ignoring parentheses: "CITY OF MAASIN (Capital)" -> "city of maasin"
+      const baseKey = key.split('(')[0].trim().toLowerCase();
+      if (normalized.includes(baseKey) && baseKey.length > 3) {
+        return rawBrgys[key];
+      }
+    }
+
+    return [];
+  }, [formData.municipality]);
 
   const offices = useMemo(() => (codes as any).offices || [], []);
-  const implementingOffices = useMemo(() => (codes as any).implementing_offices || [], []);
+  const implementingOffices = useMemo(() => formData.region ? (codes.deos as any)[formData.region] || [] : [], [formData.region]);
+  const legislativeDistricts = useMemo(() => formData.deo ? ((codes as any).deo_to_ld?.[formData.deo] || []) : [], [formData.deo]);
   const projectCategories = useMemo(() => (codes as any).project_categories || [], []);
   const trusts = useMemo(() => formData.category ? (codes.trusts_mapping as any)[formData.category] || [] : [], [formData.category]);
   const fiscalYears = useMemo(() => (codes as any).fiscal_years || [], []);
 
-  const infraTypes = useMemo(() => codes.infra_types || [], []);
+  const infraTypesForThrust = useMemo(() => formData.thrust ? ((codes as any).thrust_infra?.[formData.thrust] || []) : [], [formData.thrust]);
   const componentTypes = useMemo(() => (codes as any).component_types || [], []);
 
   // Check for Edit Mode
@@ -109,6 +135,7 @@ export default function NewProjectEntry() {
         deo: project.district_engineering_office || '',
         ld: project.legislative_district || '',
         municipality: project.city_municipality || '',
+        barangay: project.barangay || '',
         ou: project.operating_unit || '',
         io: project.implementing_office || '',
         isRegionwide: project.region_wide || false,
@@ -227,6 +254,7 @@ export default function NewProjectEntry() {
         funding_agreement_name: formData.fundingAgreementName,
         implementing_office: formData.io,
         city_municipality: formData.municipality,
+        barangay: formData.barangay,
         district_engineering_office: formData.deo,
         legislative_district: formData.ld,
         operating_unit: formData.ou,
@@ -292,8 +320,8 @@ export default function NewProjectEntry() {
           project_id: projectId,
           comp_id_ref: s.compId,
           infra_item: s.infraId,
-          start_limit: s.startLimit,
-          end_limit: s.endLimit,
+          start_station_limit: s.startLimit,
+          end_station_limit: s.endLimit,
           start_chainage: s.startChainage,
           end_chainage: s.endChainage,
           start_x: s.startX,
@@ -318,7 +346,7 @@ export default function NewProjectEntry() {
 
       alert('Project saved successfully to Supabase!');
     } catch (err: any) {
-      console.error('Save failed:', err);
+      console.error('Save failed:', err, JSON.stringify(err));
 
       // Secondary fallback on error
       if (err.message?.includes('failed to fetch') || err.name === 'TypeError') {
@@ -346,9 +374,13 @@ export default function NewProjectEntry() {
     setFormData(prev => {
       const next = { ...prev, [field]: value };
       // Reset dependent fields
-      if (field === 'region') next.deo = '';
-      if (field === 'deo') next.municipality = '';
+      if (field === 'region') { next.deo = ''; next.io = ''; }
+      if (field === 'deo') { next.municipality = ''; next.ld = ''; }
+      if (field === 'municipality') next.barangay = '';
       if (field === 'category') next.thrust = '';
+      if (field === 'thrust') {
+        // We probably shouldn't just reset components, but component infra type relies on it
+      }
       return next;
     });
   };
@@ -415,6 +447,109 @@ export default function NewProjectEntry() {
 
   const totalCost = components.reduce((sum, comp) => sum + comp.cost, 0);
 
+  const getInfraNameOptions = (infraType: string) => {
+    if (!infraType) return [];
+    
+    // determine key: prefer DEO if exists, else Region
+    const geoKey = formData.deo ? formData.deo : formData.region;
+    const lookupField = formData.deo ? 'deo' : (formData.region ? 'region' : null);
+    
+    if (!geoKey || !lookupField) return [];
+
+    const getList = (prefix: string) => {
+      const db = (infraCodes as any)[`${lookupField}_to_${prefix}`];
+      return db ? (db[geoKey] || []) : [];
+    };
+
+    if (infraType === 'Roads') {
+      return [
+        { label: 'National Roads', options: getList('national_roads') },
+        { label: 'Future Roads', options: getList('future_roads') }
+      ];
+    } else if (infraType === 'Bridges') {
+      return [
+        { label: 'National Bridges', options: getList('national_bridges') },
+        { label: 'Future Bridges', options: getList('future_bridges') }
+      ];
+    }
+
+    // Default or other infra types
+    return [];
+  };
+
+  const getInfraIdOptions = (compId: string) => {
+    if (!compId) return [];
+    const comp = components.find(c => c.id === compId);
+    if (!comp || !comp.infraName) return [];
+    
+    const db = infraCodes as any;
+    if (comp.infraType === 'Roads') {
+      return [
+        ...(db.road_name_to_sections?.[comp.infraName] || []),
+        ...(db.future_road_to_sections?.[comp.infraName] || [])
+      ];
+    } else if (comp.infraType === 'Bridges') {
+      return [
+        ...(db.bridge_name_to_ids?.[comp.infraName] || []),
+        ...(db.future_bridge_to_ids?.[comp.infraName] || [])
+      ];
+    }
+    return [];
+  };
+
+  const generateDescription = () => {
+    const grouped = specificDetails.reduce((acc, det) => {
+      if (!det.compId) return acc;
+      const comp = components.find(c => c.id === det.compId);
+      if (!comp || !comp.infraName) return acc;
+
+      const key = `${comp.id}_${comp.infraName}`;
+      if (!acc[key]) {
+        acc[key] = {
+          infraName: comp.infraName,
+          infraType: comp.infraType,
+          details: []
+        };
+      }
+      acc[key].details.push(det);
+      return acc;
+    }, {} as any);
+
+    const descParts: string[] = [];
+    for (const key of Object.keys(grouped)) {
+      const g = grouped[key];
+      if (g.infraType === 'Roads') {
+        const chains = g.details
+          .filter((d: any) => d.startLimit || d.endLimit)
+          .map((d: any) => `${d.startLimit || '?'} - ${d.endLimit || '?'}`)
+          .join(', ');
+        if (chains) {
+          descParts.push(`${g.infraName} - ${chains}`);
+        } else {
+          descParts.push(g.infraName);
+        }
+      } else if (g.infraType === 'Bridges') {
+        const d0 = g.details[0]; // Take first bridge detail
+        if (d0) {
+           const infraIdText = d0.infraId ? `(${d0.infraId})` : '';
+           const scopeText = d0.scope ? `along ${d0.scope}` : '';
+           descParts.push(`${g.infraName} ${infraIdText} ${scopeText}`.trim().replace(/\s+/g, ' '));
+        } else {
+           descParts.push(g.infraName);
+        }
+      } else {
+        descParts.push(g.infraName);
+      }
+    }
+
+    if (descParts.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        projectDescription: descParts.join('; ')
+      }));
+    }
+  };
+
   return (
     <>
       <div className={styles.container}>
@@ -464,6 +599,7 @@ export default function NewProjectEntry() {
                 className={styles.input}
                 value={formData.io}
                 onChange={(e) => handleInputChange('io', e.target.value)}
+                disabled={!formData.region}
               >
                 <option value="">Select IO</option>
                 {implementingOffices.map((o: string) => <option key={o} value={o}>{o}</option>)}
@@ -489,11 +625,10 @@ export default function NewProjectEntry() {
                   className={styles.input}
                   value={formData.ld}
                   onChange={(e) => handleInputChange('ld', e.target.value)}
+                  disabled={!formData.deo}
                 >
                   <option value="">Select LD</option>
-                  <option value="1st District">1st District</option>
-                  <option value="2nd District">2nd District</option>
-                  <option value="3rd District">3rd District</option>
+                  {legislativeDistricts.map((ld: string) => <option key={ld} value={ld}>{ld}</option>)}
                 </select>
               </div>
             </div>
@@ -512,6 +647,21 @@ export default function NewProjectEntry() {
                 </select>
               </div>
               <div className={styles.formGroup}>
+                <label className={styles.label}>Barangay</label>
+                <select
+                  className={styles.input}
+                  value={formData.barangay || ''}
+                  onChange={(e) => handleInputChange('barangay', e.target.value)}
+                  disabled={!formData.municipality}
+                >
+                  <option value="">Select Brgy.</option>
+                  {barangays.map((b: string) => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className={styles.formRow2}>
+              <div className={styles.formGroup}>
                 <label className={styles.label}>Operating Unit (OU)</label>
                 <select
                   className={styles.input}
@@ -521,6 +671,9 @@ export default function NewProjectEntry() {
                   <option value="">Select OU</option>
                   {offices.map((o: string) => <option key={o} value={o}>{o}</option>)}
                 </select>
+              </div>
+              <div className={styles.formGroup}>
+                {/* Empty block to keep layout grid balanced if necessary, or put Regionwide checkbox here */}
               </div>
             </div>
 
@@ -689,16 +842,27 @@ export default function NewProjectEntry() {
                       </select>
                     </td>
                     <td className={styles.td}>
-                      <select className={styles.tableInput} value={comp.infraType || ''} onChange={(e) => updateComponent(idx, 'infraType', e.target.value)}>
+                      <select className={styles.tableInput} value={comp.infraType || ''} onChange={(e) => updateComponent(idx, 'infraType', e.target.value)} disabled={!formData.thrust}>
                         <option value="">Select</option>
-                        {infraTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                        {infraTypesForThrust.map((t: string) => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="Road/Bridge Name" value={comp.infraName || ''} onChange={(e) => updateComponent(idx, 'infraName', e.target.value)} /></td>
+                    <td className={styles.td}>
+                      <select className={styles.tableInput} value={comp.infraName || ''} onChange={(e) => updateComponent(idx, 'infraName', e.target.value)} disabled={!comp.infraType}>
+                        <option value="">Select Infra</option>
+                        {getInfraNameOptions(comp.infraType).map((group, gIdx) => (
+                          <optgroup key={gIdx} label={group.label}>
+                            {group.options.map((opt: string) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </td>
                     <td className={styles.td}>
                       <select className={styles.tableInput} value={comp.workType || ''} onChange={(e) => updateComponent(idx, 'workType', e.target.value)} disabled={!comp.infraType}>
                         <option value="">Select Type of Work</option>
-                        {comp.infraType && (codes.work_types as any)[comp.infraType]?.map((w: any) => <option key={w} value={w}>{w}</option>)}
+                        {comp.infraType && ((codes as any).infra_to_tow?.[comp.infraType] || []).map((w: string) => <option key={w} value={w}>{w}</option>)}
                       </select>
                     </td>
                     <td className={styles.td}><input type="text" className={styles.tableInput} value={comp.unit || ''} onChange={(e) => updateComponent(idx, 'unit', e.target.value)} /></td>
@@ -757,21 +921,42 @@ export default function NewProjectEntry() {
               <tbody>
                 {specificDetails.map((det, idx) => (
                   <tr key={idx}>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} value={det.compId} onChange={(e) => updateSpecificDetail(idx, 'compId', e.target.value)} /></td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} value={det.infraId} onChange={(e) => updateSpecificDetail(idx, 'infraId', e.target.value)} /></td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} value={det.startLimit} onChange={(e) => updateSpecificDetail(idx, 'startLimit', e.target.value)} /></td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} value={det.endLimit} onChange={(e) => updateSpecificDetail(idx, 'endLimit', e.target.value)} /></td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} value={det.startChainage} onChange={(e) => updateSpecificDetail(idx, 'startChainage', e.target.value)} /></td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} value={det.endChainage} onChange={(e) => updateSpecificDetail(idx, 'endChainage', e.target.value)} /></td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="S.X" value={det.startX} onChange={(e) => updateSpecificDetail(idx, 'startX', e.target.value)} /></td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="S.Y" value={det.startY} onChange={(e) => updateSpecificDetail(idx, 'startY', e.target.value)} /></td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="E.X" value={det.endX} onChange={(e) => updateSpecificDetail(idx, 'endX', e.target.value)} /></td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="E.Y" value={det.endY} onChange={(e) => updateSpecificDetail(idx, 'endY', e.target.value)} /></td>
-                    <td className={styles.td}><input type="number" className={styles.tableInput} value={det.length} placeholder="Length" onChange={(e) => updateSpecificDetail(idx, 'length', parseFloat(e.target.value))} /></td>
-                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="Scope of Work" value={det.scope} onChange={(e) => updateSpecificDetail(idx, 'scope', e.target.value)} /></td>
-                    <td className={styles.td}><input type="number" className={styles.tableInput} value={det.target} placeholder="Target" onChange={(e) => updateSpecificDetail(idx, 'target', parseFloat(e.target.value))} /></td>
-                    <td className={styles.tdCost}><input type="number" className={styles.tableInput} style={{ textAlign: 'right' }} value={det.cost} placeholder="Cost" onChange={(e) => updateSpecificDetail(idx, 'cost', parseFloat(e.target.value))} /></td>
-                    <td className={styles.td}><input type="number" className={styles.tableInput} value={det.lanes} onChange={(e) => updateSpecificDetail(idx, 'lanes', parseInt(e.target.value))} /></td>
+                    <td className={styles.td}>
+                      <select className={styles.tableInput} value={det.compId || ''} onChange={(e) => updateSpecificDetail(idx, 'compId', e.target.value)}>
+                        <option value="">Select ID</option>
+                        {components.filter(c => c.id).map(c => (
+                          <option key={c.id} value={c.id}>{c.id}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className={styles.td}>
+                      <input 
+                        type="text" 
+                        className={styles.tableInput} 
+                        value={det.infraId || ''} 
+                        onChange={(e) => updateSpecificDetail(idx, 'infraId', e.target.value)} 
+                        list={`infra-ids-${idx}`}
+                        placeholder="ID"
+                      />
+                      <datalist id={`infra-ids-${idx}`}>
+                        {getInfraIdOptions(det.compId).map((opt: string) => (
+                          <option key={opt} value={opt} />
+                        ))}
+                      </datalist>
+                    </td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} value={det.startLimit || ''} onChange={(e) => updateSpecificDetail(idx, 'startLimit', e.target.value)} /></td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} value={det.endLimit || ''} onChange={(e) => updateSpecificDetail(idx, 'endLimit', e.target.value)} /></td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} value={det.startChainage || ''} onChange={(e) => updateSpecificDetail(idx, 'startChainage', e.target.value)} /></td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} value={det.endChainage || ''} onChange={(e) => updateSpecificDetail(idx, 'endChainage', e.target.value)} /></td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="S.X" value={det.startX || ''} onChange={(e) => updateSpecificDetail(idx, 'startX', e.target.value)} /></td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="S.Y" value={det.startY || ''} onChange={(e) => updateSpecificDetail(idx, 'startY', e.target.value)} /></td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="E.X" value={det.endX || ''} onChange={(e) => updateSpecificDetail(idx, 'endX', e.target.value)} /></td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="E.Y" value={det.endY || ''} onChange={(e) => updateSpecificDetail(idx, 'endY', e.target.value)} /></td>
+                    <td className={styles.td}><input type="number" className={styles.tableInput} value={det.length || 0} placeholder="Length" onChange={(e) => updateSpecificDetail(idx, 'length', parseFloat(e.target.value))} /></td>
+                    <td className={styles.td}><input type="text" className={styles.tableInput} placeholder="Scope of Work" value={det.scope || ''} onChange={(e) => updateSpecificDetail(idx, 'scope', e.target.value)} /></td>
+                    <td className={styles.td}><input type="number" className={styles.tableInput} value={det.target || 0} placeholder="Target" onChange={(e) => updateSpecificDetail(idx, 'target', parseFloat(e.target.value))} /></td>
+                    <td className={styles.tdCost}><input type="number" className={styles.tableInput} style={{ textAlign: 'right' }} value={det.cost || 0} placeholder="Cost" onChange={(e) => updateSpecificDetail(idx, 'cost', parseFloat(e.target.value))} /></td>
+                    <td className={styles.td}><input type="number" className={styles.tableInput} value={det.lanes || 0} onChange={(e) => updateSpecificDetail(idx, 'lanes', parseInt(e.target.value))} /></td>
                     <td className={styles.td}>
                       <button className={styles.btnIconOnly} onClick={() => removeSpecificDetail(idx)}>
                         <span className="material-symbols-outlined">delete</span>
@@ -784,34 +969,6 @@ export default function NewProjectEntry() {
           </div>
         </section>
 
-        {/* Supporting Documents (SD) */}
-        <section className={styles.glassCard}>
-          <div className={styles.sectionHeader}>
-            <span className={`material-symbols-outlined ${styles.sectionIcon}`}>upload_file</span>
-            <h2 className={styles.sectionTitle}>Supporting Documents (SD)</h2>
-          </div>
-
-          <div className={styles.dropZone}>
-            <div className={styles.dropIconBox}>
-              <span className="material-symbols-outlined" style={{ fontSize: '2rem' }}>cloud_upload</span>
-            </div>
-            <p className={styles.dropTitle}>Tap to upload or drag & drop</p>
-            <p className={styles.dropSubtitle}>PDF, PNG, JPG (Max 25MB each)</p>
-          </div>
-
-          <div className={styles.fileList}>
-            <div className={styles.fileItem}>
-              <div className={styles.fileInfo}>
-                <span className={`material-symbols-outlined ${styles.fileIcon}`}>picture_as_pdf</span>
-                <span className={styles.fileName}>Feasibility_Study_V1.pdf</span>
-              </div>
-              <button className={styles.fileRemove}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-          </div>
-        </section>
-
       </div>
 
       {/* Floating Action Bar */}
@@ -821,7 +978,7 @@ export default function NewProjectEntry() {
           Download Excel (RBP)
         </button>
 
-        <button className={`${styles.btnPrimary} ${styles.btnOrange}`}>
+        <button className={`${styles.btnPrimary} ${styles.btnOrange}`} onClick={generateDescription}>
           <span className="material-symbols-outlined">auto_awesome</span>
           Generate Description
         </button>
