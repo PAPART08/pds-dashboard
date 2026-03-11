@@ -25,6 +25,7 @@ interface Project {
     status: string;
     assignedTo?: string; // Unit Head Lead
     deadline?: string;
+    isIncludedInMasterList: boolean;
     createdAt: string;
 }
 
@@ -82,6 +83,7 @@ export default function GlobalTaskListPage() {
                         status: p.status || 'PROPOSED',
                         assignedTo: p.assigned_to || '',
                         deadline: p.deadline || '',
+                        isIncludedInMasterList: p.is_included_in_master_list || false,
                         createdAt: p.created_at
                     }));
                 }
@@ -96,6 +98,7 @@ export default function GlobalTaskListPage() {
                 status: p.status || 'Draft',
                 assignedTo: p.assignedTo || '',
                 deadline: p.deadline || '',
+                isIncludedInMasterList: p.isIncludedInMasterList || false,
                 createdAt: p.createdAt || p.created_at || new Date().toISOString()
             }));
 
@@ -110,8 +113,9 @@ export default function GlobalTaskListPage() {
                 }
             });
 
-            combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setProjects(combined);
+            const filtered = combined.filter(p => p.isIncludedInMasterList === true);
+            filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setProjects(filtered);
         } catch (err) {
             console.error('Error fetching projects:', err);
         } finally {
