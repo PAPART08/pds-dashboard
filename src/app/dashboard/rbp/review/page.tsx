@@ -62,7 +62,25 @@ export default function ReviewQueuePage() {
           fiscalYear: p.fiscalYear || '2025'
         }));
 
-        const combined = [...supabaseData, ...formattedLocal];
+        // Combine and de-duplicate by ID
+        const seenIds = new Set();
+        const combined: any[] = [];
+
+        // Prefer local storage
+        formattedLocal.forEach((p: any) => {
+          if (!seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            combined.push(p);
+          }
+        });
+
+        // Add supabase projects
+        supabaseData.forEach((p: any) => {
+          if (!seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            combined.push(p);
+          }
+        });
 
         // Only projects approved for Master List
         const masterBase = combined.filter(p => p.isIncludedInMasterList === true);
