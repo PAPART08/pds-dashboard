@@ -251,7 +251,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
       {/* Header */}
       <div className="flex items-center space-x-4 mb-4">
         <Link
-          href={isMember ? "/dashboard/user-task" : "/dashboard/technical-review"}
+          href={isMember ? "/dashboard/user-task" : "/dashboard/rbp/review"}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white"
           title={isMember ? "Back to My Activity" : "Back to Review Queue"}
         >
