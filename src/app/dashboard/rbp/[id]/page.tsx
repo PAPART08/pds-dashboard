@@ -421,6 +421,10 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
               <div className="pt-4 border-t border-gray-50 flex flex-col gap-3">
                 <button
                   disabled={!canAssignLead}
+                  onClick={() => {
+                    handleAssignProject(assignment);
+                    alert(`Assignment for ${assignment} confirmed and synced.`);
+                  }}
                   className={`btn btn-secondary w-full justify-center text-xs py-3 bg-[color:var(--dpwh-blue)] text-white font-bold ${!canAssignLead ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <UserPlus className="w-4 h-4 mr-2" />
                   CONFIRM ASSIGNMENT
