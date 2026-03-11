@@ -47,8 +47,7 @@ export default function MasterList() {
     try {
       const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
 
-      const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+      const isSupabaseConfigured = true;
 
       let supabaseData: any[] = [];
       if (isSupabaseConfigured) {
@@ -112,8 +111,7 @@ export default function MasterList() {
       localStorage.setItem('rbp_projects', JSON.stringify(filtered));
 
       // 2. Supabase delete
-      const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+      const isSupabaseConfigured = true;
 
       if (isSupabaseConfigured) {
         await supabase.from('projects').delete().eq('id', id);

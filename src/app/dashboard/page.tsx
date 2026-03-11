@@ -120,8 +120,7 @@ export default function DashboardPage() {
 
                 // Fetch from Supabase
                 let supabaseData: Project[] = [];
-                const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-                    process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+                const isSupabaseConfigured = true;
 
                 if (isSupabaseConfigured) {
                     const { data, error } = await supabase.from('projects').select('id, category, status, stage');

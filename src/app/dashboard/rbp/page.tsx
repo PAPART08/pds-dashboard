@@ -38,8 +38,7 @@ export default function RBPStagePage() {
       const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
 
       // 2. Fetch from Supabase
-      const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+      const isSupabaseConfigured = true;
 
       let supabaseData: Project[] = [];
       if (isSupabaseConfigured) {
@@ -101,8 +100,7 @@ export default function RBPStagePage() {
       localStorage.setItem('rbp_projects', JSON.stringify(filtered));
 
       // Delete from Supabase
-      const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+      const isSupabaseConfigured = true;
 
       if (isSupabaseConfigured) {
         const { error } = await supabase.from('projects').delete().eq('id', id);
@@ -130,8 +128,7 @@ export default function RBPStagePage() {
       }
 
       // Supabase
-      const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+      const isSupabaseConfigured = true;
 
       if (isSupabaseConfigured) {
         await supabase.from('projects').update({ is_included_in_master_list: !currentStatus }).eq('id', id);
@@ -165,8 +162,7 @@ export default function RBPStagePage() {
       localStorage.setItem('rbp_projects', JSON.stringify(newList));
 
       // Supabase Sync (Simplified for now)
-      const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+      const isSupabaseConfigured = true;
 
       if (isSupabaseConfigured) {
         if (strategy === 'replace') {

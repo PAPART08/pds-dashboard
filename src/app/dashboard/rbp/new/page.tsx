@@ -211,8 +211,7 @@ export default function NewProjectEntry() {
     setIsSubmitting(true);
     try {
       // 1. Check if Supabase is properly configured
-      const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+      const isSupabaseConfigured = true;
 
       if (!isSupabaseConfigured) {
         console.warn('Supabase not configured. Using localStorage fallback.');

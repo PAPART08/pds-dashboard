@@ -56,11 +56,38 @@ export default function GlobalTaskListPage() {
         fetchProjects();
     }, []);
 
-    const fetchProjects = () => {
+    const fetchProjects = async () => {
         setIsLoading(true);
         try {
+            // 1. Fetch from local storage
             const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
-            const formatted = localData.map((p: any) => ({
+            
+            // 2. Fetch from Supabase
+            const isSupabaseConfigured = true;
+
+            let supabaseData: Project[] = [];
+            if (isSupabaseConfigured) {
+                const { data, error } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (!error && data) {
+                    supabaseData = data.map(p => ({
+                        id: p.id,
+                        alternateId: p.alternate_id || p.id.substring(0, 8).toUpperCase(),
+                        projectDescription: p.project_name || 'No Description',
+                        municipality: p.city_municipality || 'Unspecified',
+                        totalCost: p.project_amount || 0,
+                        status: p.status || 'PROPOSED',
+                        assignedTo: p.assigned_to || '',
+                        deadline: p.deadline || '',
+                        createdAt: p.created_at
+                    }));
+                }
+            }
+
+            const formattedLocal = localData.map((p: any) => ({
                 id: p.id,
                 alternateId: p.alternateId || p.id.substring(0, 8).toUpperCase(),
                 projectDescription: p.projectDescription || p.project_name || 'No Description',
@@ -71,7 +98,20 @@ export default function GlobalTaskListPage() {
                 deadline: p.deadline || '',
                 createdAt: p.createdAt || p.created_at || new Date().toISOString()
             }));
-            setProjects(formatted);
+
+            // Combine and avoid duplicates by ID
+            const seenIds = new Set();
+            const combined: Project[] = [];
+
+            [...supabaseData, ...formattedLocal].forEach(p => {
+                if (!seenIds.has(p.id)) {
+                    seenIds.add(p.id);
+                    combined.push(p);
+                }
+            });
+
+            combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setProjects(combined);
         } catch (err) {
             console.error('Error fetching projects:', err);
         } finally {
@@ -83,20 +123,41 @@ export default function GlobalTaskListPage() {
         setProjects(prev => prev.map(p => p.id === projectId ? { ...p, [field]: value } : p));
     };
 
-    const saveProjectChanges = (projectId: string) => {
+    const saveProjectChanges = async (projectId: string) => {
         setIsSaving(projectId);
         try {
             const projectToSave = projects.find(p => p.id === projectId);
+            if (!projectToSave) return;
+
+            // 1. Update Local Storage
             const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
             const index = localData.findIndex((p: any) => p.id === projectId);
 
-            if (index !== -1 && projectToSave) {
+            if (index !== -1) {
                 localData[index].assignedTo = projectToSave.assignedTo;
                 localData[index].deadline = projectToSave.deadline;
                 localStorage.setItem('rbp_projects', JSON.stringify(localData));
             }
 
-            // Feedback to user
+            // 2. Update Supabase
+            const isSupabaseConfigured = true;
+
+            if (isSupabaseConfigured) {
+                const { error } = await supabase
+                    .from('projects')
+                    .update({
+                        assigned_to: projectToSave.assignedTo,
+                        deadline: projectToSave.deadline
+                    })
+                    .eq('id', projectId);
+
+                if (error) {
+                    console.error('Supabase update error:', error);
+                    alert('Saved locally, but failed to sync with Supabase.');
+                }
+            }
+
+            // Feedback
             setTimeout(() => setIsSaving(null), 500);
         } catch (err) {
             console.error('Error saving changes:', err);

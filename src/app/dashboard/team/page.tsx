@@ -54,8 +54,7 @@ export default function TeamPage() {
     const fetchTeam = async () => {
       setIsLoading(true);
       try {
-        const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-          process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+        const isSupabaseConfigured = true;
 
         if (isSupabaseConfigured) {
           const { data, error } = await supabase.from('employees').select('*').order('created_at', { ascending: true });
@@ -115,8 +114,7 @@ export default function TeamPage() {
     // Optimistic UI update and Local Storage Fallback
     saveTeamLocally(updatedTeam);
 
-    const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+    const isSupabaseConfigured = true;
 
     if (isSupabaseConfigured) {
       try {
@@ -158,8 +156,7 @@ export default function TeamPage() {
     const updatedTeam = team.filter(e => e.id !== selectedEmployee.id);
     saveTeamLocally(updatedTeam);
 
-    const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+    const isSupabaseConfigured = true;
 
     if (isSupabaseConfigured) {
       try {
@@ -190,8 +187,7 @@ export default function TeamPage() {
 
     setIsAdding(false); // Close modal while processing to prevent duplicate clicks
 
-    const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+    const isSupabaseConfigured = true;
 
     if (isSupabaseConfigured) {
       try {

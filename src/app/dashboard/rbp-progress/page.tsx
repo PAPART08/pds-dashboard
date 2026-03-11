@@ -30,8 +30,7 @@ export default function RBPProgressDashboard() {
             try {
                 const localDataRaw = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
 
-                const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-                    process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+                const isSupabaseConfigured = true;
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let supabaseData: any[] = [];

@@ -25,8 +25,7 @@ export default function ApprovalQueuePage() {
       try {
         const localData = JSON.parse(localStorage.getItem('rbp_projects') || '[]');
 
-        const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-          process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+        const isSupabaseConfigured = true;
 
         let supabaseData: any[] = [];
         if (isSupabaseConfigured) {

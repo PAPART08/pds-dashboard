@@ -41,8 +41,7 @@ export default function UnitHeadDashboard() {
                 const currentUser = savedUser ? JSON.parse(savedUser) : null;
                 const currentUserName = currentUser?.name || '';
 
-                const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-                    process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+                const isSupabaseConfigured = true;
 
                 let supabaseData: any[] = [];
                 if (isSupabaseConfigured) {

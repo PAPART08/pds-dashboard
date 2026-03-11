@@ -40,8 +40,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
   useEffect(() => {
     const fetchTeam = async () => {
       try {
-        const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-          process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+        const isSupabaseConfigured = true;
 
         let fetchedMembers: string[] = [];
 
@@ -96,8 +95,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
           return;
         }
 
-        const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL &&
-          process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+        const isSupabaseConfigured = true;
 
         if (isSupabaseConfigured) {
           const { data, error } = await supabase.from('projects').select('*').eq('id', id).single();
