@@ -71,7 +71,7 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           name: 'Project Detail Entry',
           href: '/dashboard/rbp',
           icon: 'inventory_2',
-          roles: ['Section Chief', 'Planning Unit', 'Unit Head', 'Unit Member', 'Regular Member']
+          roles: ['Planning Unit']
         },
         {
           name: 'Global Task List',
