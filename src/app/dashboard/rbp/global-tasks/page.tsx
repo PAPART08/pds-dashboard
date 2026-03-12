@@ -60,29 +60,38 @@ export default function GlobalTaskListPage() {
     const fetchProjects = async () => {
         setIsLoading(true);
         try {
+            // Fetch projects and their associated tasks from Supabase
             const { data, error } = await supabase
                 .from('projects')
-                .select('*')
+                .select(`
+                    *,
+                    tasks (*)
+                `)
+                .eq('is_included_in_master_list', true)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
 
             if (data) {
-                const mappedData = data.map(p => ({
-                    id: p.id,
-                    alternateId: p.alternate_id || p.id.substring(0, 8).toUpperCase(),
-                    projectDescription: p.project_name || 'No Description',
-                    municipality: p.city_municipality || 'Unspecified',
-                    totalCost: p.project_amount || 0,
-                    status: p.status || 'PROPOSED',
-                    assignedTo: p.assigned_to || '',
-                    deadline: p.deadline || '',
-                    isIncludedInMasterList: p.is_included_in_master_list || false,
-                    createdAt: p.created_at
-                }));
+                const mappedData = data.map(p => {
+                    // Find the PROJECT_LEAD task if it exists
+                    const leadTask = p.tasks?.find((t: any) => t.task_type === 'PROJECT_LEAD');
+                    
+                    return {
+                        id: p.id,
+                        alternateId: p.alternate_id || p.id.substring(0, 8).toUpperCase(),
+                        projectDescription: p.project_name || 'No Description',
+                        municipality: p.city_municipality || 'Unspecified',
+                        totalCost: p.project_amount || 0,
+                        status: p.status || 'PROPOSED',
+                        assignedTo: leadTask?.assignee_name || p.assigned_to || '',
+                        deadline: leadTask?.deadline || p.deadline || '',
+                        isIncludedInMasterList: p.is_included_in_master_list || false,
+                        createdAt: p.created_at
+                    };
+                });
 
-                const filtered = mappedData.filter(p => p.isIncludedInMasterList === true);
-                setProjects(filtered);
+                setProjects(mappedData);
             }
         } catch (err) {
             console.error('Error fetching projects:', err);
@@ -101,7 +110,8 @@ export default function GlobalTaskListPage() {
             const projectToSave = projects.find(p => p.id === projectId);
             if (!projectToSave) return;
 
-            const { error } = await supabase
+            // 1. Update the projects table (legacy/compatibility)
+            const { error: pError } = await supabase
                 .from('projects')
                 .update({
                     assigned_to: projectToSave.assignedTo,
@@ -109,7 +119,37 @@ export default function GlobalTaskListPage() {
                 })
                 .eq('id', projectId);
 
-            if (error) throw error;
+            if (pError) throw pError;
+
+            // 2. Upsert into the TASKS table for PROJECT_LEAD
+            // First check if it exists
+            const { data: existingTask } = await supabase
+                .from('tasks')
+                .select('id')
+                .eq('project_id', projectId)
+                .eq('task_type', 'PROJECT_LEAD')
+                .single();
+
+            if (existingTask) {
+                await supabase
+                    .from('tasks')
+                    .update({
+                        assignee_name: projectToSave.assignedTo,
+                        deadline: projectToSave.deadline || null,
+                        status: 'In Progress'
+                    })
+                    .eq('id', existingTask.id);
+            } else if (projectToSave.assignedTo) {
+                await supabase
+                    .from('tasks')
+                    .insert({
+                        project_id: projectId,
+                        assignee_name: projectToSave.assignedTo,
+                        task_type: 'PROJECT_LEAD',
+                        deadline: projectToSave.deadline || null,
+                        status: 'In Progress'
+                    });
+            }
 
             // Feedback
             setTimeout(() => setIsSaving(null), 500);

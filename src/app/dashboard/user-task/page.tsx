@@ -43,52 +43,49 @@ export default function UserTaskDashboard() {
                 const savedUser = localStorage.getItem('currentUser');
                 const currentUserName = savedUser ? JSON.parse(savedUser).name : '';
 
-                // Fetch projects from Supabase
+                if (!currentUserName) {
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Fetch tasks assigned to the user from the tasks table
                 const { data, error } = await supabase
-                    .from('projects')
-                    .select('*')
+                    .from('tasks')
+                    .select(`
+                        *,
+                        projects (
+                            id,
+                            alternate_id,
+                            project_name,
+                            city_municipality,
+                            project_amount,
+                            start_year
+                        )
+                    `)
+                    .eq('assignee_name', currentUserName)
+                    .eq('task_type', 'DOC_COMPLIANCE')
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
                 if (data) {
-                    const userAssignedTasks: Project[] = [];
-                    data.forEach((p: any) => {
-                        const docAssignments = p.doc_assignments || {};
-                        const docStatuses = p.doc_statuses || {};
-                        const docDeadlines = p.doc_deadlines || {};
-                        const docUploads = p.doc_uploads || {};
+                    const userAssignedTasks: Project[] = data.map((t: any) => ({
+                        id: t.id, // Task ID
+                        docId: `${t.projects?.alternate_id || t.projects?.id.substring(0, 8).toUpperCase()}-${t.doc_code}`,
+                        title: t.projects?.project_name || 'Untitled Project',
+                        location: t.projects?.city_municipality || 'Unspecified',
+                        costValue: t.projects?.project_amount || 0,
+                        stage: 'Preparation',
+                        status: t.status,
+                        createdAt: t.created_at,
+                        fiscalYear: (t.projects?.start_year || 2025).toString(),
+                        type: 'Assigned Document',
+                        deadline: t.deadline,
+                        projectId: t.project_id,
+                        docCode: t.doc_code
+                    }));
 
-                        Object.entries(docAssignments).forEach(([code, assignedName]) => {
-                            if (assignedName === currentUserName) {
-                                const taskKey = `${p.id}-${code}`;
-                                
-                                // Status logic: use doc_statuses if set, else check doc_uploads, else default
-                                let status = docStatuses[code];
-                                if (!status) {
-                                    status = docUploads[code] ? 'Submitted' : 'Drafting';
-                                }
-
-                                userAssignedTasks.push({
-                                    id: taskKey,
-                                    docId: `${p.alternate_id || p.id.substring(0, 8).toUpperCase()}-${code}`,
-                                    title: p.project_name || 'Untitled Project',
-                                    location: p.city_municipality || 'Unspecified',
-                                    costValue: p.project_amount || 0,
-                                    stage: 'Preparation',
-                                    status: status,
-                                    createdAt: p.created_at,
-                                    fiscalYear: (p.start_year || 2025).toString(),
-                                    type: 'Assigned Document',
-                                    deadline: docDeadlines[code],
-                                    projectId: p.id,
-                                    docCode: code
-                                });
-                            }
-                        });
-                    });
-
-                    // Fallback for demo
+                    // Fallback for demo (only if no real tasks found)
                     if (userAssignedTasks.length === 0 && currentUserName === 'Maria Dela Cruz') {
                         const sdList = ['PR', 'DUPA', 'SD-01'];
                         sdList.forEach(sd => {
@@ -110,7 +107,7 @@ export default function UserTaskDashboard() {
                     setProjects(userAssignedTasks);
                 }
             } catch (err) {
-                console.error('Error fetching projects:', err);
+                console.error('Error fetching tasks:', err);
             } finally {
                 setIsLoading(false);
             }
@@ -120,13 +117,20 @@ export default function UserTaskDashboard() {
     }, []);
 
     // Calculate dynamic counts based on project data
-    const today = new Date().toISOString().split('T')[0];
-    const dueTodayCount = projects.filter(p => p.deadline === today || p.status === 'Draft' || p.status === 'Drafting' || p.status.includes('Pending')).length;
-    const upcomingCount = projects.filter(p => (p.deadline && p.deadline > today) || p.status === 'Preparation').length;
-    const completedCount = projects.length;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const dueTodayCount = projects.filter(p => p.deadline === todayStr).length;
+    const upcomingCount = projects.filter(p => p.deadline && p.deadline > todayStr).length;
+    
+    // Overdue Logic: Deadline is past AND status is not Approved
+    const overdueCount = projects.filter(p => 
+        p.deadline && 
+        p.deadline < todayStr && 
+        p.status !== 'Approved'
+    ).length;
+
     const displayProjects = projects.slice(0, 5); 
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, projectId: string, docCode: string, fullDocId: string) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, projectId: string, docCode: string, taskTableId: string) => {
         const file = e.target.files?.[0];
         if (!file || !projectId || !docCode) return;
 
@@ -135,24 +139,35 @@ export default function UserTaskDashboard() {
         sessionStorage.setItem(`pdf_${projectId}_${docCode}`, url);
 
         try {
-            // Update Supabase with the new status and upload info
-            // Fetch current doc_statuses and doc_uploads first to ensure we don't overwrite others
+            // Update the NEW tasks table with the new status
+            const { error: tError } = await supabase
+                .from('tasks')
+                .update({ status: 'Submitted' })
+                .eq('id', taskTableId);
+
+            if (tError) {
+                // Fallback attempt by components if ID is not UUID (like in demo)
+                if (taskTableId.startsWith('demo-')) {
+                     console.log("Demo task upload simulated");
+                } else {
+                    throw tError;
+                }
+            }
+
+            // Sync with old projects table for backward compatibility (optional but safe for now)
             const { data: p, error: fError } = await supabase.from('projects').select('doc_statuses, doc_uploads').eq('id', projectId).single();
-            if (fError) throw fError;
-
-            const newStatuses = { ...(p.doc_statuses || {}), [docCode]: 'Submitted' };
-            const newUploads = { ...(p.doc_uploads || {}), [docCode]: file.name || 'document.pdf' };
-
-            const { error: uError } = await supabase.from('projects').update({
-                doc_statuses: newStatuses,
-                doc_uploads: newUploads
-            }).eq('id', projectId);
-
-            if (uError) throw uError;
+            if (!fError && p) {
+                const newStatuses = { ...(p.doc_statuses || {}), [docCode]: 'Submitted' };
+                const newUploads = { ...(p.doc_uploads || {}), [docCode]: file.name || 'document.pdf' };
+                await supabase.from('projects').update({
+                    doc_statuses: newStatuses,
+                    doc_uploads: newUploads
+                }).eq('id', projectId);
+            }
 
             // Update local state
             setProjects(prevProjects => prevProjects.map(p => {
-                if (p.id === fullDocId) {
+                if (p.id === taskTableId) {
                     return { ...p, status: 'Submitted' };
                 }
                 return p;
@@ -160,7 +175,7 @@ export default function UserTaskDashboard() {
 
             alert("Document successfully uploaded and synced.");
         } catch (err) {
-            console.error("Error updating Supabase:", err);
+            console.error("Error updating Task status:", err);
             alert("Upload failed to sync with database.");
         }
     };
@@ -202,12 +217,12 @@ export default function UserTaskDashboard() {
                     </div>
 
                     <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                            <CheckCircle2 className="w-6 h-6" />
+                        <div className="w-12 h-12 rounded-lg bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center">
+                            <AlertCircle className="w-6 h-6" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Overview Task</p>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{completedCount}</h3>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Overdue Tasks</p>
+                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{overdueCount}</h3>
                         </div>
                     </div>
 

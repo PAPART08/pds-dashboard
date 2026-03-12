@@ -58,7 +58,15 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
     const fetchProject = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.from('projects').select('*').eq('id', id).single();
+        const { data, error } = await supabase
+          .from('projects')
+          .select(`
+            *,
+            tasks (*)
+          `)
+          .eq('id', id)
+          .single();
+        
         if (error) throw error;
 
         if (data) {
@@ -72,10 +80,30 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
             thrust: data.thrust,
             deadline: data.deadline
           });
-          setAssignment(data.assigned_to || '');
-          setDocAssignments(data.doc_assignments || {});
-          setDocDeadlines(data.doc_deadlines || {});
-          setUploadedDocs(data.doc_uploads || {});
+
+          // Extract assignments from the tasks table
+          const leadTask = data.tasks?.find((t: any) => t.task_type === 'PROJECT_LEAD');
+          setAssignment(leadTask?.assignee_name || data.assigned_to || '');
+
+          const docTasks = data.tasks?.filter((t: any) => t.task_type === 'DOC_COMPLIANCE') || [];
+          
+          const assignments: Record<string, string> = { ...data.doc_assignments };
+          const deadlines: Record<string, string> = { ...data.doc_deadlines };
+          const uploads: Record<string, string> = { ...data.doc_uploads };
+          const taskStatuses: Record<string, string> = {};
+
+          docTasks.forEach((t: any) => {
+            if (t.doc_code) {
+              assignments[t.doc_code] = t.assignee_name || '';
+              deadlines[t.doc_code] = t.deadline || '';
+              taskStatuses[t.doc_code] = t.status;
+            }
+          });
+
+          setDocAssignments(assignments);
+          setDocDeadlines(deadlines);
+          setUploadedDocs(uploads);
+          (window as any).__docTaskStatuses = taskStatuses; // To use for status icons
         }
       } catch (err) {
         console.error('Error fetching project detail:', err);
@@ -89,13 +117,18 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
   const handleAssignProject = async (name: string) => {
     setAssignment(name);
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update({ assigned_to: name })
-        .eq('id', id);
-      if (error) throw error;
+      // 1. Legacy update
+      await supabase.from('projects').update({ assigned_to: name }).eq('id', id);
+      
+      // 2. Relational update
+      const { data: existing } = await supabase.from('tasks').select('id').eq('project_id', id).eq('task_type', 'PROJECT_LEAD').single();
+      if (existing) {
+        await supabase.from('tasks').update({ assignee_name: name, status: 'In Progress' }).eq('id', existing.id);
+      } else {
+        await supabase.from('tasks').insert({ project_id: id, assignee_name: name, task_type: 'PROJECT_LEAD', status: 'In Progress' });
+      }
     } catch (err) {
-      console.error('Supabase sync error (Project Assignment):', err);
+      console.error('Task sync error (Project Lead):', err);
     }
   };
 
@@ -104,41 +137,47 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
     setDocAssignments(newDocAssignments);
 
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update({ doc_assignments: newDocAssignments })
-        .eq('id', id);
-      if (error) throw error;
+      // 1. Legacy update
+      await supabase.from('projects').update({ doc_assignments: newDocAssignments }).eq('id', id);
+      
+      // 2. Relational update
+      const { data: existing } = await supabase.from('tasks').select('id').eq('project_id', id).eq('task_type', 'DOC_COMPLIANCE').eq('doc_code', docCode).single();
+      if (existing) {
+        await supabase.from('tasks').update({ assignee_name: name }).eq('id', existing.id);
+      } else {
+        await supabase.from('tasks').insert({ project_id: id, assignee_name: name, task_type: 'DOC_COMPLIANCE', doc_code: docCode, status: 'Drafting' });
+      }
     } catch (err) {
-      console.error('Supabase sync error (Doc Assignment):', err);
+      console.error('Task sync error (Doc Assignment):', err);
     }
   };
 
   const handleUploadDoc = async (docCode: string, file: File) => {
-    // For demo/simplicity, we still use object URL locally for viewing
-    // But we record the action/metadata in Supabase for sync tracking
     const url = URL.createObjectURL(file);
     const newUploadedDocs = { ...uploadedDocs, [docCode]: file.name || 'document.pdf' };
     setUploadedDocs(newUploadedDocs);
     
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update({ doc_uploads: newUploadedDocs })
-        .eq('id', id);
-      if (error) throw error;
+      // 1. Legacy update
+      await supabase.from('projects').update({ doc_uploads: newUploadedDocs }).eq('id', id);
+      
+      // 2. Relational update (Status -> Submitted)
+      await supabase.from('tasks').update({ status: 'Submitted' }).eq('project_id', id).eq('task_type', 'DOC_COMPLIANCE').eq('doc_code', docCode);
+      
+      // Update local hack state
+      if (!(window as any).__docTaskStatuses) (window as any).__docTaskStatuses = {};
+      (window as any).__docTaskStatuses[docCode] = 'Submitted';
+
     } catch (err) {
-      console.error('Supabase sync error (Doc Upload):', err);
+      console.error('Task sync error (Doc Upload):', err);
     }
     
-    // Set a flag in session storage temporarily to pass the URL to the review screen
     sessionStorage.setItem(`pdf_${id}_${docCode}`, url);
   };
 
   const documents = getRequiredDocs(project?.subProgramCode, project?.thrust);
 
   const handleUpdateDocDeadline = async (docCode: string, date: string) => {
-    // Validation: must not pass project deadline
     if (project?.deadline && date > project.deadline) {
       alert(`Error: Document deadline cannot pass project target date (${project.deadline})`);
       return;
@@ -148,20 +187,22 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
     setDocDeadlines(newDocDeadlines);
 
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update({ doc_deadlines: newDocDeadlines })
-        .eq('id', id);
-      if (error) throw error;
+      // 1. Legacy update
+      await supabase.from('projects').update({ doc_deadlines: newDocDeadlines }).eq('id', id);
+      
+      // 2. Relational update
+      await supabase.from('tasks').update({ deadline: date }).eq('project_id', id).eq('task_type', 'DOC_COMPLIANCE').eq('doc_code', docCode);
     } catch (err) {
-      console.error('Supabase sync error (Doc Deadline):', err);
+      console.error('Task sync error (Doc Deadline):', err);
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Approved': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
+      case 'Submitted': 
       case 'Under Review': return 'text-blue-600 bg-blue-50 border-blue-100';
+      case 'Returned': return 'text-red-600 bg-red-50 border-red-100';
       case 'In Progress': return 'text-orange-600 bg-orange-50 border-orange-100';
       default: return 'text-gray-400 bg-gray-50 border-gray-100';
     }
@@ -170,8 +211,9 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'Approved': return <CheckCircle2 className="w-4 h-4" />;
+      case 'Submitted':
       case 'Under Review': return <Clock className="w-4 h-4" />;
-      case 'In Progress': return <AlertCircle className="w-4 h-4" />;
+      case 'Returned': return <AlertCircle className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4 opacity-50" />;
     }
   };
@@ -226,23 +268,26 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
             </div>
 
             <div className="divide-y divide-[color:var(--border-color)]">
-              {documents.map((doc: any, idx) => (
-                <div key={idx} className="p-5 hover:bg-gray-50/50 transition-colors group">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
-                        <h4 className="font-semibold text-sm group-hover:text-[color:var(--dpwh-blue)] transition-colors">{doc.label}</h4>
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${uploadedDocs[doc.code] ? getStatusColor('Approved') : getStatusColor('Pending')}`}>
-                          {uploadedDocs[doc.code] ? getStatusIcon('Approved') : getStatusIcon('Pending')}
-                          {uploadedDocs[doc.code] ? 'SUBMITTED' : 'PENDING'}
-                        </span>
-                        {docAssignments[doc.code] && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold border border-blue-100">
-                            <User className="w-3 h-3" />
-                            {docAssignments[doc.code].toUpperCase()}
+              {documents.map((doc: any, idx) => {
+                const currentStatus = (window as any).__docTaskStatuses?.[doc.code] || (uploadedDocs[doc.code] ? 'Submitted' : 'Pending');
+                
+                return (
+                  <div key={idx} className="p-5 hover:bg-gray-50/50 transition-colors group">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <h4 className="font-semibold text-sm group-hover:text-[color:var(--dpwh-blue)] transition-colors">{doc.label}</h4>
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${getStatusColor(currentStatus)}`}>
+                            {getStatusIcon(currentStatus)}
+                            {currentStatus.toUpperCase()}
                           </span>
-                        )}
-                      </div>
+                          {docAssignments[doc.code] && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-bold border border-blue-100">
+                              <User className="w-3 h-3" />
+                              {docAssignments[doc.code].toUpperCase()}
+                            </span>
+                          )}
+                        </div>
                       <div className="mt-2 flex items-center space-x-6 text-xs text-gray-400">
                         <span className="flex items-center"><User className="w-3 h-3 mr-1.5" /> Assigned: {docAssignments[doc.code] || 'None'}</span>
                         <span className="flex items-center"><History className="w-3 h-3 mr-1.5" /> Code: {doc.code}</span>
@@ -314,7 +359,8 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           </div>
 

@@ -84,9 +84,11 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
         } else if (savedUrlSession) {
             setPdfUrl(savedUrlSession);
         }
-    }, [id, docCode]);    const handleApprove = async () => {
+    }, [id, docCode]);
+
+    const handleApprove = async () => {
         try {
-            // First, fetch existing doc_statuses to merge
+            // 1. Legacy update
             const { data: p, error: fError } = await supabase.from('projects').select('doc_statuses').eq('id', id).single();
             if (fError) throw fError;
 
@@ -98,6 +100,13 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
 
             if (uError) throw uError;
 
+            // 2. Relational update
+            await supabase.from('tasks')
+                .update({ status: 'Approved' })
+                .eq('project_id', id)
+                .eq('task_type', 'DOC_COMPLIANCE')
+                .eq('doc_code', docCode);
+
             alert("Document Approved & Sent to Chief.");
             setComments([...comments, { id: Date.now(), user: 'You', role: 'Reviewer', text: 'Document Approved & Sent to Chief.', time: 'Just now', isResolved: true }]);
             setTimeout(() => router.push(`/dashboard/rbp/${id}`), 1000);
@@ -106,9 +115,10 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
             alert("Approval failed to sync with database.");
         }
     };
-;    const handleReturn = async () => {
+
+    const handleReturn = async () => {
         try {
-            // Fetch existing data for merging
+            // 1. Legacy update
             const { data: p, error: fError } = await supabase.from('projects').select('doc_statuses, doc_uploads').eq('id', id).single();
             if (fError) throw fError;
 
@@ -119,6 +129,13 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
             }).eq('id', id);
 
             if (uError) throw uError;
+
+            // 2. Relational update
+            await supabase.from('tasks')
+                .update({ status: 'Returned' })
+                .eq('project_id', id)
+                .eq('task_type', 'DOC_COMPLIANCE')
+                .eq('doc_code', docCode);
 
             // Save annotations local to browser for now
             localStorage.setItem(`pds_annotations_${id}_${docCode}`, JSON.stringify(paths));
@@ -133,7 +150,6 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
             alert("Return operation failed to sync.");
         }
     };
-;
 
     const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
         setNumPages(numPages);

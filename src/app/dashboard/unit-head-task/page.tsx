@@ -33,77 +33,115 @@ export default function UnitHeadDashboard() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchProjects = async () => {
+        const fetchUnitHeadData = async () => {
             setIsLoading(true);
             try {
                 const savedUser = localStorage.getItem('currentUser');
                 const currentUser = savedUser ? JSON.parse(savedUser) : null;
                 const currentUserName = currentUser?.name || '';
 
-                const { data, error } = await supabase
-                    .from('projects')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                if (data) {
-                    const mappedData = data.map(p => ({
-                        id: p.id,
-                        alternateId: p.alternate_id,
-                        title: p.project_name || 'Untitled Project',
-                        location: p.city_municipality || 'Unspecified Location',
-                        costValue: p.project_amount || 0,
-                        stage: 'Preparation',
-                        status: p.status || 'Draft',
-                        createdAt: p.created_at,
-                        fiscalYear: (p.start_year || 2025).toString(),
-                        assignedTo: p.assigned_to,
-                        deadline: p.deadline
-                    }));
-
-                    const filtered = mappedData.filter(p => {
-                        const role = currentUser?.role || currentUser?.position;
-                        return p.assignedTo === currentUserName || role === 'Admin' || role === 'Section Chief';
-                    });
-
-                    setProjects(filtered);
+                if (!currentUserName) {
+                    setIsLoading(false);
+                    return;
                 }
+
+                // 1. Fetch projects where user is the lead
+                const { data: leadTasks, error: leadError } = await supabase
+                    .from('tasks')
+                    .select(`
+                        project_id,
+                        projects (
+                            id,
+                            alternate_id,
+                            project_name,
+                            city_municipality,
+                            project_amount,
+                            start_year,
+                            status
+                        )
+                    `)
+                    .eq('assignee_name', currentUserName)
+                    .eq('task_type', 'PROJECT_LEAD');
+
+                if (leadError) throw leadError;
+
+                const leadProjectIds = leadTasks?.map((t: any) => t.project_id) || [];
+                
+                // 2. Fetch all tasks for those lead projects (to calculate summary counts)
+                let allRelatedTasks: any[] = [];
+                if (leadProjectIds.length > 0) {
+                    const { data: tasks, error: taskError } = await supabase
+                        .from('tasks')
+                        .select(`
+                            *,
+                            projects (
+                                id,
+                                alternate_id,
+                                project_name,
+                                city_municipality,
+                                project_amount,
+                                start_year,
+                                status
+                            )
+                        `)
+                        .in('project_id', leadProjectIds);
+                    
+                    if (taskError) throw taskError;
+                    allRelatedTasks = tasks || [];
+                }
+
+                // Map projects from leadTasks for the projects state (consistency)
+                const mappedProjects = leadTasks?.map((t: any) => ({
+                    id: t.projects?.id,
+                    alternateId: t.projects?.alternate_id,
+                    title: t.projects?.project_name || 'Untitled Project',
+                    location: t.projects?.city_municipality || 'Unspecified Location',
+                    costValue: t.projects?.project_amount || 0,
+                    stage: 'Preparation',
+                    status: t.projects?.status || 'Draft',
+                    createdAt: t.projects?.created_at,
+                    fiscalYear: (t.projects?.start_year || 2025).toString()
+                })) || [];
+
+                setProjects(mappedProjects);
+                (window as any).__allRelatedTasks = allRelatedTasks; // Tiny hack to use in summary calc without extra state if needed immediately
+
             } catch (err) {
-                console.error('Error fetching projects:', err);
+                console.error('Error fetching dashboard data:', err);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchProjects();
+        fetchUnitHeadData();
     }, []);
 
-    const today = new Date().toISOString().split('T')[0];
-    const pendingTasks = projects.filter(p => {
-        const s = p.status?.toUpperCase() || '';
-        return s.includes('DRAFT') || s.includes('PENDING') || s.includes('PROPOSED') || s === 'RETURNED';
-    });
-    const dueTodayCount = projects.filter(p => (p as any).deadline === today).length || pendingTasks.length;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const allTasks = (window as any).__allRelatedTasks || [];
+    
+    // Counts based on ALL tasks in projects that this Unit Head leads
+    const dueTodayCount = allTasks.filter((t: any) => t.deadline === todayStr).length;
+    const upcomingCount = allTasks.filter((t: any) => t.deadline && t.deadline > todayStr).length;
+    const overdueCount = allTasks.filter((t: any) => 
+        t.deadline && 
+        t.deadline < todayStr && 
+        t.status !== 'Approved'
+    ).length;
 
-    const inProgressTasks = projects.filter(p => {
-        const s = p.status?.toUpperCase() || '';
-        return s.includes('REVIEW');
-    });
-    const upcomingCount = projects.filter(p => (p as any).deadline && (p as any).deadline > today).length || inProgressTasks.length;
-
-    const completedCount = projects.length;
-
-    const displayProjects = projects.filter(p => {
-        const s = p.status?.toUpperCase() || '';
-        return (
-            s.includes('REVIEW') ||
-            s.includes('DRAFT') ||
-            s.includes('PENDING') ||
-            s.includes('PROPOSED') ||
-            s === 'RETURNED'
-        );
-    }).slice(0, 5);
+    // "Pending Documents for Review" list (Submitted but not yet approved/returned)
+    const displayProjects = allTasks.filter((t: any) => 
+        t.task_type === 'DOC_COMPLIANCE' && 
+        t.status === 'Submitted'
+    ).map((t: any) => ({
+        id: t.project_id,
+        alternateId: t.projects?.alternate_id,
+        docCode: t.doc_code,
+        title: t.projects?.project_name,
+        submittedBy: t.assignee_name,
+        deadline: t.deadline,
+        status: t.status,
+        createdAt: t.created_at
+    })).slice(0, 5);
 
     return (
         <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50 dark:bg-slate-900 animate-fade-in font-sans flex flex-col xl:flex-row gap-6 xl:gap-8">
@@ -141,12 +179,12 @@ export default function UnitHeadDashboard() {
                     </div>
 
                     <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                            <CheckCircle2 className="w-6 h-6" />
+                        <div className="w-12 h-12 rounded-lg bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center">
+                            <AlertCircle className="w-6 h-6" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Overview Task</p>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{completedCount}</h3>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Overdue Tasks</p>
+                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{overdueCount}</h3>
                         </div>
                     </div>
 
@@ -184,14 +222,14 @@ export default function UnitHeadDashboard() {
                                     <tr>
                                         <td colSpan={5} className="px-5 py-4 text-center">No documents currently pending review.</td>
                                     </tr>
-                                ) : displayProjects.map((doc) => (
-                                    <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <td className="px-5 py-4 font-bold text-slate-900 dark:text-white">{doc.alternateId || doc.id.substring(0, 8)}</td>
+                                ) : displayProjects.map((doc: any) => (
+                                    <tr key={`${doc.id}-${doc.docCode}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <td className="px-5 py-4 font-bold text-slate-900 dark:text-white">{doc.alternateId || doc.id.substring(0, 8)}-{doc.docCode}</td>
                                         <td className="px-5 py-4 flex items-center gap-2">
                                             <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold">
-                                                {('U').charAt(0)}
+                                                {doc.submittedBy?.charAt(0) || 'U'}
                                             </div>
-                                            User
+                                            {doc.submittedBy || 'Unknown User'}
                                         </td>
                                         <td className="px-5 py-4 text-slate-600 dark:text-slate-400">
                                             <div className="max-w-[200px] truncate" title={doc.title}>{doc.title}</div>
