@@ -28,6 +28,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
   const [docAssignments, setDocAssignments] = useState<Record<string, string>>({});
   const [uploadedDocs, setUploadedDocs] = useState<Record<string, string>>({});
   const [docDeadlines, setDocDeadlines] = useState<Record<string, string>>({});
+  const [docTaskStatuses, setDocTaskStatuses] = useState<Record<string, string>>({});
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
@@ -103,7 +104,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
           setDocAssignments(assignments);
           setDocDeadlines(deadlines);
           setUploadedDocs(uploads);
-          (window as any).__docTaskStatuses = taskStatuses; // To use for status icons
+          setDocTaskStatuses(taskStatuses);
         }
       } catch (err) {
         console.error('Error fetching project detail:', err);
@@ -165,8 +166,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
       await supabase.from('tasks').update({ status: 'Submitted' }).eq('project_id', id).eq('task_type', 'DOC_COMPLIANCE').eq('doc_code', docCode);
       
       // Update local hack state
-      if (!(window as any).__docTaskStatuses) (window as any).__docTaskStatuses = {};
-      (window as any).__docTaskStatuses[docCode] = 'Submitted';
+      setDocTaskStatuses(prev => ({ ...prev, [docCode]: 'Submitted' }));
 
     } catch (err) {
       console.error('Task sync error (Doc Upload):', err);
@@ -269,7 +269,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
 
             <div className="divide-y divide-[color:var(--border-color)]">
               {documents.map((doc: any, idx) => {
-                const currentStatus = (window as any).__docTaskStatuses?.[doc.code] || (uploadedDocs[doc.code] ? 'Submitted' : 'Pending');
+                const currentStatus = docTaskStatuses?.[doc.code] || (uploadedDocs[doc.code] ? 'Submitted' : 'Pending');
                 
                 return (
                   <div key={idx} className="p-5 hover:bg-gray-50/50 transition-colors group">

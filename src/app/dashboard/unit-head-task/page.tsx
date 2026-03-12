@@ -30,6 +30,7 @@ interface Project {
 export default function UnitHeadDashboard() {
     const [noteText, setNoteText] = useState('');
     const [projects, setProjects] = useState<Project[]>([]);
+    const [allTasks, setAllTasks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -104,7 +105,7 @@ export default function UnitHeadDashboard() {
                 })) || [];
 
                 setProjects(mappedProjects);
-                (window as any).__allRelatedTasks = allRelatedTasks; // Tiny hack to use in summary calc without extra state if needed immediately
+                setAllTasks(allRelatedTasks);
 
             } catch (err) {
                 console.error('Error fetching dashboard data:', err);
@@ -117,7 +118,6 @@ export default function UnitHeadDashboard() {
     }, []);
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const allTasks = (window as any).__allRelatedTasks || [];
     
     // Counts based on ALL tasks in projects that this Unit Head leads
     const dueTodayCount = allTasks.filter((t: any) => t.deadline === todayStr).length;
