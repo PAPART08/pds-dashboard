@@ -23,16 +23,22 @@ export default function Login() {
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { session, profile, loading } = useAuth();
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        if (!loading && session && profile) {
+        setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (isMounted && !loading && session && profile) {
             const role = profile.position || 'Regular Member';
             const targetRoute = getRedirectRoute(role);
             router.push(targetRoute);
         }
-    }, [session, profile, loading, router]);
+    }, [isMounted, session, profile, loading, router]);
 
-    if (loading) {
+    // Don't show the loading spinner during SSR to prevent hydration mismatch
+    if (isMounted && loading) {
         return (
             <div className={styles.container}>
                 {/* Background */}

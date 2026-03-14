@@ -14,17 +14,23 @@ export default function DashboardLayout({
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const { profile, loading, session } = useAuth();
     const router = useRouter();
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
     
     useEffect(() => {
-        if (!loading && (!session || !profile)) {
+        if (isMounted && !loading && (!session || !profile)) {
             // Only redirect if absolutely sure there is no session and no profile found
             if (!session) {
                 router.push('/login');
             }
         }
-    }, [loading, session, profile, router]);
+    }, [isMounted, loading, session, profile, router]);
 
-    if (loading) {
+    // Don't render dashboard content or redirect until mounted to prevent hydration errors
+    if (!isMounted || loading) {
         return (
             <div className="flex h-screen w-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
                 <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
