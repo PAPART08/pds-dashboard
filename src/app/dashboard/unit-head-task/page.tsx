@@ -73,7 +73,7 @@ export default function UnitHeadDashboard() {
                 const leadProjectIds = Array.from(new Set([
                     ...(leadTasksTable?.map((t: any) => t.project_id) || []),
                     ...(legacyLeadProjects?.map((p: any) => p.id) || [])
-                ]));
+                ])).filter(Boolean); // Filter out any null or undefined IDs
                 
                 // 2. Fetch projects and ALL tasks for those lead projects
                 let allRelatedTasksMapped: any[] = [];
@@ -156,8 +156,8 @@ export default function UnitHeadDashboard() {
                 setProjects(mappedProjects);
                 setAllTasks(allRelatedTasksMapped);
 
-            } catch (err) {
-                console.error('Error fetching dashboard data:', err);
+            } catch (err: any) {
+                console.error('Error fetching dashboard data:', err?.message || err);
             } finally {
                 setIsLoading(false);
             }
