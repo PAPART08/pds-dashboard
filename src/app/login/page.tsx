@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import styles from './page.module.css';
 
 // Dummy accounts for different roles
@@ -21,6 +22,23 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { session, profile, loading } = useAuth();
+
+    useEffect(() => {
+        if (!loading && session && profile) {
+            const role = profile.position || 'Regular Member';
+            const targetRoute = getRedirectRoute(role);
+            router.push(targetRoute);
+        }
+    }, [session, profile, loading, router]);
+
+    if (loading) {
+        return (
+            <div className={styles.container} style={{ display: 'flex', alignItems: 'center', justifyItems: 'center' }}>
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent mx-auto"></div>
+            </div>
+        );
+    }
 
     const getRedirectRoute = (role: string) => {
         switch (role) {

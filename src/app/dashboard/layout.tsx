@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import styles from './layout.module.css';
 import { useAuth } from '@/context/AuthContext';
@@ -11,7 +12,24 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const { profile } = useAuth();
+    const { profile, loading, session } = useAuth();
+    const router = useRouter();
+    
+    useEffect(() => {
+        if (!loading && !session) {
+            router.push('/login');
+        }
+    }, [loading, session, router]);
+
+    if (loading) {
+        return (
+            <div className="flex h-screen w-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+            </div>
+        );
+    }
+
+    if (!session) return null;
     
     const currentUser = {
         name: profile?.name,
