@@ -141,14 +141,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            // Clear all states manually to be safe and ensure UI updates
+            if (typeof window !== 'undefined') {
+                // 1. Vaporize all local databases completely
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // 2. Kill all cookies by forcefully expiring them
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i];
+                    const eqPos = cookie.indexOf("=");
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                }
+            }
+
+            // Clear all React states manually
             setSession(null);
             setUser(null);
             setProfile(null);
-            localStorage.removeItem('currentUser');
-            // Use a hard redirect instead of router.push to completely dump the 
-            // Next.js client router cache and React state, ensuring a clean slate.
-            window.location.href = '/login';
+            
+            // 3. Cache-busting hard redirect
+            window.location.href = `/login?logged_out=${new Date().getTime()}`;
         }
     };
 
