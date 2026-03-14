@@ -124,6 +124,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const signOut = async () => {
         try {
+            // Aggressively clear any Supabase session tokens from localStorage 
+            // to prevent ghost sessions on reloads (Fixes local logout issue)
+            if (typeof window !== 'undefined') {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith('sb-') && key.endsWith('-auth-token') || key === 'currentUser')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+            }
+            
             await supabase.auth.signOut();
         } catch (error) {
             console.error('Logout error:', error);

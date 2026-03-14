@@ -34,8 +34,15 @@ export default function Login() {
 
     if (loading) {
         return (
-            <div className={styles.container} style={{ display: 'flex', alignItems: 'center', justifyItems: 'center' }}>
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent mx-auto"></div>
+            <div className={styles.container}>
+                {/* Background */}
+                <div className={styles.bgWrapper}>
+                    <div className={styles.glowTopLeft}></div>
+                    <div className={styles.glowBottomRight}></div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100%', position: 'relative', zIndex: 10 }}>
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
+                </div>
             </div>
         );
     }
