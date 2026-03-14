@@ -146,7 +146,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUser(null);
             setProfile(null);
             localStorage.removeItem('currentUser');
-            router.push('/login');
+            // Use a hard redirect instead of router.push to completely dump the 
+            // Next.js client router cache and React state, ensuring a clean slate.
+            window.location.href = '/login';
         }
     };
 
