@@ -142,17 +142,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             console.error('Logout error:', error);
         } finally {
             if (typeof window !== 'undefined') {
-                // 1. Vaporize all local databases completely
-                localStorage.clear();
-                sessionStorage.clear();
-                
-                // 2. Kill all cookies by forcefully expiring them
-                const cookies = document.cookie.split(";");
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i];
-                    const eqPos = cookie.indexOf("=");
-                    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                try {
+                    // 1. Vaporize all local databases completely
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    // 2. Kill only Supabase cookies to prevent breaking Vercel routing
+                    const cookies = document.cookie.split(";");
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i];
+                        const eqPos = cookie.indexOf("=");
+                        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+                        if (name.startsWith('sb-')) {
+                            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                        }
+                    }
+                } catch (storageError) {
+                    console.warn('Storage wipe was blocked by browser settings:', storageError);
                 }
             }
 
