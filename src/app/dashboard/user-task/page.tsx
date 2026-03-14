@@ -108,7 +108,7 @@ export default function UserTaskDashboard() {
                 if (allProjects) {
                     allProjects.forEach(p => {
                         if (p.doc_assignments) {
-                            Object.entries(p.doc_assignments).forEach(([docCode, assignee]) => {
+                            Object.entries(p.doc_assignments).forEach(([docCode, assignee]: [string, any]) => {
                                 if (assignee?.toLowerCase().trim() === currentUserName?.toLowerCase().trim()) {
                                     const compositeKey = `${p.id}_${docCode}`;
                                     if (!seenTaskDocCodes.has(compositeKey)) {
