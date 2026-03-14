@@ -40,8 +40,8 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
     const { profile, loading: authLoading } = useAuth();
 
     // Sync current user info from profile
-    const currentUserName = profile?.name || 'Member';
-    const currentUserRole = profile?.position || 'Unit Member';
+    const currentUserName = profile?.name || '';
+    const currentUserRole = profile?.position || '';
 
     useEffect(() => {
         if (!authLoading && !profile) {
@@ -115,6 +115,17 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
     const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
         setNumPages(numPages);
     };
+
+    if (authLoading || !profile) {
+        return (
+            <div className="flex h-[calc(100vh-80px)] items-center justify-center bg-gray-50">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+                    <p className="font-medium text-slate-500 animate-pulse uppercase tracking-[0.2em] text-xs">Authenticating...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-[calc(100vh-80px)] overflow-hidden bg-[#f5f6f8] dark:bg-[#101622] -mx-4 md:-mx-8 lg:-mx-10 px-4 md:px-8 lg:px-10 -my-6 pt-4 font-sans">

@@ -40,12 +40,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUser(currentUser);
 
             if (currentUser) {
-                // Set a temporary fallback profile immediately based on user metadata
-                // to prevent premature redirection by pages checking !profile
+                // Initialize with metadata fallback (fast) to prevent null check failures
+                // but keep 'loading' true while we fetch definitive DB data.
                 const tempProfile: Employee = {
                     id: currentUser.id,
                     name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'User',
-                    position: currentUser.user_metadata?.position, // Removed default to Regular Member
+                    position: currentUser.user_metadata?.position, 
                     unit: currentUser.user_metadata?.unit || 'Planning & Design',
                     user_type: currentUser.user_metadata?.user_type || 'User',
                     email: currentUser.email || '',
@@ -53,7 +53,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 };
                 setProfile(tempProfile);
 
-                // Then try to get the real profile from DB
+                // Fetch real profile from DB (definitive)
+                // We keep 'loading' true during this fetch to avoid 'Guest' flashes
                 await fetchProfile(currentUser.id);
             } else {
                 setProfile(null);

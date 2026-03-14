@@ -27,6 +27,8 @@ export async function createTeamMember(userData: any) {
             user_metadata: {
                 full_name: userData.name,
                 username: userData.username,
+                position: userData.position,
+                unit: userData.unit,
             },
         });
 
@@ -85,16 +87,27 @@ export async function updateTeamMember(userData: any) {
 
     try {
         // 1. Update Auth password if provided
+        const updateAttrs: any = {
+            user_metadata: {
+                full_name: userData.name,
+                username: userData.username,
+                position: userData.position,
+                unit: userData.unit,
+            }
+        };
+        
         if (userData.password) {
-            const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
-                userData.id,
-                { password: userData.password }
-            );
+            updateAttrs.password = userData.password;
+        }
+
+        const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+            userData.id,
+            updateAttrs
+        );
             if (authError) {
                 console.error("Supabase Auth Update Error:", authError);
                 return { success: false, error: authError.message };
             }
-        }
 
         // 2. Update the custom 'employees' table
         const { error: dbError } = await supabaseAdmin

@@ -57,8 +57,8 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
     const [newComment, setNewComment] = useState('');
     const { profile, loading: authLoading } = useAuth();
     
-    // Initialize currentUser from profile if already available
-    const [currentUser, setCurrentUser] = useState<any>(profile ? { name: profile.name, role: profile.position } : null);
+    // Derive currentUser from profile – ensures synchronization with AuthContext
+    const currentUser = profile ? { name: profile.name, role: profile.position } : null;
 
     // Zoom state
     const [zoom, setZoom] = useState(1.0);
@@ -77,18 +77,13 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
     const textInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (!authLoading) {
-            if (!profile) {
-                // Short buffer to prevent ghost redirects on very slow initial loads
-                const timer = setTimeout(() => {
-                    if (!profile) router.push('/login');
-                }, 1000);
-                return () => clearTimeout(timer);
-            }
-            setCurrentUser({ name: profile.name, role: profile.position });
-        } else if (profile) {
-            // If profile is available (even if still loading other auth state), set it
-            setCurrentUser({ name: profile.name, role: profile.position });
+        if (!authLoading && !profile) {
+            // Give it 1 second to try and load from metadata/profile fallback 
+            // before redirecting, to handle slow connections
+            const timer = setTimeout(() => {
+                if (!profile) router.push('/login');
+            }, 1000);
+            return () => clearTimeout(timer);
         }
     }, [profile, authLoading, router]);
 
@@ -337,7 +332,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
     const canReview = currentUser?.role === 'Section Chief' || currentUser?.role === 'Unit Head' || currentUser?.role === 'Planning Unit Head';
 
     // Show loading state while auth is being validated
-    if (loading || !currentUser) {
+    if (authLoading || !currentUser) {
         return (
             <div className="flex h-[calc(100vh-80px)] items-center justify-center bg-gray-50">
                 <div className="flex flex-col items-center gap-4">
