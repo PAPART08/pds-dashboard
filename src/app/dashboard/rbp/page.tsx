@@ -181,38 +181,206 @@ export default function RBPStagePage() {
     }
   };
 
+  // Helper: split a large array into chunks and insert each one, throwing on any error
+  const chunkInsert = async (table: string, rows: any[], chunkSize = 500) => {
+    if (rows.length === 0) return;
+    for (let i = 0; i < rows.length; i += chunkSize) {
+      const chunk = rows.slice(i, i + chunkSize);
+      const { error } = await supabase.from(table).insert(chunk);
+      if (error) throw new Error(`Insert into ${table} failed: ${error.message}`);
+    }
+  };
+
   const handleImport = async (importedProjects: any[], strategy: 'merge' | 'overwrite' | 'replace') => {
     try {
       if (strategy === 'replace') {
         await supabase.from('projects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       }
 
-      for (const p of importedProjects) {
-        const projectRecord = {
-          alternate_id: p.alternateId,
-          project_name: p.projectDescription,
-          project_amount: p.totalCost,
-          project_category: p.category,
-          thrust: p.thrust,
-          sub_program_code: p.subProgramCode,
-          implementing_office: p.io,
-          city_municipality: p.municipality,
-          district_engineering_office: p.deo,
-          legislative_district: p.ld,
-          operating_unit: p.ou,
-          region_wide: p.isRegionwide,
-          start_year: parseInt(p.fiscalYear),
-          reporting_region: p.region,
-          rank: p.priorityRank ? parseInt(p.priorityRank) : null,
-          tier: p.priorityTier,
-          justification: p.justification
-        };
+      const buildProjectRecord = (p: any) => ({
+        alternate_id: p.alternateId,
+        project_name: p.projectDescription,
+        project_amount: p.totalCost,
+        project_category: p.category,
+        thrust: p.thrust,
+        sub_program_code: p.subProgramCode,
+        implementing_office: p.io,
+        city_municipality: p.municipality,
+        barangay: p.barangay || null,
+        district_engineering_office: p.deo,
+        legislative_district: p.ld,
+        operating_unit: p.ou,
+        region_wide: p.isRegionwide,
+        start_year: p.fiscalYear ? parseInt(p.fiscalYear) : null,
+        reporting_region: p.region,
+        project_origin: p.projectOrigin,
+        funding_agreement_name: p.fundingAgreementName,
+        originating_agency: p.originatingAgency,
+        rank: p.priorityRank ? parseInt(p.priorityRank) : null,
+        tier: p.priorityTier,
+        justification: p.justification,
+        program_stage: p.programStage
+      });
 
-        if (strategy === 'overwrite') {
-          await supabase.from('projects').upsert(projectRecord, { onConflict: 'alternate_id' });
-        } else {
-          await supabase.from('projects').insert([projectRecord]);
+      if (strategy === 'overwrite') {
+        // For overwrite, upsert projects individually (need returned IDs), but parallelize sub-record ops
+        const upsertedProjects = await Promise.all(
+          importedProjects.map(async (p) => {
+            const { data: upserted, error: uError } = await supabase
+              .from('projects')
+              .upsert(buildProjectRecord(p), { onConflict: 'alternate_id' })
+              .select()
+              .single();
+            if (uError) throw uError;
+
+            // Parallel delete of old sub-records
+            await Promise.all([
+              supabase.from('project_components').delete().eq('project_id', upserted.id),
+              supabase.from('project_infra_activities').delete().eq('project_id', upserted.id),
+            ]);
+
+            return { projectId: upserted.id, source: p };
+          })
+        );
+
+        // Collect all components + activities
+        const allComponents = upsertedProjects.flatMap(({ projectId, source: p }) =>
+          (p.components || []).map((c: any) => ({
+            project_id: projectId,
+            comp_id_display: c.id,
+            comp_type: c.compType,
+            comp_amount: c.cost,
+            planned_start_date: c.start || null,
+            planned_end_date: c.end || null,
+            start_year: p.fiscalYear ? parseInt(p.fiscalYear) : null,
+            infra_type: c.infraType,
+            infra_name: c.infraName,
+            type_of_work: c.workType,
+            target_unit: c.unit,
+            physical_target: c.target,
+            unit_cost: c.unitCost,
+            alternate_id: c.alternateId,
+            program_stage: c.programStage
+          }))
+        );
+        const allActivities = upsertedProjects.flatMap(({ projectId, source: p }) =>
+          (p.specificDetails || []).map((s: any) => ({
+            project_id: projectId,
+            comp_id_ref: s.compId,
+            infra_item: s.infraId,
+            start_station_limit: s.startLimit,
+            end_station_limit: s.endLimit,
+            start_chainage: s.startChainage,
+            end_chainage: s.endChainage,
+            start_x: s.startX,
+            start_y: s.startY,
+            end_x: s.endX,
+            end_y: s.endY,
+            length_m: s.length,
+            detailed_scope_of_work: s.scope,
+            target_amount: s.target,
+            cost_per_line: s.cost,
+            dominant: s.dominant,
+            year: s.year ? parseInt(s.year) : (p.fiscalYear ? parseInt(p.fiscalYear) : null),
+            alternate_id: s.alternateId,
+            program_stage: s.programStage,
+            infra_type: s.infraType,
+            original_remarks: s.originalRemarks,
+            revised_remarks: s.revisedRemarks,
+            num_lanes: s.lanes
+          }))
+        );
+
+        // Chunked inserts with error checking
+        await chunkInsert('project_components', allComponents);
+        await chunkInsert('project_infra_activities', allActivities);
+
+      } else {
+        // merge / replace: batch insert new projects, fetch IDs for existing ones
+        const alternateIds = importedProjects.map(p => p.alternateId).filter(Boolean);
+        
+        // 1. Fetch existing project IDs
+        const { data: existingProjects, error: eError } = await supabase
+          .from('projects')
+          .select('id, alternate_id')
+          .in('alternate_id', alternateIds);
+        if (eError) throw eError;
+
+        const idMap = new Map(existingProjects.map((r: any) => [r.alternate_id, r.id]));
+
+        // 2. Insert new projects
+        const newProjects = importedProjects.filter(p => !idMap.has(p.alternateId));
+        if (newProjects.length > 0) {
+          const projectRecords = newProjects.map(buildProjectRecord);
+          // Insert in chunks and add to idMap
+          for (let i = 0; i < projectRecords.length; i += 500) {
+            const chunk = projectRecords.slice(i, i + 500);
+            const { data, error } = await supabase
+              .from('projects')
+              .insert(chunk)
+              .select('id, alternate_id');
+            if (error) throw new Error(`Project insert failed: ${error.message}`);
+            if (data) {
+              data.forEach((r: any) => idMap.set(r.alternate_id, r.id));
+            }
+          }
         }
+
+        const allComponents = importedProjects.flatMap((p) => {
+          const projectId = idMap.get(p.alternateId);
+          if (!projectId) return [];
+          return (p.components || []).map((c: any) => ({
+            project_id: projectId,
+            comp_id_display: c.id,
+            comp_type: c.compType,
+            comp_amount: c.cost,
+            planned_start_date: c.start || null,
+            planned_end_date: c.end || null,
+            start_year: p.fiscalYear ? parseInt(p.fiscalYear) : null,
+            infra_type: c.infraType,
+            infra_name: c.infraName,
+            type_of_work: c.workType,
+            target_unit: c.unit,
+            physical_target: c.target,
+            unit_cost: c.unitCost,
+            alternate_id: c.alternateId,
+            program_stage: c.programStage
+          }));
+        });
+
+        const allActivities = importedProjects.flatMap((p) => {
+          const projectId = idMap.get(p.alternateId);
+          if (!projectId) return [];
+          return (p.specificDetails || []).map((s: any) => ({
+            project_id: projectId,
+            comp_id_ref: s.compId,
+            infra_item: s.infraId,
+            start_station_limit: s.startLimit,
+            end_station_limit: s.endLimit,
+            start_chainage: s.startChainage,
+            end_chainage: s.endChainage,
+            start_x: s.startX,
+            start_y: s.startY,
+            end_x: s.endX,
+            end_y: s.endY,
+            length_m: s.length,
+            detailed_scope_of_work: s.scope,
+            target_amount: s.target,
+            cost_per_line: s.cost,
+            dominant: s.dominant,
+            year: s.year ? parseInt(s.year) : (p.fiscalYear ? parseInt(p.fiscalYear) : null),
+            alternate_id: s.alternateId,
+            program_stage: s.programStage,
+            infra_type: s.infraType,
+            original_remarks: s.originalRemarks,
+            revised_remarks: s.revisedRemarks,
+            num_lanes: s.lanes
+          }));
+        });
+
+        // Chunked inserts with error checking
+        await chunkInsert('project_components', allComponents);
+        await chunkInsert('project_infra_activities', allActivities);
       }
 
       setIsImportOpen(false);

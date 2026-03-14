@@ -23,8 +23,12 @@ export default function ApprovalQueuePage() {
     const fetchProjects = async () => {
       setIsLoading(true);
       try {
-        // Fetch exclusively from Supabase
-        const { data, error } = await supabase.from('projects').select('*');
+        // Fetch exclusively from Supabase, filtering by status
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('status', 'Submitted to Section Chief');
+          
         if (error) throw error;
 
         if (data) {
@@ -33,7 +37,7 @@ export default function ApprovalQueuePage() {
             alternateId: p.alternate_id,
             name: p.project_name || 'No Description',
             cost: (p.project_amount / 1000000).toFixed(1) + 'M',
-            status: 'Technically Vetted',
+            status: p.status || 'Submitted',
             date: new Date(p.created_at).toLocaleDateString()
           }));
           setProjects(mappedData);
@@ -46,6 +50,40 @@ export default function ApprovalQueuePage() {
     };
     fetchProjects();
   }, []);
+
+  const handleApproveProject = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ status: 'Approved' })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setProjects(projects.filter(p => p.id !== id));
+      alert("Project officially Approved and recommended for Master List.");
+    } catch (err) {
+      console.error("Approval failed:", err);
+      alert("Failed to sign-off project.");
+    }
+  };
+
+  const handleRejectProject = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ status: 'Returned to Unit Head' })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setProjects(projects.filter(p => p.id !== id));
+      alert("Project returned to Unit Head for corrections.");
+    } catch (err) {
+      console.error("Rejection failed:", err);
+      alert("Failed to reject project.");
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in px-4 md:px-0 pb-10">
@@ -122,10 +160,16 @@ export default function ApprovalQueuePage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <button className="btn btn-outline border-gray-100 hover:border-red-200 hover:bg-red-50 text-red-500 px-4 py-2 rounded-xl text-xs font-bold uppercase">
+                    <button 
+                      onClick={() => handleRejectProject(item.id)}
+                      className="btn btn-outline border-gray-100 hover:border-red-200 hover:bg-red-50 text-red-500 px-4 py-2 rounded-xl text-xs font-bold uppercase"
+                    >
                       Reject
                     </button>
-                    <button className="btn btn-secondary bg-[color:var(--dpwh-blue)] text-white px-6 py-2 rounded-xl text-xs font-bold uppercase flex items-center shadow-md hover:bg-emerald-600 transition-all active:scale-95">
+                    <button 
+                      onClick={() => handleApproveProject(item.id)}
+                      className="btn btn-secondary bg-[color:var(--dpwh-blue)] text-white px-6 py-2 rounded-xl text-xs font-bold uppercase flex items-center shadow-md hover:bg-emerald-600 transition-all active:scale-95"
+                    >
                       <Stamp className="w-4 h-4 mr-2" />
                       Digital Sign-off
                     </button>

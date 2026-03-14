@@ -30,28 +30,77 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
 
     useEffect(() => {
+        let mounted = true;
+
+        const handleAuthStateChange = async (currentSession: Session | null) => {
+            if (!mounted) return;
+
+            setSession(currentSession);
+            const currentUser = currentSession?.user ?? null;
+            setUser(currentUser);
+
+            if (currentUser) {
+                // Set a temporary fallback profile immediately based on user metadata
+                // to prevent premature redirection by pages checking !profile
+                const tempProfile: Employee = {
+                    id: currentUser.id,
+                    name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'User',
+                    position: currentUser.user_metadata?.position, // Removed default to Regular Member
+                    unit: currentUser.user_metadata?.unit || 'Planning & Design',
+                    user_type: currentUser.user_metadata?.user_type || 'User',
+                    email: currentUser.email || '',
+                    created_at: new Date().toISOString()
+                };
+                setProfile(tempProfile);
+
+                // Then try to get the real profile from DB
+                await fetchProfile(currentUser.id);
+            } else {
+                setProfile(null);
+                localStorage.removeItem('currentUser');
+            }
+
+            if (mounted) {
+                setLoading(false);
+            }
+        };
+
+        const initializeAuth = async () => {
+            try {
+                const { data: { session: currentSession } } = await supabase.auth.getSession();
+                await handleAuthStateChange(currentSession);
+            } catch (error) {
+                console.error('Error fetching initial session:', error);
+                if (mounted) setLoading(false);
+            }
+        };
+
+        initializeAuth();
+
+        const safetyTimer = setTimeout(() => {
+            if (mounted && loading) {
+                console.warn('Auth check timed out. Forcing loading to false.');
+                setLoading(false);
+            }
+        }, 5000); // Reduced timeout to 5s for better UX
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
             console.log('Auth event:', event, 'User:', currentSession?.user?.id);
             
-            setSession(currentSession);
-            setUser(currentSession?.user ?? null);
-            
-            if (currentSession?.user) {
-                // Fetch profile only if session has changed meaningfully
-                await fetchProfile(currentSession.user.id);
-            } else {
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                await handleAuthStateChange(currentSession);
+            } else if (event === 'SIGNED_OUT') {
+                setSession(null);
+                setUser(null);
                 setProfile(null);
-                // Clear legacy localStorage for compatibility
                 localStorage.removeItem('currentUser');
-            }
-            
-            // Only set loading to false after the initial check is complete
-            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-                setLoading(false);
+                if (mounted) setLoading(false);
             }
         });
 
         return () => {
+            mounted = false;
+            clearTimeout(safetyTimer);
             subscription.unsubscribe();
         };
     }, []);
@@ -73,15 +122,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
 
             if (!data) {
-                console.warn('No profile found for authenticated user ID:', userId);
-                // Attempt to fallback to session metadata if profile is missing
-                const { data: { session } } = await supabase.auth.getSession();
-                const user = session?.user;
+                console.warn('No profile found in employees table for ID:', userId);
+                // Fallback to basic session info if DB profile is missing
                 if (user) {
                     const fallbackProfile: Employee = {
                         id: user.id,
                         name: user.user_metadata?.full_name || user.user_metadata?.name || 'User',
-                        position: user.user_metadata?.position || 'Regular Member',
+                        position: user.user_metadata?.position || 'Regular Member', // Keep default here as absolute final fallback
                         unit: user.user_metadata?.unit || 'Planning & Design',
                         user_type: user.user_metadata?.user_type || 'User',
                         email: user.email,
@@ -124,51 +171,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const signOut = async () => {
         try {
-            // Aggressively clear any Supabase session tokens from localStorage 
-            // to prevent ghost sessions on reloads (Fixes local logout issue)
-            if (typeof window !== 'undefined') {
-                const keysToRemove = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && (key.startsWith('sb-') && key.endsWith('-auth-token') || key === 'currentUser')) {
-                        keysToRemove.push(key);
-                    }
-                }
-                keysToRemove.forEach(key => localStorage.removeItem(key));
-            }
-            
             await supabase.auth.signOut();
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            if (typeof window !== 'undefined') {
-                try {
-                    // 1. Vaporize all local databases completely
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    
-                    // 2. Kill only Supabase cookies to prevent breaking Vercel routing
-                    const cookies = document.cookie.split(";");
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i];
-                        const eqPos = cookie.indexOf("=");
-                        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-                        if (name.startsWith('sb-')) {
-                            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-                        }
-                    }
-                } catch (storageError) {
-                    console.warn('Storage wipe was blocked by browser settings:', storageError);
-                }
-            }
-
-            // Clear all React states manually
+            // Clear React states
             setSession(null);
             setUser(null);
             setProfile(null);
             
-            // 3. Cache-busting hard redirect
-            window.location.href = `/login?logged_out=${new Date().getTime()}`;
+            // Hard redirect to login page to clear any in-memory state
+            window.location.href = '/login';
         }
     };
 

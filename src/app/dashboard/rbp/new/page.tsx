@@ -170,8 +170,8 @@ export default function NewProjectEntry() {
       setSpecificDetails(specs.map(s => ({
         compId: s.comp_id_ref,
         infraId: s.infra_item,
-        startLimit: s.start_limit,
-        endLimit: s.end_limit,
+        startLimit: s.start_station_limit,
+        endLimit: s.end_station_limit,
         startChainage: s.start_chainage,
         endChainage: s.end_chainage,
         startX: s.start_x || '',
@@ -535,15 +535,16 @@ export default function NewProjectEntry() {
 
             <div className={styles.formGroup}>
               <label className={styles.label}>Implementing Office (IO)</label>
-              <select
+              <input
                 className={styles.input}
+                list="io-options"
                 value={formData.io}
                 onChange={(e) => handleInputChange('io', e.target.value)}
-                disabled={!formData.region}
-              >
-                <option value="">Select IO</option>
-                {implementingOffices.map((o: string) => <option key={o} value={o}>{o}</option>)}
-              </select>
+                placeholder="Select or type IO"
+              />
+              <datalist id="io-options">
+                {implementingOffices.map((o: string) => <option key={o} value={o} />)}
+              </datalist>
             </div>
 
             <div className={styles.formRow2}>
@@ -603,14 +604,16 @@ export default function NewProjectEntry() {
             <div className={styles.formRow2}>
               <div className={styles.formGroup}>
                 <label className={styles.label}>Operating Unit (OU)</label>
-                <select
+                <input
                   className={styles.input}
+                  list="ou-options"
                   value={formData.ou}
                   onChange={(e) => handleInputChange('ou', e.target.value)}
-                >
-                  <option value="">Select OU</option>
-                  {offices.map((o: string) => <option key={o} value={o}>{o}</option>)}
-                </select>
+                  placeholder="Select or type OU"
+                />
+                <datalist id="ou-options">
+                  {offices.map((o: string) => <option key={o} value={o} />)}
+                </datalist>
               </div>
               <div className={styles.formGroup}>
                 {/* Empty block to keep layout grid balanced if necessary, or put Regionwide checkbox here */}

@@ -22,14 +22,53 @@ const PdfRenderer = dynamic(() => import('@/components/PdfRenderer'), {
     loading: () => <div className="p-10 text-slate-500 font-bold animate-pulse">Initializing PDF Viewer...</div>
 });
 
-export default function DocumentCorrectionViewer({ params }: { params: Promise<{ id: string, docCode: string }> }) {
-    const { id, docCode } = use(params);
+import { useAuth } from '@/context/AuthContext';
+
+export default function DocumentCorrectionViewer({ params: paramsProp }: { params: any }) {
+    // Safely handle params
+    const unwrappedParams = paramsProp && typeof paramsProp.then === 'function' ? use(paramsProp) : paramsProp;
+    const { id, docCode } = (unwrappedParams || {}) as { id: string, docCode: string };
+    
     const router = useRouter();
 
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
     const [numPages, setNumPages] = useState<number | null>(null);
     const [paths, setPaths] = useState<any[]>([]);
     const [comments, setComments] = useState<{ id: number, user: string, role: string, text: string, time: string, isResolved: boolean }[]>([]);
+    const [replyText, setReplyText] = useState('');
+    
+    const { profile, loading: authLoading } = useAuth();
+
+    // Sync current user info from profile
+    const currentUserName = profile?.name || 'Member';
+    const currentUserRole = profile?.position || 'Unit Member';
+
+    useEffect(() => {
+        if (!authLoading && !profile) {
+            const timer = setTimeout(() => {
+                if (!profile) router.push('/login');
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [profile, authLoading, router]);
+
+    const handlePostReply = () => {
+        if (!replyText.trim()) return;
+        const now = new Date();
+        const timeStr = now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const reply = {
+            id: Date.now(),
+            user: currentUserName,
+            role: currentUserRole,
+            text: replyText,
+            time: timeStr,
+            isResolved: false
+        };
+        const updatedComments = [...comments, reply];
+        setComments(updatedComments);
+        localStorage.setItem(`pds_comments_${id}_${docCode}`, JSON.stringify(updatedComments));
+        setReplyText('');
+    };
 
     const docName = SUPPORTING_DOC_DESCRIPTIONS[docCode as string] || 'Unknown Document';
 
@@ -185,7 +224,24 @@ export default function DocumentCorrectionViewer({ params }: { params: Promise<{
                         </div>
                     ))}
 
-                    <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                    {/* Reply to Remarks */}
+                    <div className="mt-4 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Reply to Reviewer</p>
+                        <textarea
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="Type your response to the reviewer..."
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none h-20"
+                        ></textarea>
+                        <button
+                            onClick={handlePostReply}
+                            className="mt-2 w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors"
+                        >
+                            Post Reply
+                        </button>
+                    </div>
+
+                    <div className="mt-4 pt-6 border-t border-slate-200 dark:border-slate-700">
                         <p className="text-xs text-slate-500 text-center mb-3">Done making the requested changes?</p>
                         <label className="w-full flex justify-center items-center px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-md shadow-blue-600/20 cursor-pointer transition-colors">
                             Upload Final Revision

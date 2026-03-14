@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import dynamic from 'next/dynamic';
 import {
     Bell,
@@ -40,6 +41,7 @@ export default function PlanningMemberTaskPage() {
     const [complianceModal, setComplianceModal] = useState<{ id: string; subject: string } | null>(null);
     const [complianceNote, setComplianceNote] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { profile, loading } = useAuth();
     const [currentUserName, setCurrentUserName] = useState('');
 
     const fetchMemorandums = useCallback(async (userName: string) => {
@@ -61,15 +63,16 @@ export default function PlanningMemberTaskPage() {
     }, []);
 
     useEffect(() => {
-        const savedUser = localStorage.getItem('currentUser');
-        const userName = savedUser ? JSON.parse(savedUser).name : '';
-        setCurrentUserName(userName);
-        if (userName) {
-            fetchMemorandums(userName);
-        } else {
-            setIsLoading(false);
+        if (!loading) {
+            const userName = profile?.name || '';
+            setCurrentUserName(userName);
+            if (userName) {
+                fetchMemorandums(userName);
+            } else {
+                setIsLoading(false);
+            }
         }
-    }, [fetchMemorandums]);
+    }, [fetchMemorandums, profile, loading]);
 
     const todayStr = new Date().toISOString().split('T')[0];
     const pendingCount = memorandums.filter(m => m.status === 'Pending' || m.status === 'Overdue').length;

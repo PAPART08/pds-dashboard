@@ -3,6 +3,7 @@
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import {
   ChevronLeft,
   CheckCircle2,
@@ -29,27 +30,41 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
   const [uploadedDocs, setUploadedDocs] = useState<Record<string, string>>({});
   const [docDeadlines, setDocDeadlines] = useState<Record<string, string>>({});
   const [docTaskStatuses, setDocTaskStatuses] = useState<Record<string, string>>({});
+  const { profile, loading } = useAuth();
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) setCurrentUser(JSON.parse(savedUser));
-  }, []);
+    if (!loading) {
+      setCurrentUser(profile ? { name: profile.name, role: profile.position } : null);
+    }
+  }, [profile, loading]);
 
-  const [teamMembers, setTeamMembers] = useState<string[]>([]);
+  const [teamMembers, setTeamMembers] = useState<{name: string, position: string, unit?: string}[]>([]);
 
   useEffect(() => {
     const fetchTeam = async () => {
       try {
-        const { data, error } = await supabase.from('employees').select('name').order('created_at', { ascending: true });
+        const { data, error } = await supabase
+          .from('employees')
+          .select('name, position, unit')
+          .order('name', { ascending: true });
+          
         if (!error && data && data.length > 0) {
-          setTeamMembers(data.map((d: any) => d.name));
+          const members = data.filter((e: any) => 
+            e.position === 'Planning Engineer' || 
+            e.position === 'Regular Member' || 
+            e.position === 'Unit Member' ||
+            e.position === 'Cost Estimator' ||
+            e.position === 'Project Programmer' ||
+            e.position === 'Unit Head'
+          );
+          setTeamMembers(members);
         } else {
-          setTeamMembers(EMPLOYEES.map(e => e.name));
+          setTeamMembers(EMPLOYEES.map(e => ({ name: e.name, position: e.position, unit: (e as any).unit || 'Planning' })));
         }
       } catch (err) {
         console.error('Error fetching team members:', err);
-        setTeamMembers(EMPLOYEES.map(e => e.name));
+        setTeamMembers(EMPLOYEES.map(e => ({ name: e.name, position: e.position, unit: (e as any).unit || 'Planning' })));
       }
     };
     fetchTeam();
@@ -183,6 +198,23 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
 
   const documents = getRequiredDocs(project?.subProgramCode, project?.thrust);
 
+  const handleSubmitToChief = async () => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ status: 'Submitted to Section Chief' })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setProject({ ...project, status: 'Submitted to Section Chief' });
+      alert("Project successfully submitted to Section Chief for Final Approval.");
+    } catch (err) {
+      console.error("Submission failed:", err);
+      alert("Failed to submit project to Chief.");
+    }
+  };
+
   const handleUpdateDocDeadline = async (docCode: string, date: string) => {
     if (project?.deadline && date > project.deadline) {
       alert(`Error: Document deadline cannot pass project target date (${project.deadline})`);
@@ -310,7 +342,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
                           onChange={(e) => handleAssignDoc(doc.code, e.target.value)}
                         >
                           <option value="">Tag Assignment</option>
-                          {teamMembers.map(m => <option key={m} value={m}>{m}</option>)}
+                          {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name} ({m.position} / {m.unit || 'Planning'})</option>)}
                         </select>
                       </div>
 
@@ -406,7 +438,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
                     onChange={(e) => handleAssignProject(e.target.value)}
                   >
                     <option value="">Select Member</option>
-                    {teamMembers.map(m => <option key={m} value={m}>{m}</option>)}
+                    {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name} ({m.position} / {m.unit || 'Planning'})</option>)}
                   </select>
                 </div>
 
@@ -422,6 +454,35 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
                     CONFIRM ASSIGNMENT
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {isUnitHead && (
+            <div className="glass-panel p-6 shadow-md border-t-4 border-blue-600 bg-white">
+              <h3 className="font-bold text-md mb-4 uppercase tracking-tighter text-gray-500">Project Management</h3>
+              <div className="space-y-4">
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Current Status</p>
+                  <p className="text-sm font-black text-slate-800">{project?.status}</p>
+                </div>
+                
+                <button
+                  disabled={project?.status === 'Submitted to Section Chief' || project?.status === 'Approved'}
+                  onClick={handleSubmitToChief}
+                  className={`w-full flex justify-center items-center py-3 rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 ${
+                    (project?.status === 'Submitted to Section Chief' || project?.status === 'Approved')
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                      : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white'
+                  }`}
+                >
+                  <ArrowUpRight className="w-4 h-4 mr-2" />
+                  {project?.status === 'Submitted to Section Chief' ? 'SUBMITTED' : (project?.status === 'Approved' ? 'APPROVED' : 'SUBMIT TO SECTION CHIEF')}
+                </button>
+                
+                <p className="text-[10px] text-gray-400 italic text-center">
+                  Submitting will notify the Section Chief for final digital sign-off.
+                </p>
               </div>
             </div>
           )}

@@ -57,9 +57,9 @@ export default function RBPProgressDashboard() {
     }, []);
 
     const pendingCount = projects.filter(p => p.status === 'Draft' || p.status.includes('Pending')).length;
-    const underReviewCount = projects.filter(p => Object.is(p.status, 'Under Review') || p.status.includes('Review') || p.status.includes('Prog')).length;
-    const approvalCount = projects.filter(p => Object.is(p.status, 'Approved') || p.status.includes('Approv')).length;
-    const submissionCount = projects.filter(p => p.status.includes('Submit') || p.status.includes('Done')).length;
+    const underReviewCount = projects.filter(p => p.status === 'Under Review' || p.status.includes('Review') || p.status.includes('Prog')).length;
+    const approvalCount = projects.filter(p => p.status === 'Submitted to Section Chief').length;
+    const submissionCount = projects.filter(p => p.status === 'Approved' || p.status === 'Submitted to DE').length;
 
     const calculateUnitMetrics = (keywords: string[]) => {
         const unitProjects = projects.filter(p => keywords.some(k => p.category?.toLowerCase().includes(k.toLowerCase()) || p.id.includes(k)));

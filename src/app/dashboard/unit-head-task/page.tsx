@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import dynamic from 'next/dynamic';
 import {
@@ -38,14 +39,14 @@ export default function UnitHeadDashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [activeBreakdown, setActiveBreakdown] = useState<string | null>(null);
     const [currentUserName, setCurrentUserName] = useState('');
+    const { profile, loading } = useAuth();
 
     useEffect(() => {
         const fetchUnitHeadData = async () => {
             setIsLoading(true);
             try {
-                const savedUser = localStorage.getItem('currentUser');
-                const currentUser = savedUser ? JSON.parse(savedUser) : null;
-                const userName = currentUser?.name || '';
+                if (loading) return;
+                const userName = profile?.name || '';
                 setCurrentUserName(userName);
 
                 if (!userName) {
@@ -170,7 +171,7 @@ export default function UnitHeadDashboard() {
         if (savedNotes) {
             setNoteText(savedNotes);
         }
-    }, []);
+    }, [profile, loading]);
 
     const handleSaveNote = () => {
         localStorage.setItem('unit_head_strategic_notes', noteText);

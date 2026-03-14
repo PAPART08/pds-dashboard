@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import {
     Search,
     Calendar,
@@ -38,35 +39,61 @@ export default function GlobalTaskListPage() {
     const router = useRouter();
     const [unitHeads, setUnitHeads] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState<string | null>(null);
+    const { profile, loading } = useAuth();
 
     useEffect(() => {
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-            const user = JSON.parse(savedUser);
-            setCurrentUser(user);
-            
-            // Access control for Unit Head
-            if (user.role === 'Unit Head') {
-                router.push('/dashboard/unit-head-task');
-                return;
+        if (!loading) {
+            if (profile) {
+                const user = { name: profile.name, role: profile.position };
+                setCurrentUser(user);
+                
+                // Access control for Unit Head
+                if (user.role === 'Unit Head') {
+                    router.push('/dashboard/unit-head-task');
+                    return;
+                }
             }
-        }
 
-        // Fetch Unit Heads for assignment
-        const savedTeam = localStorage.getItem('pds_team');
-        let team = [];
-        if (savedTeam) {
-            team = JSON.parse(savedTeam);
-        } else {
-            team = EMPLOYEES;
-        }
-        const heads = team
-            .filter((e: any) => e.position === 'Unit Head' || e.user_type === 'Admin')
-            .map((e: any) => e.name);
-        setUnitHeads(heads);
+            // Fetch Unit Heads for assignment from Supabase
+            const fetchUnitHeads = async () => {
+                try {
+                    const { data, error } = await supabase
+                    .from('employees')
+                    .select('name, position, user_type')
+                    .order('name');
+                
+                if (error) throw error;
+                
+                if (data) {
+                    const heads = data
+                        .filter((e: any) => 
+                            e.position === 'Unit Head' || 
+                            e.position === 'Planning Unit Head' || 
+                            e.user_type === 'Admin'
+                        )
+                        .map((e: any) => e.name);
+                    setUnitHeads(heads);
+                }
+            } catch (err) {
+                console.error('Error fetching employees for lead assignment:', err);
+                // Fallback to local if Supabase fails
+                const savedTeam = localStorage.getItem('pds_team');
+                let team = [];
+                if (savedTeam) {
+                    team = JSON.parse(savedTeam);
+                } else {
+                    team = EMPLOYEES;
+                }
+                const heads = team
+                    .filter((e: any) => e.position === 'Unit Head' || e.position === 'Planning Unit Head' || e.user_type === 'Admin')
+                    .map((e: any) => e.name);
+                setUnitHeads(heads);
+            }
+        };
 
-        fetchProjects();
-    }, []);
+        fetchUnitHeads();
+        }
+    }, [profile, loading, router]);
 
     const fetchProjects = async () => {
         setIsLoading(true);

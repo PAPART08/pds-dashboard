@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import dynamic from 'next/dynamic';
 import {
     Calendar,
@@ -38,14 +39,16 @@ export default function UserTaskDashboard() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [currentUserName, setCurrentUserName] = useState('');
+    const { profile, loading } = useAuth();
 
     useEffect(() => {
         const fetchProjects = async () => {
             setIsLoading(true);
             try {
+                if (loading) return;
+                
                 // Get current user's name
-                const savedUser = localStorage.getItem('currentUser');
-                const currentUserName = savedUser ? JSON.parse(savedUser).name : '';
+                const currentUserName = profile?.name || '';
                 setCurrentUserName(currentUserName);
 
                 if (!currentUserName) {
@@ -88,7 +91,7 @@ export default function UserTaskDashboard() {
                         
                         userAssignedTasks.push({
                             id: t.id,
-                            docId: `${t.projects?.alternate_id || t.projects?.id.substring(0, 8).toUpperCase()}-${t.doc_code}`,
+                            docId: `${t.projects?.alternate_id || t.projects?.id.substring(0, 8).toUpperCase()}${t.doc_code ? `-${t.doc_code}` : ''}`,
                             title: t.projects?.project_name || 'Untitled Project',
                             location: t.projects?.city_municipality || 'Unspecified',
                             costValue: t.projects?.project_amount || 0,
@@ -109,23 +112,23 @@ export default function UserTaskDashboard() {
                     allProjects.forEach(p => {
                         if (p.doc_assignments) {
                             Object.entries(p.doc_assignments).forEach(([docCode, assignee]: [string, any]) => {
-                                if (assignee?.toLowerCase().trim() === currentUserName?.toLowerCase().trim()) {
+                                if (typeof assignee === 'string' && assignee.toLowerCase().trim() === currentUserName.toLowerCase().trim()) {
                                     const compositeKey = `${p.id}_${docCode}`;
                                     if (!seenTaskDocCodes.has(compositeKey)) {
                                         userAssignedTasks.push({
                                             id: `legacy-${p.id}-${docCode}`,
-                                            docId: `${p.alternate_id || p.id.substring(0, 8).toUpperCase()}-${docCode}`,
-                                            title: p.project_name || 'Untitled Project',
-                                            location: p.city_municipality || 'Unspecified',
-                                            costValue: p.project_amount || 0,
-                                            stage: 'Preparation',
-                                            status: p.doc_statuses?.[docCode] || 'Drafting',
-                                            createdAt: p.created_at,
-                                            fiscalYear: (p.start_year || 2025).toString(),
-                                            type: 'Legacy Assignment',
-                                            deadline: p.doc_deadlines?.[docCode] || null,
-                                            projectId: p.id,
-                                            docCode: docCode
+                            docId: `${p.alternate_id || p.id.substring(0, 8).toUpperCase()}${docCode ? `-${docCode}` : ''}`,
+                            title: p.project_name || 'Untitled Project',
+                            location: p.city_municipality || 'Unspecified',
+                            costValue: p.project_amount || 0,
+                            stage: 'Preparation',
+                            status: p.doc_statuses?.[docCode] || 'Drafting',
+                            createdAt: p.created_at,
+                            fiscalYear: (p.start_year || 2025).toString(),
+                            type: 'Legacy Assignment',
+                            deadline: p.doc_deadlines?.[docCode] || null,
+                            projectId: p.id,
+                            docCode: docCode
                                         });
                                     }
                                 }
@@ -330,7 +333,7 @@ export default function UserTaskDashboard() {
                                     </tr>
                                 ) : displayProjects.map((doc) => (
                                     <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <td className="px-5 py-4 font-extrabold text-[#1e293b] dark:text-white tracking-wider whitespace-normal break-words min-w-[150px]">{doc.docId || doc.id.substring(0, 8)}</td>
+                                        <td className="px-5 py-4 font-extrabold text-[#1e293b] dark:text-white tracking-wider whitespace-normal break-words min-w-[150px]">{doc.docCode || doc.docId || doc.id.substring(0, 8)}</td>
                                         <td className="px-5 py-4">
                                             <div className="max-w-[180px] lg:max-w-[300px] whitespace-normal break-words" title={doc.title}>{doc.title}</div>
                                         </td>

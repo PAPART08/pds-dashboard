@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import {
   ClipboardCheck,
   Search,
@@ -18,12 +19,13 @@ export default function ReviewQueuePage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [masterListCount, setMasterListCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const { profile, loading } = useAuth();
 
   useEffect(() => {
     const fetchAllData = async () => {
       setIsLoading(true);
       try {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const currentUser = profile ? { name: profile.name, role: profile.position, position: profile.position, user_type: profile.user_type } : {};
         
         // Fetch only from Supabase
         const { data, error } = await supabase.from('projects').select('*');
@@ -62,8 +64,10 @@ export default function ReviewQueuePage() {
         setIsLoading(false);
       }
     };
-    fetchAllData();
-  }, []);
+    if (!loading) {
+      fetchAllData();
+    }
+  }, [profile, loading]);
 
   const getPriorityStyle = (priority: string) => {
     switch (priority) {

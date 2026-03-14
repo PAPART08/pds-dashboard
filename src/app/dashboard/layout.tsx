@@ -21,10 +21,20 @@ export default function DashboardLayout({
     }, []);
     
     useEffect(() => {
-        if (isMounted && !loading && (!session || !profile)) {
-            // Only redirect if absolutely sure there is no session and no profile found
+        if (isMounted && !loading) {
             if (!session) {
                 router.push('/login');
+            } else if (!profile) {
+                // Only redirect if we definitely shouldn't have a profile
+                // (e.g. session search finished but fetchProfile returned null)
+                // If we have a session, AuthContext should have provided at least a fallback profile.
+                const timer = setTimeout(() => {
+                    if (!profile && session) {
+                        console.warn('Session exists but no employee profile found after timeout. Redirecting.');
+                        router.push('/login');
+                    }
+                }, 2000);
+                return () => clearTimeout(timer);
             }
         }
     }, [isMounted, loading, session, profile, router]);
@@ -81,7 +91,7 @@ export default function DashboardLayout({
                                     {currentUser.name || 'User'}
                                 </span>
                                 <span className={styles.userRoleHeader}>
-                                    {currentUser.role || 'Guest'}
+                                    {currentUser.role || 'Loading...'}
                                 </span>
                             </div>
                         </div>

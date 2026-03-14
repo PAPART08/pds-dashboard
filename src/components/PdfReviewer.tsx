@@ -8,15 +8,25 @@ import 'react-pdf/dist/Page/TextLayer.css';
 // Configure worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+export interface TextAnnotation {
+    x: number;
+    y: number;
+    text: string;
+}
+
 interface PdfReviewerProps {
     pdfUrl: string;
     numPages: number | null;
     onLoadSuccess: (data: { numPages: number }) => void;
     paths: any[];
+    currentPath?: any;
+    textAnnotations?: TextAnnotation[];
     activeTool: string;
+    zoom?: number;
     onMouseDown: (e: React.MouseEvent<SVGSVGElement>) => void;
     onMouseMove: (e: React.MouseEvent<SVGSVGElement>) => void;
     onMouseUp: () => void;
+    onSvgClick?: (e: React.MouseEvent<SVGSVGElement>) => void;
 }
 
 export default function PdfReviewer({
@@ -24,12 +34,17 @@ export default function PdfReviewer({
     numPages,
     onLoadSuccess,
     paths,
+    currentPath,
+    textAnnotations = [],
     activeTool,
+    zoom = 1,
     onMouseDown,
     onMouseMove,
-    onMouseUp
+    onMouseUp,
+    onSvgClick
 }: PdfReviewerProps) {
     const [loadError, setLoadError] = useState(false);
+    const pageWidth = Math.round(800 * zoom);
 
     if (loadError) {
         return (
@@ -40,8 +55,10 @@ export default function PdfReviewer({
         );
     }
 
+    const allPaths = currentPath ? [...paths, currentPath] : paths;
+
     return (
-        <div className="relative shadow-2xl">
+        <div className="relative shadow-2xl" style={{ transition: 'width 0.2s ease' }}>
             <Document
                 file={pdfUrl}
                 onLoadSuccess={onLoadSuccess}
@@ -54,7 +71,7 @@ export default function PdfReviewer({
                             pageNumber={i + 1}
                             renderAnnotationLayer={false}
                             renderTextLayer={false}
-                            width={800}
+                            width={pageWidth}
                         />
                     </div>
                 ))}
@@ -62,13 +79,14 @@ export default function PdfReviewer({
 
             {/* Annotation SVG Overlay */}
             <svg
-                className={`absolute inset-0 w-full h-full z-10 ${activeTool === 'select' ? 'pointer-events-none' : 'cursor-crosshair'}`}
+                className={`absolute inset-0 w-full h-full z-10 ${activeTool === 'select' ? 'pointer-events-none' : activeTool === 'text' ? 'cursor-text' : 'cursor-crosshair'}`}
                 onMouseDown={onMouseDown}
                 onMouseMove={onMouseMove}
                 onMouseUp={onMouseUp}
                 onMouseLeave={onMouseUp}
+                onClick={onSvgClick}
             >
-                {paths.map((p, i) => (
+                {allPaths.map((p, i) => (
                     <polyline
                         key={i}
                         points={p.points.map((pt: any) => `${pt.x},${pt.y}`).join(' ')}
@@ -80,6 +98,21 @@ export default function PdfReviewer({
                         strokeLinejoin="round"
                         style={{ mixBlendMode: 'multiply' }}
                     />
+                ))}
+                {/* Text Annotations */}
+                {textAnnotations.map((t, i) => (
+                    <text
+                        key={`text_${i}`}
+                        x={t.x}
+                        y={t.y}
+                        fill="#1e40af"
+                        fontSize="14"
+                        fontWeight="bold"
+                        fontFamily="Inter, sans-serif"
+                        style={{ userSelect: 'none', pointerEvents: 'none' }}
+                    >
+                        {t.text}
+                    </text>
                 ))}
             </svg>
         </div>

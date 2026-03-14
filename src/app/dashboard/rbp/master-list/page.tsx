@@ -134,6 +134,114 @@ export default function MasterList() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, locationFilter, yearFilter]);
 
+  // --- Handlers ---
+  const handleExportMYPS = async () => {
+    setIsExportDropdownOpen(false);
+    setIsLoading(true);
+    try {
+      const projectIds = projects.map(p => p.id);
+      if (projectIds.length === 0) {
+        alert('No projects to export.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Fetch full project data
+      const { data: projs, error: pError } = await supabase
+        .from('projects')
+        .select('*')
+        .in('id', projectIds);
+      if (pError) throw pError;
+
+      const { data: comps, error: cError } = await supabase
+        .from('project_components')
+        .select('*')
+        .in('project_id', projectIds);
+      if (cError) throw cError;
+
+      const { data: specs, error: sError } = await supabase
+        .from('project_infra_activities')
+        .select('*')
+        .in('project_id', projectIds);
+      if (sError) throw sError;
+
+      const fullProjects = projs.map(p => ({
+        id: p.id,
+        alternateId: p.alternate_id,
+        projectDescription: p.project_name,
+        projectAmount: p.project_amount,
+        category: p.project_category,
+        thrust: p.thrust,
+        projectOrigin: p.project_origin,
+        fundingAgreementName: p.funding_agreement_name,
+        io: p.implementing_office,
+        municipality: p.city_municipality,
+        deo: p.district_engineering_office,
+        ld: p.legislative_district,
+        ou: p.operating_unit,
+        originatingAgency: p.originating_agency,
+        isRegionwide: p.region_wide,
+        fiscalYear: (p.start_year || 2025).toString(),
+        region: p.reporting_region,
+        programStage: p.program_stage,
+        priorityTier: p.tier,
+        priorityRank: p.rank,
+        justification: p.justification,
+        asd1: p.asd_1, asd2: p.asd_2, asd3: p.asd_3, asd4: p.asd_4, asd5: p.asd_5,
+        asd6: p.asd_6, asd7: p.asd_7, asd8: p.asd_8, asd9: p.asd_9, asd10: p.asd_10,
+        asd11: p.asd_11,
+        
+        components: comps.filter(c => c.project_id === p.id).map(c => ({
+          id: c.comp_id_display,
+          compType: c.comp_type,
+          infraType: c.infra_type,
+          infraName: c.infra_name,
+          workType: c.type_of_work,
+          unit: c.target_unit,
+          target: c.physical_target,
+          cost: c.comp_amount,
+          unitCost: c.unit_cost,
+          start: c.planned_start_date,
+          end: c.planned_end_date,
+          calendar: c.pip_calendar_days,
+          alternateId: c.alternate_id,
+          programStage: c.program_stage
+        })),
+
+        specificDetails: specs.filter(s => s.project_id === p.id).map(s => ({
+          compId: s.comp_id_ref,
+          infraId: s.infra_item,
+          startLimit: s.start_station_limit || s.start_limit,
+          endLimit: s.end_station_limit || s.end_limit,
+          startChainage: s.start_chainage,
+          endChainage: s.end_chainage,
+          startX: s.start_x,
+          startY: s.start_y,
+          endX: s.end_x,
+          endY: s.end_y,
+          length: s.length_m,
+          scope: s.detailed_scope_of_work,
+          target: s.target_amount,
+          cost: s.cost_per_line,
+          lanes: s.num_lanes,
+          dominant: s.dominant,
+          alternateId: s.alternate_id,
+          programStage: s.program_stage,
+          originalRemarks: s.original_remarks,
+          revisedRemarks: s.revised_remarks,
+          infraType: s.infra_type
+        }))
+      }));
+
+      exportProjectsToExcel(fullProjects);
+    } catch (err) {
+      console.error('Export failed:', err);
+      alert('Failed to export projects.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // --- Helpers ---
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -202,10 +310,7 @@ export default function MasterList() {
             <div className={styles.dropdownMenu} style={{ right: 0, left: 'auto', minWidth: '180px', marginTop: '0.5rem' }}>
               <button
                 className={styles.dropdownItem}
-                onClick={() => {
-                  exportProjectsToExcel(projects);
-                  setIsExportDropdownOpen(false);
-                }}
+                onClick={handleExportMYPS}
               >
                 <span className="material-symbols-outlined" style={{ marginRight: '8px', fontSize: '18px' }}>table_chart</span>
                 MYPS Import File

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import {
     Plus,
     FileText,
@@ -58,6 +59,7 @@ export default function MemorandumsPage() {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [currentUserName, setCurrentUserName] = useState('');
     const [filterStatus, setFilterStatus] = useState<string>('All');
+    const { profile, loading } = useAuth();
 
     const fetchData = useCallback(async (userName: string) => {
         setIsLoading(true);
@@ -87,12 +89,12 @@ export default function MemorandumsPage() {
     }, []);
 
     useEffect(() => {
-        const savedUser = localStorage.getItem('currentUser');
-        const userName = savedUser ? JSON.parse(savedUser).name : '';
+        if (loading) return;
+        const userName = profile?.name || '';
         setCurrentUserName(userName);
         if (userName) fetchData(userName);
         else setIsLoading(false);
-    }, [fetchData]);
+    }, [fetchData, profile, loading]);
 
     const todayStr = new Date().toISOString().split('T')[0];
 

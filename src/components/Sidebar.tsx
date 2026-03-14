@@ -108,7 +108,7 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           name: 'Financial Targets',
           href: '/dashboard/gaa/financials',
           icon: 'account_balance_wallet',
-          roles: ['Section Chief', 'Planning Unit']
+          roles: ['Section Chief', 'Planning Unit Head']
         },
         {
           name: 'Physical Progress',

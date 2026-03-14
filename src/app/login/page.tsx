@@ -31,27 +31,24 @@ export default function Login() {
 
     useEffect(() => {
         if (isMounted && !loading && session && profile) {
-            const role = profile.position || 'Regular Member';
-            const targetRoute = getRedirectRoute(role);
-            router.push(targetRoute);
+            // Only redirect if we have a definitive position.
+            // If position is missing, it might be the temporary fallback profile.
+            // We wait until fetchProfile updates it or the final fallback kicks in.
+            const role = profile.position;
+            
+            if (role) {
+                const targetRoute = getRedirectRoute(role);
+                console.log('Redirecting based on role:', role, 'to:', targetRoute);
+                router.push(targetRoute);
+            } else {
+                console.log('Profile loaded but position is missing, waiting for full profile sync...');
+            }
         }
     }, [isMounted, session, profile, loading, router]);
 
-    // Don't show the loading spinner during SSR to prevent hydration mismatch
-    if (isMounted && loading) {
-        return (
-            <div className={styles.container}>
-                {/* Background */}
-                <div className={styles.bgWrapper}>
-                    <div className={styles.glowTopLeft}></div>
-                    <div className={styles.glowBottomRight}></div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100%', position: 'relative', zIndex: 10 }}>
-                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
-                </div>
-            </div>
-        );
-    }
+    // We no longer block rendering of the form while loading.
+    // The submit button will be disabled during the initial auth check.
+    // This prevents a stale session from causing the form to "disappear" via a redirect.
 
     const getRedirectRoute = (role: string) => {
         switch (role) {
@@ -107,22 +104,9 @@ export default function Login() {
 
             if (data?.user) {
                 console.log('Login successful for user:', data.user.id);
-                // The AuthProvider will handle session detection, profile fetching, and legacy localStorage sync
-                // We just need to fetch the profile here to know where to redirect immediately.
-                const { data: profile, error: profileError } = await supabase
-                    .from('employees')
-                    .select('position')
-                    .eq('id', data.user.id)
-                    .maybeSingle();
-                
-                if (profileError) {
-                    console.error('Profile fetch error during login:', profileError);
-                }
-                
-                const role = profile?.position || 'Regular Member';
-                const targetRoute = getRedirectRoute(role);
-                console.log('Redirecting to:', targetRoute, 'based on role:', role);
-                router.push(targetRoute);
+                // We no longer manually fetch profile and redirect here.
+                // The redirected is handled by the useEffect watching session & profile state
+                // from useAuth(), ensuring consistency.
             }
         } catch (err: any) {
             setError(err.message || 'An unexpected error occurred during login.');
@@ -211,7 +195,7 @@ export default function Login() {
                         </div>
 
                         {/* Submit Button */}
-                        <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+                        <button type="submit" className={styles.submitBtn} disabled={isSubmitting || (isMounted && loading)}>
                             {isSubmitting ? (
                                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent mx-auto"></div>
                             ) : (

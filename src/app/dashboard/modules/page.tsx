@@ -3,21 +3,24 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import styles from './modules.module.css';
 
 export default function ModuleSelection() {
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const router = useRouter();
+    const { session, loading } = useAuth();
 
     useEffect(() => {
         // Auth Check
-        const user = localStorage.getItem('currentUser');
-        if (!user) {
-            router.push('/login');
-            return;
+        if (!loading) {
+            if (!session) {
+                router.push('/login');
+                return;
+            }
+            setIsCheckingAuth(false);
         }
-        setIsCheckingAuth(false);
 
         // Dark Mode Check
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {

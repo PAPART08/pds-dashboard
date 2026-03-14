@@ -1,9 +1,10 @@
 "use client";
 
-import { use, useState, useEffect } from 'react';
+import { use, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import {
     ChevronLeft,
     MousePointer2,
@@ -14,12 +15,14 @@ import {
     X,
     History,
     MessageSquare,
-    Search,
     ZoomIn,
     ZoomOut,
     Download,
     Save,
-    Eraser
+    Eraser,
+    GitCompareArrows,
+    Minus,
+    Plus
 } from 'lucide-react';
 import { SUPPORTING_DOC_DESCRIPTIONS } from '@/lib/supporting-docs';
 import dynamic from 'next/dynamic';
@@ -29,8 +32,22 @@ const PdfReviewer = dynamic(() => import('@/components/PdfReviewer'), {
     loading: () => <div className="p-10 text-slate-500 font-bold animate-pulse">Initializing PDF Reviewer...</div>
 });
 
-export default function DocumentReviewPage({ params }: { params: Promise<{ id: string, docCode: string }> }) {
-    const { id, docCode } = use(params);
+const PdfRenderer = dynamic(() => import('@/components/PdfRenderer'), {
+    ssr: false,
+    loading: () => <div className="p-10 text-slate-500 font-bold animate-pulse">Loading Previous Version...</div>
+});
+
+interface TextAnnotation {
+    x: number;
+    y: number;
+    text: string;
+}
+
+export default function DocumentReviewPage({ params: paramsProp }: { params: any }) {
+    // Safely handle params (could be a Promise or plain object depending on Next.js version)
+    const unwrappedParams = paramsProp && typeof paramsProp.then === 'function' ? use(paramsProp) : paramsProp;
+    const { id, docCode } = (unwrappedParams || {}) as { id: string, docCode: string };
+    
     const router = useRouter();
 
     const [activeTool, setActiveTool] = useState('select');
@@ -38,7 +55,42 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
     const [numPages, setNumPages] = useState<number | null>(null);
     const [comments, setComments] = useState<{ id: number, user: string, role: string, text: string, time: string, isResolved: boolean }[]>([]);
     const [newComment, setNewComment] = useState('');
-    const [currentUser, setCurrentUser] = useState<any>(null);
+    const { profile, loading: authLoading } = useAuth();
+    
+    // Initialize currentUser from profile if already available
+    const [currentUser, setCurrentUser] = useState<any>(profile ? { name: profile.name, role: profile.position } : null);
+
+    // Zoom state
+    const [zoom, setZoom] = useState(1.0);
+    const zoomIn = () => setZoom(z => Math.min(z + 0.25, 2.5));
+    const zoomOut = () => setZoom(z => Math.max(z - 0.25, 0.5));
+
+    // Comparison state
+    const [previousPdfUrl, setPreviousPdfUrl] = useState<string | null>(null);
+    const [showComparison, setShowComparison] = useState(false);
+    const [prevNumPages, setPrevNumPages] = useState<number | null>(null);
+
+    // Text annotation state
+    const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
+    const [showTextInput, setShowTextInput] = useState<{ x: number, y: number } | null>(null);
+    const [textInputValue, setTextInputValue] = useState('');
+    const textInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (!authLoading) {
+            if (!profile) {
+                // Short buffer to prevent ghost redirects on very slow initial loads
+                const timer = setTimeout(() => {
+                    if (!profile) router.push('/login');
+                }, 1000);
+                return () => clearTimeout(timer);
+            }
+            setCurrentUser({ name: profile.name, role: profile.position });
+        } else if (profile) {
+            // If profile is available (even if still loading other auth state), set it
+            setCurrentUser({ name: profile.name, role: profile.position });
+        }
+    }, [profile, authLoading, router]);
 
     // Annotation Drawing State
     const [isDrawing, setIsDrawing] = useState(false);
@@ -48,8 +100,6 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
     const docName = SUPPORTING_DOC_DESCRIPTIONS[docCode as string] || 'Unknown Document';
 
     useEffect(() => {
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) setCurrentUser(JSON.parse(savedUser));
         const savedComments = localStorage.getItem(`pds_comments_${id}_${docCode}`);
         if (savedComments) {
             setComments(JSON.parse(savedComments));
@@ -69,12 +119,18 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
         // Load annotations
         const savedAnnotations = localStorage.getItem(`pds_annotations_${id}_${docCode}`);
         if (savedAnnotations) {
-            try {
-                setPaths(JSON.parse(savedAnnotations));
-            } catch (err) {
-                console.error("Error loading annotations", err);
-            }
+            try { setPaths(JSON.parse(savedAnnotations)); } catch (err) { }
         }
+
+        // Load text annotations
+        const savedTextAnnotations = localStorage.getItem(`pds_text_annotations_${id}_${docCode}`);
+        if (savedTextAnnotations) {
+            try { setTextAnnotations(JSON.parse(savedTextAnnotations)); } catch (err) { }
+        }
+
+        // Load previous PDF URL for comparison
+        const prevUrl = localStorage.getItem(`pdf_prev_${id}_${docCode}`);
+        if (prevUrl) setPreviousPdfUrl(prevUrl);
 
         const fetchPdfUrl = async () => {
             const savedUrlGlobal = localStorage.getItem(`pdf_${id}_${docCode}`);
@@ -82,7 +138,6 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
 
             const isValidPdfUrl = (url: string | null) => {
                 if (!url) return false;
-                // Basic validation: must start with a valid protocol or be a base64/blob
                 return url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:application/pdf');
             };
 
@@ -91,14 +146,13 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
             } else if (isValidPdfUrl(savedUrlSession)) {
                 setPdfUrl(savedUrlSession);
             } else {
-                // Check Supabase if not in local storage
                 try {
                     const { data, error } = await supabase
                         .from('projects')
                         .select('doc_uploads')
                         .eq('id', id)
                         .single();
-                    
+
                     if (!error && data?.doc_uploads?.[docCode]) {
                         const dbUrl = data.doc_uploads[docCode];
                         if (isValidPdfUrl(dbUrl)) {
@@ -114,21 +168,21 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
         fetchPdfUrl();
     }, [id, docCode]);
 
+    // Focus text input when it shows
+    useEffect(() => {
+        if (showTextInput && textInputRef.current) {
+            textInputRef.current.focus();
+        }
+    }, [showTextInput]);
+
     const handleApprove = async () => {
         try {
-            // 1. Legacy update
             const { data: p, error: fError } = await supabase.from('projects').select('doc_statuses').eq('id', id).single();
             if (fError) throw fError;
-
             const newStatuses = { ...(p.doc_statuses || {}), [docCode as string]: 'Approved' };
-
-            const { error: uError } = await supabase.from('projects').update({
-                doc_statuses: newStatuses
-            }).eq('id', id);
-
+            const { error: uError } = await supabase.from('projects').update({ doc_statuses: newStatuses }).eq('id', id);
             if (uError) throw uError;
 
-            // 2. Relational update
             await supabase.from('tasks')
                 .update({ status: 'Approved' })
                 .eq('project_id', id)
@@ -136,7 +190,9 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                 .eq('doc_code', docCode);
 
             alert("Document Approved & Sent to Chief.");
-            setComments([...comments, { id: Date.now(), user: 'You', role: 'Reviewer', text: 'Document Approved & Sent to Chief.', time: 'Just now', isResolved: true }]);
+            const userName = currentUser?.name || 'Reviewer';
+            const userRole = currentUser?.role || 'Reviewer';
+            setComments([...comments, { id: Date.now(), user: userName, role: userRole, text: 'Document Approved & Sent to Chief.', time: 'Just now', isResolved: true }]);
             setTimeout(() => router.push(`/dashboard/rbp/${id}`), 1000);
         } catch (err) {
             console.error("Failed to approve doc", err);
@@ -146,30 +202,31 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
 
     const handleReturn = async () => {
         try {
-            // 1. Legacy update
             const { data: p, error: fError } = await supabase.from('projects').select('doc_statuses, doc_uploads').eq('id', id).single();
             if (fError) throw fError;
-
             const newStatuses = { ...(p.doc_statuses || {}), [docCode as string]: 'Returned' };
-
-            const { error: uError } = await supabase.from('projects').update({
-                doc_statuses: newStatuses
-            }).eq('id', id);
-
+            const { error: uError } = await supabase.from('projects').update({ doc_statuses: newStatuses }).eq('id', id);
             if (uError) throw uError;
 
-            // 2. Relational update
             await supabase.from('tasks')
                 .update({ status: 'Returned' })
                 .eq('project_id', id)
                 .eq('task_type', 'DOC_COMPLIANCE')
                 .eq('doc_code', docCode);
 
-            // Save annotations local to browser for now
+            // Save current PDF as "previous" version for future comparison
+            if (pdfUrl) {
+                localStorage.setItem(`pdf_prev_${id}_${docCode}`, pdfUrl);
+            }
+
+            // Save annotations
             localStorage.setItem(`pds_annotations_${id}_${docCode}`, JSON.stringify(paths));
+            localStorage.setItem(`pds_text_annotations_${id}_${docCode}`, JSON.stringify(textAnnotations));
 
             alert("Document Returned to Compiler with Corrections.");
-            const updatedComments = [...comments, { id: Date.now(), user: 'You', role: 'Reviewer', text: 'Document Returned for Corrections.', time: 'Just now', isResolved: false }];
+            const userName = currentUser?.name || 'Reviewer';
+            const userRole = currentUser?.role || 'Reviewer';
+            const updatedComments = [...comments, { id: Date.now(), user: userName, role: userRole, text: 'Document Returned for Corrections.', time: 'Just now', isResolved: false }];
             setComments(updatedComments);
             localStorage.setItem(`pds_comments_${id}_${docCode}`, JSON.stringify(updatedComments));
             setTimeout(() => router.push(`/dashboard/rbp/${id}`), 1000);
@@ -185,17 +242,18 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
 
     const handleSaveAnnotations = () => {
         localStorage.setItem(`pds_annotations_${id}_${docCode}`, JSON.stringify(paths));
+        localStorage.setItem(`pds_text_annotations_${id}_${docCode}`, JSON.stringify(textAnnotations));
         alert("Annotations successfully saved to the document.");
     };
 
     // Drawing Handlers
     const startDrawing = (e: React.MouseEvent<SVGSVGElement>) => {
+        if (activeTool === 'text') return; // Text tool uses click handler
+
         if (activeTool === 'eraser') {
             const rect = e.currentTarget.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-
-            // Remove paths near the click
             setPaths(paths.filter(p => {
                 return !p.points.some((pt: any) => Math.sqrt(Math.pow(pt.x - x, 2) + Math.pow(pt.y - y, 2)) < 15);
             }));
@@ -227,14 +285,38 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
         }
     };
 
+    // Text tool click handler
+    const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
+        if (activeTool !== 'text') return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        setShowTextInput({ x, y });
+        setTextInputValue('');
+    };
+
+    const submitTextAnnotation = () => {
+        if (!showTextInput || !textInputValue.trim()) {
+            setShowTextInput(null);
+            return;
+        }
+        setTextAnnotations([...textAnnotations, { x: showTextInput.x, y: showTextInput.y, text: textInputValue.trim() }]);
+        setShowTextInput(null);
+        setTextInputValue('');
+    };
+
     const addComment = () => {
         if (!newComment.trim()) return;
+        const userName = currentUser?.name || 'Unknown';
+        const userRole = currentUser?.role || 'User';
+        const now = new Date();
+        const timeStr = now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         const comment = {
             id: Date.now(),
-            user: 'You',
-            role: 'Reviewer',
+            user: userName,
+            role: userRole,
             text: newComment,
-            time: 'Just now',
+            time: timeStr,
             isResolved: false
         };
         const updatedComments = [...comments, comment];
@@ -243,8 +325,28 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
         setNewComment('');
     };
 
-    const isMember = currentUser?.role === 'Unit Member' || currentUser?.role === 'Regular Member';
-    const canReview = currentUser?.role === 'Section Chief' || currentUser?.role === 'Unit Head';
+    const resolveComment = (commentId: number) => {
+        const updatedComments = comments.map(c =>
+            c.id === commentId ? { ...c, isResolved: !c.isResolved } : c
+        );
+        setComments(updatedComments);
+        localStorage.setItem(`pds_comments_${id}_${docCode}`, JSON.stringify(updatedComments));
+    };
+
+    const isMember = currentUser?.role === 'Unit Member' || currentUser?.role === 'Regular Member' || currentUser?.role === 'Planning Engineer';
+    const canReview = currentUser?.role === 'Section Chief' || currentUser?.role === 'Unit Head' || currentUser?.role === 'Planning Unit Head';
+
+    // Show loading state while auth is being validated
+    if (loading || !currentUser) {
+        return (
+            <div className="flex h-[calc(100vh-80px)] items-center justify-center bg-gray-50">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+                    <p className="font-medium text-slate-500 animate-pulse uppercase tracking-[0.2em] text-xs">Verifying Access...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-[calc(100vh-80px)] overflow-hidden bg-gray-50 -mx-4 md:-mx-8 lg:-mx-10 px-4 md:px-8 lg:px-10 -my-6 pt-4">
@@ -264,6 +366,22 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                 </div>
 
                 <div className="flex items-center space-x-3">
+                    {/* Compare Button */}
+                    <button
+                        disabled={!previousPdfUrl}
+                        onClick={() => setShowComparison(!showComparison)}
+                        className={`flex items-center space-x-2 px-4 py-2 text-sm font-bold rounded-lg transition-colors ${
+                            showComparison
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : previousPdfUrl
+                                    ? 'text-gray-600 border border-gray-200 hover:bg-gray-100'
+                                    : 'text-gray-300 border border-gray-100 cursor-not-allowed'
+                        }`}
+                        title={previousPdfUrl ? 'Compare with previous submission' : 'No previous version available'}
+                    >
+                        <GitCompareArrows className="w-4 h-4" />
+                        <span>{showComparison ? 'Exit Compare' : 'Compare'}</span>
+                    </button>
                     <button className="flex items-center space-x-2 px-4 py-2 text-sm font-bold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
                         <History className="w-4 h-4" />
                         <span>History</span>
@@ -273,6 +391,26 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
 
             {/* Main Workspace */}
             <div className="flex flex-1 overflow-hidden mt-4 gap-4 pb-4">
+
+                {/* Comparison Panel (Previous Version) */}
+                {showComparison && previousPdfUrl && (
+                    <div className="w-[400px] flex flex-col bg-orange-50/50 rounded-2xl border border-orange-200 overflow-hidden relative shadow-inner shrink-0">
+                        <div className="bg-orange-100 px-4 py-2.5 flex items-center justify-between border-b border-orange-200">
+                            <span className="text-xs font-black text-orange-700 uppercase tracking-widest">Previous Version</span>
+                            <button onClick={() => setShowComparison(false)} className="p-1 rounded-lg hover:bg-orange-200 transition-colors">
+                                <X className="w-4 h-4 text-orange-600" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-auto bg-slate-300 p-4 flex flex-col items-center">
+                            <PdfRenderer
+                                pdfUrl={previousPdfUrl}
+                                numPages={prevNumPages}
+                                onLoadSuccess={({ numPages }: { numPages: number }) => setPrevNumPages(numPages)}
+                                paths={[]}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {/* PDF Viewer Area */}
                 <div className="flex-1 flex flex-col bg-slate-200/50 rounded-2xl border border-gray-200 overflow-hidden relative shadow-inner">
@@ -311,8 +449,14 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                             <Type className="w-4 h-4" />
                         </button>
                         <div className="w-px h-6 bg-gray-200 mx-1"></div>
-                        <button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors" title="Zoom In"><ZoomIn className="w-4 h-4" /></button>
-                        <button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors" title="Zoom Out"><ZoomOut className="w-4 h-4" /></button>
+                        {/* Zoom Controls */}
+                        <button onClick={zoomOut} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors disabled:text-gray-300 disabled:hover:bg-transparent" disabled={zoom <= 0.5} title="Zoom Out">
+                            <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="text-[11px] font-bold text-gray-600 min-w-[40px] text-center select-none">{Math.round(zoom * 100)}%</span>
+                        <button onClick={zoomIn} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors disabled:text-gray-300 disabled:hover:bg-transparent" disabled={zoom >= 2.5} title="Zoom In">
+                            <Plus className="w-4 h-4" />
+                        </button>
                     </div>
 
                     {/* Document Display / Upload Area */}
@@ -343,11 +487,38 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                                     numPages={numPages}
                                     onLoadSuccess={onDocumentLoadSuccess}
                                     paths={paths}
+                                    currentPath={currentPath}
+                                    textAnnotations={textAnnotations}
                                     activeTool={activeTool}
+                                    zoom={zoom}
                                     onMouseDown={startDrawing}
                                     onMouseMove={draw}
                                     onMouseUp={endDrawing}
+                                    onSvgClick={handleSvgClick}
                                 />
+                                {/* Floating Text Input */}
+                                {showTextInput && (
+                                    <div
+                                        className="absolute z-30 bg-white border-2 border-blue-500 rounded-lg shadow-xl p-1 flex items-center"
+                                        style={{ left: showTextInput.x + 32, top: showTextInput.y + 60 }}
+                                    >
+                                        <input
+                                            ref={textInputRef}
+                                            type="text"
+                                            value={textInputValue}
+                                            onChange={(e) => setTextInputValue(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') submitTextAnnotation(); if (e.key === 'Escape') setShowTextInput(null); }}
+                                            placeholder="Type annotation..."
+                                            className="px-2 py-1 text-sm border-none outline-none w-48"
+                                        />
+                                        <button onClick={submitTextAnnotation} className="p-1 bg-blue-600 text-white rounded ml-1 hover:bg-blue-700">
+                                            <Check className="w-3 h-3" />
+                                        </button>
+                                        <button onClick={() => setShowTextInput(null)} className="p-1 text-gray-400 hover:text-red-500 ml-1">
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -357,7 +528,7 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                 <div className="w-[380px] flex flex-col gap-4">
 
                     {/* Action Buttons */}
-                    {!isMember && (
+                    {canReview && (
                         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-3">
                             <button onClick={handleSaveAnnotations} className="w-full flex justify-center items-center py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-sm shadow-sm active:scale-[0.98]">
                                 <Save className="w-4 h-4 mr-2" />
@@ -390,7 +561,7 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                         </div>
                     )}
 
-                    {isMember && (
+                    {!canReview && (
                         <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 shadow-sm flex flex-col gap-2">
                             <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 italic">Review Mode Only</p>
                             <p className="text-xs text-amber-700 font-medium">Please review the remarks from your supervisor below and upload a corrected version if necessary.</p>
@@ -409,7 +580,7 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
 
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
                             {comments.map(c => (
-                                <div key={c.id} className="p-3 bg-gray-50 border border-gray-100 rounded-xl">
+                                <div key={c.id} className={`p-3 rounded-xl ${c.isResolved ? 'bg-green-50 border border-green-100' : 'bg-gray-50 border border-gray-100'}`}>
                                     <div className="flex justify-between items-start mb-2">
                                         <div>
                                             <span className="font-bold text-sm text-gray-800">{c.user}</span>
@@ -420,9 +591,9 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                                     <div className="flex items-center justify-between text-xs font-medium text-gray-400">
                                         <span>{c.time}</span>
                                         {c.isResolved ? (
-                                            <span className="text-green-600 font-bold flex items-center gap-1"><Check className="w-3 h-3" /> Resolved</span>
+                                            <button onClick={() => resolveComment(c.id)} className="text-green-600 font-bold flex items-center gap-1 hover:underline"><Check className="w-3 h-3" /> Resolved</button>
                                         ) : (
-                                            !isMember && <button className="text-[color:var(--dpwh-blue)] hover:underline font-bold">Resolve</button>
+                                            canReview && <button onClick={() => resolveComment(c.id)} className="text-[color:var(--dpwh-blue)] hover:underline font-bold">Resolve</button>
                                         )}
                                     </div>
                                 </div>
@@ -430,21 +601,19 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
                         </div>
 
                         {/* Comment Input */}
-                        {!isMember && (
-                            <div className="p-4 border-t border-gray-100 bg-gray-50">
-                                <div className="relative">
-                                    <textarea
-                                        value={newComment}
-                                        onChange={e => setNewComment(e.target.value)}
-                                        placeholder="Add a remark or reference a drawing section..."
-                                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--dpwh-blue)] bg-white resize-none h-24"
-                                    ></textarea>
-                                    <div className="absolute right-2 bottom-2">
-                                        <button onClick={addComment} className="bg-[color:var(--dpwh-blue)] text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-800 transition-colors">Post</button>
-                                    </div>
+                        <div className="p-4 border-t border-gray-100 bg-gray-50">
+                            <div className="relative">
+                                <textarea
+                                    value={newComment}
+                                    onChange={e => setNewComment(e.target.value)}
+                                    placeholder={canReview ? "Add a remark or reference a drawing section..." : "Reply to a remark..."}
+                                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--dpwh-blue)] bg-white resize-none h-24"
+                                ></textarea>
+                                <div className="absolute right-2 bottom-2">
+                                    <button onClick={addComment} className="bg-[color:var(--dpwh-blue)] text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-blue-800 transition-colors">Post</button>
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </div>
 
                 </div>
