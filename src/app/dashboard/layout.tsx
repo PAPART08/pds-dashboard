@@ -16,10 +16,13 @@ export default function DashboardLayout({
     const router = useRouter();
     
     useEffect(() => {
-        if (!loading && !session) {
-            router.push('/login');
+        if (!loading && (!session || !profile)) {
+            // Only redirect if absolutely sure there is no session and no profile found
+            if (!session) {
+                router.push('/login');
+            }
         }
-    }, [loading, session, router]);
+    }, [loading, session, profile, router]);
 
     if (loading) {
         return (

@@ -30,39 +30,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
 
     useEffect(() => {
-        const setData = async () => {
-            try {
-                const { data: { session }, error } = await supabase.auth.getSession();
-                if (error) throw error;
-                
-                setSession(session);
-                setUser(session?.user ?? null);
-                
-                if (session?.user) {
-                    await fetchProfile(session.user.id);
-                }
-            } catch (error) {
-                console.error('Auth initialization error:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+            console.log('Auth event:', event, 'User:', currentSession?.user?.id);
             
-            if (session?.user) {
-                await fetchProfile(session.user.id);
+            setSession(currentSession);
+            setUser(currentSession?.user ?? null);
+            
+            if (currentSession?.user) {
+                // Fetch profile only if session has changed meaningfully
+                await fetchProfile(currentSession.user.id);
             } else {
                 setProfile(null);
                 // Clear legacy localStorage for compatibility
                 localStorage.removeItem('currentUser');
             }
-            setLoading(false);
+            
+            // Only set loading to false after the initial check is complete
+            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                setLoading(false);
+            }
         });
-
-        setData();
 
         return () => {
             subscription.unsubscribe();
