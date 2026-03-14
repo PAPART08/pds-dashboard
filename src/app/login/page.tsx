@@ -11,7 +11,7 @@ const DUMMY_ACCOUNTS = [
     { email: 'chief@dpwh.gov.ph', username: 'chief', password: 'password123', role: 'Section Chief', name: 'Carlos Santos', route: '/dashboard/modules' },
     { email: 'head@dpwh.gov.ph', username: 'head', password: 'password123', role: 'Unit Head', name: 'Antonio Reyes', route: '/dashboard/unit-head-task' },
     { email: 'user@dpwh.gov.ph', username: 'user', password: 'password123', role: 'Regular Member', name: 'Maria Dela Cruz', route: '/dashboard/user-task' },
-    { email: 'planning@dpwh.gov.ph', username: 'planning', password: 'password123', role: 'Planning Unit', name: 'James Rodriguez', route: '/dashboard/rbp-progress' },
+    { email: 'planning@dpwh.gov.ph', username: 'planning', password: 'password123', role: 'Planning Unit Head', name: 'James Rodriguez', route: '/dashboard/rbp-progress' },
 ];
 
 export default function Login() {
@@ -27,9 +27,10 @@ export default function Login() {
             case 'Admin': return '/dashboard/team';
             case 'Section Chief': return '/dashboard/modules';
             case 'Unit Head': return '/dashboard/unit-head-task';
+            case 'Planning Unit Head': return '/dashboard/rbp-progress';
+            case 'Planning Engineer': return '/dashboard/planning-member-task';
             case 'Regular Member':
             case 'Unit Member':
-            case 'Planning Unit':
             default: return '/dashboard/user-task';
         }
     };
@@ -43,67 +44,54 @@ export default function Login() {
         const cleanPassword = password.trim();
 
         try {
-            const finalEmail = cleanIdentifier.includes('@') ? cleanIdentifier : `${cleanIdentifier}@dpwh.gov.ph`;
-            console.log('Attempting login with:', { finalEmail, passwordLength: cleanPassword.length });
-
-            // First attempt: Supabase Auth
+            // Try exactly what was entered first
+            let finalEmail = cleanIdentifier;
+            if (!cleanIdentifier.includes('@')) {
+                finalEmail = `${cleanIdentifier}@dpwh.gov.ph`;
+            }
+            
+            console.log('Attempting login with:', finalEmail);
             let { data, error: authError } = await supabase.auth.signInWithPassword({
                 email: finalEmail,
                 password: cleanPassword,
             });
 
+            // If it failed and didn't have @, try @gmail.com as a fallback (convenience for demo)
+            if (authError && !cleanIdentifier.includes('@')) {
+                const gmailEmail = `${cleanIdentifier}@gmail.com`;
+                console.log('Retrying with:', gmailEmail);
+                const retry = await supabase.auth.signInWithPassword({
+                    email: gmailEmail,
+                    password: cleanPassword,
+                });
+                data = retry.data;
+                authError = retry.error;
+            }
+
             if (authError) {
-                // Handled cached stale session tokens commonly found in edge deployments
-                if (authError.message.includes('Refresh Token') || authError.message.includes('refresh token')) {
-                    console.log("Stale session detected, clearing and retrying...");
-                    await supabase.auth.signOut();
-
-                    const retry = await supabase.auth.signInWithPassword({
-                        email: identifier.includes('@') ? identifier : `${identifier}@dpwh.gov.ph`,
-                        password: password,
-                    });
-
-                    data = retry.data;
-                    authError = retry.error;
-                }
-
-                if (authError) {
-                    setError(authError.message === 'Invalid login credentials' ? 'Invalid credentials. Please try again.' : authError.message);
-                    setIsSubmitting(false);
-                    return;
-                }
+                setError(authError.message === 'Invalid login credentials' ? 'Invalid credentials. Please try again.' : authError.message);
+                setIsSubmitting(false);
+                return;
             }
 
             if (data?.user) {
-                // Determine base info from dummy accounts if applicable (for demo purposes)
-                const demoAccount = DUMMY_ACCOUNTS.find(acc => acc.email.toLowerCase() === finalEmail.toLowerCase());
-
-                // Try to fetch profile details if exists
-                let profile: any = null;
-                try {
-                    const profileRes = await supabase
-                        .from('employees')
-                        .select('*')
-                        .eq('id', data.user.id)
-                        .maybeSingle();
-                    profile = profileRes.data;
-                } catch (e) {
-                    console.error("Profile fetch error:", e);
+                console.log('Login successful for user:', data.user.id);
+                // The AuthProvider will handle session detection, profile fetching, and legacy localStorage sync
+                // We just need to fetch the profile here to know where to redirect immediately.
+                const { data: profile, error: profileError } = await supabase
+                    .from('employees')
+                    .select('position')
+                    .eq('id', data.user.id)
+                    .maybeSingle();
+                
+                if (profileError) {
+                    console.error('Profile fetch error during login:', profileError);
                 }
-
-                const finalRole = profile?.position || demoAccount?.role || 'Regular Member';
-                const finalName = profile?.name || demoAccount?.name || data.user.user_metadata?.full_name || 'Authenticated User';
-
-                const userData = {
-                    email: data.user.email,
-                    name: finalName,
-                    role: finalRole,
-                    user_type: profile?.user_type || (finalRole === 'Admin' ? 'Admin' : 'User'),
-                    route: getRedirectRoute(finalRole)
-                };
-
-                localStorage.setItem('currentUser', JSON.stringify(userData));
-                router.push(userData.route);
+                
+                const role = profile?.position || 'Regular Member';
+                const targetRoute = getRedirectRoute(role);
+                console.log('Redirecting to:', targetRoute, 'based on role:', role);
+                router.push(targetRoute);
             }
         } catch (err: any) {
             setError(err.message || 'An unexpected error occurred during login.');
@@ -112,11 +100,6 @@ export default function Login() {
         }
     };
 
-    const handleFillDemo = (acc: typeof DUMMY_ACCOUNTS[0]) => {
-        setIdentifier(acc.email);
-        setPassword(acc.password);
-        setError('');
-    };
 
     return (
         <div className={styles.container}>
@@ -209,24 +192,6 @@ export default function Login() {
                         </button>
                     </form>
 
-                    {/* Dummy Accounts Section */}
-                    <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: 'rgba(255, 255, 255, 0.5)', borderRadius: '0.5rem', border: '1px solid rgba(0,0,0,0.1)' }}>
-                        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#4b5563', marginBottom: '0.5rem', textAlign: 'center' }}>Demo Accounts:</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {DUMMY_ACCOUNTS.map((acc, idx) => (
-                                <button
-                                    key={idx}
-                                    type="button"
-                                    onClick={() => handleFillDemo(acc)}
-                                    style={{ textAlign: 'left', padding: '0.5rem', fontSize: '0.75rem', backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.25rem', cursor: 'pointer', transition: 'all 0.2s' }}
-                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
-                                >
-                                    <span style={{ fontWeight: 600, color: '#111827' }}>{acc.role}</span>: {acc.email} (pw: {acc.password})
-                                </button>
-                            ))}
-                        </div>
-                    </div>
 
                     {/* Footer Info */}
                     <div className={styles.cardFooter}>
@@ -241,7 +206,9 @@ export default function Login() {
 
                 {/* Bottom Security Notice */}
                 <p className={styles.securityNotice}>
-                    Authorized Personnel Access Only<br />Department of Public Works and Highways © 2024
+                    Authorized Personnel Access Only<br />
+                    DEPARTMENT OF PUBLIC WORKS AND HIGHWAYS © 2026<br />
+                    <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>Develop by Engineer Dikit</span>
                 </p>
             </main>
         </div>

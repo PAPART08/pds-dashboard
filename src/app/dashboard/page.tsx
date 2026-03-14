@@ -110,21 +110,26 @@ export default function DashboardPage() {
             setIsLoading(true);
             try {
                 // Fetch from Supabase exclusively
-                const { data, error } = await supabase.from('projects').select('id, category, status, stage');
+                const { data, error } = await supabase.from('projects').select('id, project_category, status, program_stage');
                 
                 if (error) throw error;
 
                 if (data) {
                     const mappedData = data.map(p => ({
                         id: p.id,
-                        category: p.category || 'N/A',
+                        category: p.project_category || 'N/A',
                         status: p.status || 'Drafting',
-                        stage: p.stage || 'RBP'
+                        stage: p.program_stage || 'RBP'
                     }));
                     setProjects(mappedData);
                 }
-            } catch (err) {
-                console.error('Error fetching dashboard data:', err);
+            } catch (err: any) {
+                console.error('Error fetching dashboard data:', {
+                    message: err.message,
+                    details: err.details,
+                    hint: err.hint,
+                    code: err.code
+                });
             } finally {
                 setIsLoading(false);
             }
@@ -190,10 +195,10 @@ export default function DashboardPage() {
                         <p className="text-slate-500 dark:text-slate-400">Monitor ongoing tasks across all engineering units</p>
                     </div>
                     <div className="flex gap-3">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-200">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-200">
                             <Filter className="w-5 h-5" /> Filter
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/20">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/20">
                             <Plus className="w-5 h-5" /> New Project
                         </button>
                     </div>
@@ -231,8 +236,8 @@ export default function DashboardPage() {
                                         </button>
                                     </div>
 
-                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{unit.title}</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{unit.description}</p>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 line-clamp-1">{unit.title}</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 min-h-[3rem] line-clamp-2">{unit.description}</p>
 
                                     <div className="mt-auto space-y-3">
                                         <div className="flex justify-between items-center text-sm">
@@ -248,18 +253,18 @@ export default function DashboardPage() {
                                         </div>
 
                                         {/* Status Legends */}
-                                        <div className="flex justify-between text-xs pt-1">
-                                            <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                                        <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] md:text-xs pt-1 border-t border-slate-100 dark:border-slate-800/50 mt-2">
+                                            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
                                                 <div className={`w-2 h-2 rounded-full ${unit.barColor}`} style={{ opacity: 0.3 }}></div>
-                                                <span className="font-medium">Pending ({pending})</span>
+                                                <span className="font-semibold">Pend ({pending})</span>
                                             </div>
-                                            <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                                            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
                                                 <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                                                <span className="font-medium">In-Prog ({inProgress})</span>
+                                                <span className="font-semibold">Prog ({inProgress})</span>
                                             </div>
-                                            <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                                            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
                                                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                                <span className="font-medium">Done ({completed})</span>
+                                                <span className="font-semibold">Done ({completed})</span>
                                             </div>
                                         </div>
                                     </div>

@@ -164,10 +164,10 @@
 
 .inputField {
     width: 100%;
-    padding: 1rem 1rem 1rem 3rem;
+    padding: 1rem 1rem 1rem 4rem !important;
     background-color: rgba(255, 255, 255, 0.5);
     border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
+    border-radius: 2rem !important;
     font-family: 'Inter', sans-serif;
     color: #0f172a;
     transition: all 0.2s ease;
@@ -180,7 +180,8 @@
 
 .inputField:focus {
     border-color: #0c3e7c;
-    box-shadow: 0 0 0 2px rgba(12, 62, 124, 0.2);
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(12, 62, 124, 0.1);
 }
 
 :global(.dark) .inputField {
@@ -267,7 +268,7 @@
     color: white;
     font-weight: 700;
     padding: 1rem;
-    border-radius: 0.75rem;
+    border-radius: 2rem !important;
     border: none;
     display: flex;
     align-items: center;

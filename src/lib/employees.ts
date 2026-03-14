@@ -70,7 +70,7 @@ export const EMPLOYEES: Employee[] = [
     {
         id: 'emp-08',
         name: 'James Rodriguez',
-        position: 'Planning Unit',
+        position: 'Planning Unit Head',
         unit: 'Planning',
         user_type: 'User',
         restrictions: ['RBP Encoding', 'Global Task Management']

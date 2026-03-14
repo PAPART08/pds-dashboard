@@ -84,31 +84,65 @@
     gap: 1.5rem;
 }
 
-.cycleBadge {
+.logoIconBox {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background-color: rgba(12, 62, 124, 0.05);
-    border: 1px solid rgba(12, 62, 124, 0.1);
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    background-color: var(--dpwh-blue);
     border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(12, 62, 124, 0.2);
 }
 
-:global(.dark) .cycleBadge {
-    background-color: rgba(96, 165, 250, 0.1);
-    border-color: rgba(96, 165, 250, 0.2);
+.logoIcon {
+    color: white;
+    font-size: 1.75rem !important;
 }
 
-.cycleText {
+.userProfileHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 2rem;
+    transition: all 0.2s;
+}
+
+.userProfileHeader:hover {
+    border-color: var(--dpwh-blue);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.headerAvatar {
+    width: 2.25rem;
+    height: 2.25rem;
+    background-color: var(--dpwh-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.8125rem;
+    box-shadow: 0 2px 4px rgba(12, 62, 124, 0.2);
+}
+
+.userNameHeader {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.2;
+}
+
+.userRoleHeader {
     font-size: 0.625rem;
-    font-weight: 900;
-    color: var(--dpwh-blue);
+    font-weight: 600;
+    color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.15em;
-}
-
-:global(.dark) .cycleText {
-    color: #60A5FA;
+    letter-spacing: 0.025em;
 }
 
 .notificationBox {

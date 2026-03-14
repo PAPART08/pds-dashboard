@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import styles from './layout.module.css';
+import { useAuth } from '@/context/AuthContext';
 
 export default function DashboardLayout({
     children,
@@ -10,6 +11,16 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const { profile } = useAuth();
+    
+    const currentUser = {
+        name: profile?.name,
+        role: profile?.position
+    };
+
+    const initials = currentUser.name
+        ? currentUser.name.split(' ').map((n: string) => n[0]).join('')
+        : 'U';
 
     return (
         <div className={styles.layout}>
@@ -18,19 +29,34 @@ export default function DashboardLayout({
 
                 {/* Header: Premium Glass Panel */}
                 <header className={styles.header}>
-                    <div className={styles.headerTitleBox}>
-                        <h2 className={styles.headerTitle}>
-                            Planning & Design <span className={styles.headerTitleHighlight}>Portal</span>
-                        </h2>
-                        <div className={styles.headerSubtitleBox}>
-                            <span className={styles.headerDot}></span>
-                            <span className={styles.headerSubtitle}>District Engineering Office • Active Session</span>
+                    <div className="flex items-center gap-4">
+                        <div className={styles.logoIconBox}>
+                            <span className={`material-symbols-outlined ${styles.logoIcon}`}>engineering</span>
+                        </div>
+                        <div className={styles.headerTitleBox}>
+                            <h2 className={styles.headerTitle}>
+                                PLANNING & DESIGN <span className={styles.headerTitleHighlight}>PORTAL</span>
+                            </h2>
+                            <div className={styles.headerSubtitleBox}>
+                                <span className={styles.headerDot}></span>
+                                <span className={styles.headerSubtitle}>District Engineering Office • Active Session</span>
+                            </div>
                         </div>
                     </div>
 
                     <div className={styles.headerRight}>
-                        <div className={styles.cycleBadge}>
-                            <span className={styles.cycleText}>FY 2025 Budget Cycle</span>
+                        <div className={styles.userProfileHeader}>
+                            <div className={styles.headerAvatar}>
+                                {initials}
+                            </div>
+                            <div className="hidden md:flex flex-col items-end">
+                                <span className={styles.userNameHeader}>
+                                    {currentUser.name || 'User'}
+                                </span>
+                                <span className={styles.userRoleHeader}>
+                                    {currentUser.role || 'Guest'}
+                                </span>
+                            </div>
                         </div>
                         <div className={styles.notificationBox}>
                             <span className={`material-symbols-outlined ${styles.notificationIcon}`}>notifications</span>

@@ -26,3 +26,14 @@ export interface Project {
     // Assignments will now be fetched from tasks table
     tasks?: ProjectTask[];
 }
+
+export interface Employee {
+    id: string;
+    name: string;
+    position: string;
+    unit: string;
+    user_type: string;
+    username?: string;
+    email?: string;
+    created_at: string;
+}

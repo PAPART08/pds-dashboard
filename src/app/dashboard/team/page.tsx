@@ -405,7 +405,8 @@ export default function TeamPage() {
                     >
                       <option value="Section Chief">Section Chief</option>
                       <option value="Unit Head">Unit Head</option>
-                      <option value="Planning Unit">Planning Unit</option>
+                      <option value="Planning Unit Head">Planning Unit Head</option>
+                      <option value="Planning Engineer">Planning Engineer</option>
                       <option value="Regular Member">Regular Member</option>
                       <option value="Cost Estimator">Cost Estimator</option>
                       <option value="Project Programmer">Project Programmer</option>
@@ -574,7 +575,8 @@ export default function TeamPage() {
                   <option value="" disabled>Select Role...</option>
                   <option value="Section Chief">Section Chief</option>
                   <option value="Unit Head">Unit Head</option>
-                  <option value="Planning Unit">Planning Unit</option>
+                  <option value="Planning Unit Head">Planning Unit Head</option>
+                  <option value="Planning Engineer">Planning Engineer</option>
                   <option value="Regular Member">Regular Member</option>
                   <option value="Cost Estimator">Cost Estimator</option>
                   <option value="Project Programmer">Project Programmer</option>

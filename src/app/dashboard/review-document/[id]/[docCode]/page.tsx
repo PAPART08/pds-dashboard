@@ -76,14 +76,42 @@ export default function DocumentReviewPage({ params }: { params: Promise<{ id: s
             }
         }
 
-        const savedUrlGlobal = localStorage.getItem(`pdf_${id}_${docCode}`);
-        const savedUrlSession = sessionStorage.getItem(`pdf_${id}_${docCode}`);
+        const fetchPdfUrl = async () => {
+            const savedUrlGlobal = localStorage.getItem(`pdf_${id}_${docCode}`);
+            const savedUrlSession = sessionStorage.getItem(`pdf_${id}_${docCode}`);
 
-        if (savedUrlGlobal) {
-            setPdfUrl(savedUrlGlobal);
-        } else if (savedUrlSession) {
-            setPdfUrl(savedUrlSession);
-        }
+            const isValidPdfUrl = (url: string | null) => {
+                if (!url) return false;
+                // Basic validation: must start with a valid protocol or be a base64/blob
+                return url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:application/pdf');
+            };
+
+            if (isValidPdfUrl(savedUrlGlobal)) {
+                setPdfUrl(savedUrlGlobal);
+            } else if (isValidPdfUrl(savedUrlSession)) {
+                setPdfUrl(savedUrlSession);
+            } else {
+                // Check Supabase if not in local storage
+                try {
+                    const { data, error } = await supabase
+                        .from('projects')
+                        .select('doc_uploads')
+                        .eq('id', id)
+                        .single();
+                    
+                    if (!error && data?.doc_uploads?.[docCode]) {
+                        const dbUrl = data.doc_uploads[docCode];
+                        if (isValidPdfUrl(dbUrl)) {
+                            setPdfUrl(dbUrl);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error fetching PDF from database:", err);
+                }
+            }
+        };
+
+        fetchPdfUrl();
     }, [id, docCode]);
 
     const handleApprove = async () => {

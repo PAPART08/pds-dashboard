@@ -54,9 +54,14 @@ export default function DocumentCorrectionViewer({ params }: { params: Promise<{
         const savedUrlGlobal = localStorage.getItem(`pdf_${id}_${docCode}`);
         const savedUrlSession = sessionStorage.getItem(`pdf_${id}_${docCode}`);
 
-        if (savedUrlGlobal) {
+        const isValidPdfUrl = (url: string | null) => {
+            if (!url) return false;
+            return url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:application/pdf');
+        };
+
+        if (isValidPdfUrl(savedUrlGlobal)) {
             setPdfUrl(savedUrlGlobal);
-        } else if (savedUrlSession) {
+        } else if (isValidPdfUrl(savedUrlSession)) {
             setPdfUrl(savedUrlSession);
         }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -15,11 +16,22 @@ interface PdfRendererProps {
 }
 
 export default function PdfRenderer({ pdfUrl, numPages, onLoadSuccess, paths }: PdfRendererProps) {
+    const [loadError, setLoadError] = useState(false);
+
+    if (loadError) {
+        return (
+            <div className="p-10 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl text-center">
+                <p className="text-red-600 dark:text-red-400 font-bold">Invalid PDF structure or file not found.</p>
+                <p className="text-sm text-red-500 mt-2">Please verify the document upload.</p>
+            </div>
+        );
+    }
     return (
         <div className="relative shadow-2xl">
             <Document
                 file={pdfUrl}
                 onLoadSuccess={onLoadSuccess}
+                onLoadError={() => setLoadError(true)}
                 className="flex flex-col gap-4"
             >
                 {Array.from({ length: numPages || 0 }, (_, i) => (

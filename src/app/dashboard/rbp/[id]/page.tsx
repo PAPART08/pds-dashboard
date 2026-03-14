@@ -116,17 +116,18 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
   }, [id]);
 
   const handleAssignProject = async (name: string) => {
-    setAssignment(name);
+    const trimmedName = name.trim();
+    setAssignment(trimmedName);
     try {
       // 1. Legacy update
-      await supabase.from('projects').update({ assigned_to: name }).eq('id', id);
+      await supabase.from('projects').update({ assigned_to: trimmedName }).eq('id', id);
       
       // 2. Relational update
       const { data: existing } = await supabase.from('tasks').select('id').eq('project_id', id).eq('task_type', 'PROJECT_LEAD').single();
       if (existing) {
-        await supabase.from('tasks').update({ assignee_name: name, status: 'In Progress' }).eq('id', existing.id);
+        await supabase.from('tasks').update({ assignee_name: trimmedName, status: 'In Progress' }).eq('id', existing.id);
       } else {
-        await supabase.from('tasks').insert({ project_id: id, assignee_name: name, task_type: 'PROJECT_LEAD', status: 'In Progress' });
+        await supabase.from('tasks').insert({ project_id: id, assignee_name: trimmedName, task_type: 'PROJECT_LEAD', status: 'In Progress' });
       }
     } catch (err) {
       console.error('Task sync error (Project Lead):', err);
@@ -134,7 +135,8 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
   };
 
   const handleAssignDoc = async (docCode: string, name: string) => {
-    const newDocAssignments = { ...docAssignments, [docCode]: name };
+    const trimmedName = name.trim();
+    const newDocAssignments = { ...docAssignments, [docCode]: trimmedName };
     setDocAssignments(newDocAssignments);
 
     try {
@@ -144,9 +146,9 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
       // 2. Relational update
       const { data: existing } = await supabase.from('tasks').select('id').eq('project_id', id).eq('task_type', 'DOC_COMPLIANCE').eq('doc_code', docCode).single();
       if (existing) {
-        await supabase.from('tasks').update({ assignee_name: name }).eq('id', existing.id);
+        await supabase.from('tasks').update({ assignee_name: trimmedName }).eq('id', existing.id);
       } else {
-        await supabase.from('tasks').insert({ project_id: id, assignee_name: name, task_type: 'DOC_COMPLIANCE', doc_code: docCode, status: 'Drafting' });
+        await supabase.from('tasks').insert({ project_id: id, assignee_name: trimmedName, task_type: 'DOC_COMPLIANCE', doc_code: docCode, status: 'Drafting' });
       }
     } catch (err) {
       console.error('Task sync error (Doc Assignment):', err);
@@ -154,25 +156,29 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
   };
 
   const handleUploadDoc = async (docCode: string, file: File) => {
-    const url = URL.createObjectURL(file);
-    const newUploadedDocs = { ...uploadedDocs, [docCode]: file.name || 'document.pdf' };
-    setUploadedDocs(newUploadedDocs);
-    
     try {
-      // 1. Legacy update
+      // 1. Upload to Supabase Storage
+      const { uploadDocument } = await import('@/lib/storage');
+      const { publicUrl } = await uploadDocument(file, id, docCode);
+
+      const newUploadedDocs = { ...uploadedDocs, [docCode]: publicUrl };
+      setUploadedDocs(newUploadedDocs);
+      
+      // 2. Legacy update
       await supabase.from('projects').update({ doc_uploads: newUploadedDocs }).eq('id', id);
       
-      // 2. Relational update (Status -> Submitted)
+      // 3. Relational update (Status -> Submitted)
       await supabase.from('tasks').update({ status: 'Submitted' }).eq('project_id', id).eq('task_type', 'DOC_COMPLIANCE').eq('doc_code', docCode);
       
-      // Update local hack state
+      // Update local state
       setDocTaskStatuses(prev => ({ ...prev, [docCode]: 'Submitted' }));
+      sessionStorage.setItem(`pdf_${id}_${docCode}`, publicUrl);
 
-    } catch (err) {
+      alert("Document successfully uploaded to Supabase Storage.");
+    } catch (err: any) {
       console.error('Task sync error (Doc Upload):', err);
+      alert(`Upload failed: ${err.message || 'Unknown error'}`);
     }
-    
-    sessionStorage.setItem(`pdf_${id}_${docCode}`, url);
   };
 
   const documents = getRequiredDocs(project?.subProgramCode, project?.thrust);
@@ -328,7 +334,7 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
                         <History className="w-4 h-4" />
                       </button>
                       <div className="relative inline-block">
-                        {!isSectionChief && (!isMember || docAssignments[doc.code] === currentUser?.name) && (
+                        {!isSectionChief && !isUnitHead && (!isMember || docAssignments[doc.code] === currentUser?.name) && (
                           <input
                             type="file"
                             accept="application/pdf"
@@ -340,21 +346,23 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                           />
                         )}
-                        <button
-                          disabled={isSectionChief || (isMember && docAssignments[doc.code] !== currentUser?.name)}
-                          className={`btn btn-outline py-1.5 px-4 text-xs font-bold border-dashed ${isSectionChief
-                            ? 'border-gray-200 text-gray-300 bg-gray-50 cursor-not-allowed opacity-60'
-                            : uploadedDocs[doc.code]
-                              ? 'border-emerald-400 text-emerald-600 bg-emerald-50'
-                              : (isMember && docAssignments[doc.code] !== currentUser?.name)
-                                ? 'border-gray-200 text-gray-300 bg-gray-50 cursor-not-allowed opacity-60'
-                                : 'border-gray-300 hover:border-blue-400 hover:text-blue-600 group-hover:bg-white'
-                            }`}
-                          title={isSectionChief ? "Section Chiefs cannot upload documents" : (isMember && docAssignments[doc.code] !== currentUser?.name) ? "Only assigned member can upload" : ""}
-                        >
-                          <Upload className="w-3.5 h-3.5 mr-2" />
-                          {uploadedDocs[doc.code] ? 'RE-UPLOAD' : 'UPLOAD'}
-                        </button>
+                        {!isUnitHead && (
+                          <button
+                            disabled={isSectionChief || (isMember && docAssignments[doc.code] !== currentUser?.name)}
+                            className={`btn btn-outline py-1.5 px-4 text-xs font-bold border-dashed ${isSectionChief
+                              ? 'border-gray-200 text-gray-300 bg-gray-50 cursor-not-allowed opacity-60'
+                              : uploadedDocs[doc.code]
+                                ? 'border-emerald-400 text-emerald-600 bg-emerald-50'
+                                : (isMember && docAssignments[doc.code] !== currentUser?.name)
+                                  ? 'border-gray-200 text-gray-300 bg-gray-50 cursor-not-allowed opacity-60'
+                                  : 'border-gray-300 hover:border-blue-400 hover:text-blue-600 group-hover:bg-white'
+                              }`}
+                            title={isSectionChief ? "Section Chiefs cannot upload documents" : (isMember && docAssignments[doc.code] !== currentUser?.name) ? "Only assigned member can upload" : ""}
+                          >
+                            <Upload className="w-3.5 h-3.5 mr-2" />
+                            {uploadedDocs[doc.code] ? 'RE-UPLOAD' : 'UPLOAD'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -385,36 +393,38 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
 
         {/* Right Col: Quick Actions & Summary */}
         <div className="space-y-6">
-          <div className="glass-panel p-6 shadow-md border-t-4 border-emerald-500 bg-white">
-            <h3 className="font-bold text-md mb-4 uppercase tracking-tighter text-gray-500">Unit Head Assignment</h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Assign Primary Lead</p>
-                <select
-                  disabled={!canAssignLead}
-                  className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none ${!canAssignLead ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                  value={assignment}
-                  onChange={(e) => handleAssignProject(e.target.value)}
-                >
-                  <option value="">Select Member</option>
-                  {teamMembers.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-              </div>
+          {!isUnitHead && (
+            <div className="glass-panel p-6 shadow-md border-t-4 border-emerald-500 bg-white">
+              <h3 className="font-bold text-md mb-4 uppercase tracking-tighter text-gray-500">Unit Head Assignment</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Assign Primary Lead</p>
+                  <select
+                    disabled={!canAssignLead}
+                    className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none ${!canAssignLead ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                    value={assignment}
+                    onChange={(e) => handleAssignProject(e.target.value)}
+                  >
+                    <option value="">Select Member</option>
+                    {teamMembers.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
 
-              <div className="pt-4 border-t border-gray-50 flex flex-col gap-3">
-                <button
-                  disabled={!canAssignLead}
-                  onClick={() => {
-                    handleAssignProject(assignment);
-                    alert(`Assignment for ${assignment} confirmed and synced.`);
-                  }}
-                  className={`btn btn-secondary w-full justify-center text-xs py-3 bg-[color:var(--dpwh-blue)] text-white font-bold ${!canAssignLead ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  CONFIRM ASSIGNMENT
-                </button>
+                <div className="pt-4 border-t border-gray-50 flex flex-col gap-3">
+                  <button
+                    disabled={!canAssignLead}
+                    onClick={() => {
+                      handleAssignProject(assignment);
+                      alert(`Assignment for ${assignment} confirmed and synced.`);
+                    }}
+                    className={`btn btn-secondary w-full justify-center text-xs py-3 bg-[color:var(--dpwh-blue)] text-white font-bold ${!canAssignLead ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    CONFIRM ASSIGNMENT
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="glass-panel p-6 shadow-sm border border-gray-100 bg-gray-50/30">
             <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-4">Unit Members assigned to Documents</h4>

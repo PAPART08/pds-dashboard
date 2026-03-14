@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import dynamic from 'next/dynamic';
 import {
     Calendar,
     CheckCircle2,
@@ -12,6 +13,8 @@ import {
     Search,
     AlertCircle
 } from 'lucide-react';
+
+const CalendarModule = dynamic(() => import('@/components/CalendarModule'), { ssr: false });
 
 interface Project {
     id: string;
@@ -34,6 +37,7 @@ export default function UserTaskDashboard() {
     const [noteText, setNoteText] = useState('');
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [currentUserName, setCurrentUserName] = useState('');
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -42,14 +46,15 @@ export default function UserTaskDashboard() {
                 // Get current user's name
                 const savedUser = localStorage.getItem('currentUser');
                 const currentUserName = savedUser ? JSON.parse(savedUser).name : '';
+                setCurrentUserName(currentUserName);
 
                 if (!currentUserName) {
                     setIsLoading(false);
                     return;
                 }
 
-                // Fetch tasks assigned to the user from the tasks table
-                const { data, error } = await supabase
+                // 1. Fetch relational tasks
+                const { data: relationalTasks, error: tError } = await supabase
                     .from('tasks')
                     .select(`
                         *,
@@ -63,27 +68,71 @@ export default function UserTaskDashboard() {
                         )
                     `)
                     .eq('assignee_name', currentUserName)
-                    .eq('task_type', 'DOC_COMPLIANCE')
-                    .order('created_at', { ascending: false });
+                    .in('task_type', ['DOC_COMPLIANCE', 'PROJECT_LEAD']);
 
-                if (error) throw error;
+                // 2. Fetch projects that MIGHT have legacy assignments
+                // (Fetching all for simplicity in a small app, or we could use fuzzy search)
+                const { data: allProjects, error: pError } = await supabase.from('projects').select('*');
 
-                if (data) {
-                    const userAssignedTasks: Project[] = data.map((t: any) => ({
-                        id: t.id, // Task ID
-                        docId: `${t.projects?.alternate_id || t.projects?.id.substring(0, 8).toUpperCase()}-${t.doc_code}`,
-                        title: t.projects?.project_name || 'Untitled Project',
-                        location: t.projects?.city_municipality || 'Unspecified',
-                        costValue: t.projects?.project_amount || 0,
-                        stage: 'Preparation',
-                        status: t.status,
-                        createdAt: t.created_at,
-                        fiscalYear: (t.projects?.start_year || 2025).toString(),
-                        type: 'Assigned Document',
-                        deadline: t.deadline,
-                        projectId: t.project_id,
-                        docCode: t.doc_code
-                    }));
+                if (tError) throw tError;
+                if (pError) throw pError;
+
+                const userAssignedTasks: Project[] = [];
+                const seenTaskDocCodes = new Set(); // To avoid duplicates if both systems have the same task
+
+                // A. Add Relational Tasks
+                if (relationalTasks) {
+                    relationalTasks.forEach((t: any) => {
+                        const compositeKey = `${t.project_id}_${t.doc_code}`;
+                        seenTaskDocCodes.add(compositeKey);
+                        
+                        userAssignedTasks.push({
+                            id: t.id,
+                            docId: `${t.projects?.alternate_id || t.projects?.id.substring(0, 8).toUpperCase()}-${t.doc_code}`,
+                            title: t.projects?.project_name || 'Untitled Project',
+                            location: t.projects?.city_municipality || 'Unspecified',
+                            costValue: t.projects?.project_amount || 0,
+                            stage: 'Preparation',
+                            status: t.status,
+                            createdAt: t.created_at,
+                            fiscalYear: (t.projects?.start_year || 2025).toString(),
+                            type: 'Assigned Document',
+                            deadline: t.deadline,
+                            projectId: t.project_id,
+                            docCode: t.doc_code
+                        });
+                    });
+                }
+
+                // B. Add Legacy Tasks (not already in relational table)
+                if (allProjects) {
+                    allProjects.forEach(p => {
+                        if (p.doc_assignments) {
+                            Object.entries(p.doc_assignments).forEach(([docCode, assignee]) => {
+                                if (assignee?.toLowerCase().trim() === currentUserName?.toLowerCase().trim()) {
+                                    const compositeKey = `${p.id}_${docCode}`;
+                                    if (!seenTaskDocCodes.has(compositeKey)) {
+                                        userAssignedTasks.push({
+                                            id: `legacy-${p.id}-${docCode}`,
+                                            docId: `${p.alternate_id || p.id.substring(0, 8).toUpperCase()}-${docCode}`,
+                                            title: p.project_name || 'Untitled Project',
+                                            location: p.city_municipality || 'Unspecified',
+                                            costValue: p.project_amount || 0,
+                                            stage: 'Preparation',
+                                            status: p.doc_statuses?.[docCode] || 'Drafting',
+                                            createdAt: p.created_at,
+                                            fiscalYear: (p.start_year || 2025).toString(),
+                                            type: 'Legacy Assignment',
+                                            deadline: p.doc_deadlines?.[docCode] || null,
+                                            projectId: p.id,
+                                            docCode: docCode
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
 
                     // Fallback for demo (only if no real tasks found)
                     if (userAssignedTasks.length === 0 && currentUserName === 'Maria Dela Cruz') {
@@ -105,7 +154,6 @@ export default function UserTaskDashboard() {
                     }
 
                     setProjects(userAssignedTasks);
-                }
             } catch (err) {
                 console.error('Error fetching tasks:', err);
             } finally {
@@ -114,7 +162,18 @@ export default function UserTaskDashboard() {
         };
 
         fetchProjects();
+
+        // Load persisted notes
+        const savedNotes = localStorage.getItem('user_strategic_notes');
+        if (savedNotes) {
+            setNoteText(savedNotes);
+        }
     }, []);
+
+    const handleSaveNote = () => {
+        localStorage.setItem('user_strategic_notes', noteText);
+        alert('Notes saved locally.');
+    };
 
     // Calculate dynamic counts based on project data
     const todayStr = new Date().toISOString().split('T')[0];
@@ -128,44 +187,46 @@ export default function UserTaskDashboard() {
         p.status !== 'Approved'
     ).length;
 
-    const displayProjects = projects.slice(0, 5); 
+    const displayProjects = projects; 
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, projectId: string, docCode: string, taskTableId: string) => {
         const file = e.target.files?.[0];
         if (!file || !projectId || !docCode) return;
 
-        // For demo/simplicity, we still use object URL locally for immediate feedback/viewing
-        const url = URL.createObjectURL(file);
-        sessionStorage.setItem(`pdf_${projectId}_${docCode}`, url);
-
         try {
-            // Update the NEW tasks table with the new status
+            // 1. Upload to Supabase Storage
+            const { uploadDocument } = await import('@/lib/storage');
+            const { publicUrl } = await uploadDocument(file, projectId, docCode);
+
+            // 2. Update the tasks table with the status and URL
             const { error: tError } = await supabase
                 .from('tasks')
-                .update({ status: 'Submitted' })
+                .update({ 
+                    status: 'Submitted',
+                    // Note: If the tasks table has a column for the document URL, we should store it there.
+                    // For now, mirroring the existing projects table logic.
+                })
                 .eq('id', taskTableId);
 
             if (tError) {
-                // Fallback attempt by components if ID is not UUID (like in demo)
-                if (taskTableId.startsWith('demo-')) {
-                     console.log("Demo task upload simulated");
-                } else {
-                    throw tError;
-                }
+                if (!taskTableId.startsWith('demo-')) throw tError;
             }
 
-            // Sync with old projects table for backward compatibility (optional but safe for now)
+            // 3. Sync with projects table for backward compatibility
             const { data: p, error: fError } = await supabase.from('projects').select('doc_statuses, doc_uploads').eq('id', projectId).single();
             if (!fError && p) {
                 const newStatuses = { ...(p.doc_statuses || {}), [docCode]: 'Submitted' };
-                const newUploads = { ...(p.doc_uploads || {}), [docCode]: file.name || 'document.pdf' };
+                // Store the full public URL instead of just the filename
+                const newUploads = { ...(p.doc_uploads || {}), [docCode]: publicUrl };
                 await supabase.from('projects').update({
                     doc_statuses: newStatuses,
                     doc_uploads: newUploads
                 }).eq('id', projectId);
             }
 
-            // Update local state
+            // Local State Update
+            sessionStorage.setItem(`pdf_${projectId}_${docCode}`, publicUrl);
+
             setProjects(prevProjects => prevProjects.map(p => {
                 if (p.id === taskTableId) {
                     return { ...p, status: 'Submitted' };
@@ -173,10 +234,10 @@ export default function UserTaskDashboard() {
                 return p;
             }));
 
-            alert("Document successfully uploaded and synced.");
-        } catch (err) {
-            console.error("Error updating Task status:", err);
-            alert("Upload failed to sync with database.");
+            alert("Document successfully uploaded to Supabase and synced.");
+        } catch (err: any) {
+            console.error("Error uploading to Supabase Storage:", err);
+            alert(`Upload failed: ${err.message || 'Unknown error'}`);
         }
     };
 
@@ -319,58 +380,17 @@ export default function UserTaskDashboard() {
             {/* Right Sidebar */}
             <div className="w-full xl:w-[350px] flex-shrink-0 space-y-6">
 
-                {/* Mini Calendar Widget */}
-                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-5">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                            Schedule
-                        </h3>
-                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded">March 2026</span>
-                    </div>
-
-                    {/* Simple Calendar placeholder for demonstration */}
-                    <div className="grid grid-cols-7 gap-1 text-center text-xs mb-4">
-                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <div key={`${d}-${i}`} className="font-medium text-slate-400">{d}</div>)}
-                        {Array.from({ length: 31 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className={`p-1.5 rounded-full flex items-center justify-center 
-                  ${i + 1 === 7 ? 'bg-blue-600 text-white font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer'}
-                  ${[10, 14, 22].includes(i + 1) ? 'relative after:absolute after:bottom-0 after:w-1 after:h-1 after:bg-orange-500 after:rounded-full' : ''}
-                `}
-                            >
-                                {i + 1}
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-700">
-                        <div className="flex items-start gap-3 text-sm">
-                            <div className="w-2 h-2 mt-1.5 bg-orange-500 rounded-full"></div>
-                            <div>
-                                <p className="font-medium text-slate-900 dark:text-white">Review Deadline</p>
-                                <p className="text-slate-500 text-xs text-slate-500 dark:text-slate-400">NLEX Connector • 5:00 PM</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3 text-sm">
-                            <div className="w-2 h-2 mt-1.5 bg-blue-500 rounded-full"></div>
-                            <div>
-                                <p className="font-medium text-slate-900 dark:text-white">Unit Coordination</p>
-                                <p className="text-slate-500 text-xs text-slate-500 dark:text-slate-400">Bridge Unit • Tomorrow, 10 AM</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                {/* Interactive Calendar Module */}
+                <CalendarModule userName={currentUserName} />
 
                 {/* Notepad */}
                 <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-4 flex flex-col h-[250px]">
                     <div className="flex items-center justify-between mb-3">
                         <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                             <FileText className="w-4 h-4 text-slate-500" />
-                            Quick Notes
+                            Strategic Notes
                         </h3>
-                        <button className="text-slate-400 hover:text-blue-600 transition-colors">
+                        <button onClick={handleSaveNote} className="text-slate-400 hover:text-blue-600 transition-colors" title="Save Notes">
                             <Save className="w-4 h-4" />
                         </button>
                     </div>

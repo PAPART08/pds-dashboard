@@ -36,14 +36,29 @@ export default function RBPStagePage() {
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
+      console.log('Initiating fetch for projects from Supabase...');
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
+        .select(`
+          id,
+          alternate_id,
+          project_name,
+          project_amount,
+          project_category,
+          city_municipality,
+          status,
+          created_at,
+          is_included_in_master_list
+        `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase query error:', error);
+        throw error;
+      }
 
       if (data) {
+        console.log(`Successfully fetched ${data.length} projects.`);
         const formatted = data.map(p => ({
           id: p.id,
           alternateId: p.alternate_id,
@@ -57,8 +72,15 @@ export default function RBPStagePage() {
         }));
         setProjects(formatted);
       }
-    } catch (err) {
-      console.error('Error fetching projects:', err);
+    } catch (err: any) {
+      const errorDetails = {
+        message: err?.message || 'Unknown error',
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint,
+        stack: err?.stack
+      };
+      console.error('Error fetching projects (Details):', errorDetails);
     } finally {
       setIsLoading(false);
     }

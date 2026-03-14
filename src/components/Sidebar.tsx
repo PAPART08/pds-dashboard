@@ -1,52 +1,35 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import styles from './Sidebar.module.css';
+import { useAuth } from '@/context/AuthContext';
 
 // Define User Roles
-type UserRole = 'Admin' | 'Section Chief' | 'Unit Head' | 'Planning Unit' | 'Unit Member' | 'Regular Member' | 'Cost Estimator' | 'Project Programmer' | 'User';
+type UserRole = 'Admin' | 'Section Chief' | 'Unit Head' | 'Planning Unit Head' | 'Planning Engineer' | 'Unit Member' | 'Regular Member' | 'Cost Estimator' | 'Project Programmer' | 'User';
 
 export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isCollapsed?: boolean; toggleSidebar?: () => void }) {
   const pathname = usePathname();
-  const [userRole, setUserRole] = useState<UserRole | ''>('');
-  const [userRestrictions, setUserRestrictions] = useState<string[]>([]);
-  const [userName, setUserName] = useState<string>('');
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      const role = parsedUser.role || parsedUser.position;
-      if (role) {
-        setUserRole(role as UserRole);
-      }
-      if (parsedUser.name) {
-        setUserName(parsedUser.name);
-      }
-      if (parsedUser.restrictions) {
-        setUserRestrictions(parsedUser.restrictions);
-      }
-    } else {
-      // Fallback defaults for demo if no one is logged in
-      setUserRole('Section Chief');
-      setUserName('Carlos Santos');
-    }
-    setIsLoaded(true);
-  }, []);
+  const { profile, loading: authLoading, signOut } = useAuth();
+  
+  const userRole = (profile?.position || '') as UserRole | '';
+  const userRestrictions = (profile as any)?.restrictions || [];
+  const userName = profile?.name || '';
+  const isLoaded = !authLoading && !!profile;
 
   const activeStage: 'RBP' | 'GAA' | 'ADMIN' = pathname.includes('/gaa') ? 'GAA' : (pathname.includes('/team') || pathname.includes('/settings')) ? 'ADMIN' : 'RBP';
 
   const getOverviewHref = () => {
     switch (userRole) {
       case 'Section Chief':
-      case 'Planning Unit':
         return '/dashboard/rbp-progress';
       case 'Unit Head':
         return '/dashboard/unit-head-task';
+      case 'Planning Unit Head':
+      case 'Planning Engineer':
+        return '/dashboard/planning-member-task';
       case 'Unit Member':
       default:
         return '/dashboard/user-task';
@@ -65,25 +48,25 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           name: 'Overall Progress',
           href: '/dashboard/rbp-progress',
           icon: 'analytics',
-          roles: ['Section Chief', 'Planning Unit']
+          roles: ['Section Chief', 'Planning Unit Head']
         },
         {
           name: 'Project Detail Entry',
           href: '/dashboard/rbp',
           icon: 'inventory_2',
-          roles: ['Planning Unit']
+          roles: ['Planning Unit Head']
         },
         {
           name: 'Global Task List',
           href: '/dashboard/rbp/global-tasks',
           icon: 'list_alt',
-          roles: ['Section Chief', 'Planning Unit', 'Unit Head']
+          roles: ['Section Chief', 'Planning Unit Head']
         },
         {
           name: 'Master List',
           href: '/dashboard/rbp/master-list',
           icon: 'database',
-          roles: ['Section Chief', 'Planning Unit']
+          roles: ['Section Chief', 'Planning Unit Head']
         },
         {
           name: 'Technical Review Queue',
@@ -97,6 +80,18 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           icon: 'approval',
           roles: ['Section Chief']
         },
+        {
+          name: 'Memorandums',
+          href: '/dashboard/memorandums',
+          icon: 'description',
+          roles: ['Section Chief']
+        },
+        {
+          name: 'My Tasks',
+          href: '/dashboard/planning-member-task',
+          icon: 'task_alt',
+          roles: ['Planning Engineer', 'Planning Unit Head']
+        },
       ]
     },
     GAA: {
@@ -107,7 +102,7 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           name: 'GAA Overview',
           href: '/dashboard/gaa',
           icon: 'engineering',
-          roles: ['Section Chief', 'Unit Head', 'Planning Unit', 'Unit Member', 'Regular Member']
+          roles: ['Section Chief', 'Unit Head', 'Planning Unit Head', 'Unit Member', 'Regular Member']
         },
         {
           name: 'Financial Targets',
@@ -150,12 +145,6 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
   const filteredItems = isLoaded ? navConfig[activeStage].items.filter(item => {
     if (!item.roles.includes(userRole as any)) return false;
 
-    // Specifically filter Global Task List for Section Chief, it requires an Admin to manually toggle them
-    if (item.href === '/dashboard/rbp/global-tasks') {
-      if (userRole === 'Section Chief') {
-        return true;
-      }
-    }
     return true;
   }) : [];
 
@@ -201,18 +190,14 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
 
       {/* Brand area */}
       <div className={styles.brand}>
-        <div className={styles.brandTop}>
-          <div className={styles.brandIconBox}>
-            <span className={`material-symbols-outlined ${styles.brandIcon}`}>engineering</span>
-          </div>
-          {!isCollapsed && (
+        {!isCollapsed && (
+          <>
             <h1 className={styles.brandTitle}>
               DPWH <span className={styles.brandTitleHighlight}>TASK</span>
             </h1>
-          )}
-        </div>
-        {!isCollapsed && <p className={styles.brandSubtitle}>Management System</p>}
-
+            <p className={styles.brandSubtitle}>Management System</p>
+          </>
+        )}
         {toggleSidebar && (
           <button onClick={toggleSidebar} className={styles.toggleBtn} aria-label="Toggle Sidebar">
             <span className="material-symbols-outlined">{isCollapsed ? 'menu' : 'menu_open'}</span>
@@ -323,21 +308,17 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           )}
 
           <div className={styles.bottomRow} style={isCollapsed ? { flexDirection: 'column', width: '100%' } : {}}>
-            <Link
-              href="/login"
+            <button
               className={styles.btnLogout}
-              onClick={async () => {
-                await supabase.auth.signOut();
-                localStorage.removeItem('currentUser');
-              }}
+              onClick={signOut}
               title="Logout"
             >
               <span className={`material-symbols-outlined ${styles.btnLogoutIcon}`}>logout</span>
               {!isCollapsed && 'Logout'}
-            </Link>
+            </button>
             {!isCollapsed && (
               <div className={styles.versionBadge}>
-                v2.4.0
+                1.0
               </div>
             )}
           </div>

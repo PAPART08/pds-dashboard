@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import {
     Search,
@@ -34,12 +35,22 @@ export default function GlobalTaskListPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const router = useRouter();
     const [unitHeads, setUnitHeads] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState<string | null>(null);
 
     useEffect(() => {
         const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) setCurrentUser(JSON.parse(savedUser));
+        if (savedUser) {
+            const user = JSON.parse(savedUser);
+            setCurrentUser(user);
+            
+            // Access control for Unit Head
+            if (user.role === 'Unit Head') {
+                router.push('/dashboard/unit-head-task');
+                return;
+            }
+        }
 
         // Fetch Unit Heads for assignment
         const savedTeam = localStorage.getItem('pds_team');
@@ -160,15 +171,11 @@ export default function GlobalTaskListPage() {
         }
     };
 
-    // Filter by assignment if Unit Head
     const displayProjects = projects.filter(p => {
         const matchesSearch = p.projectDescription.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.alternateId.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.municipality.toLowerCase().includes(searchTerm.toLowerCase());
 
-        if (currentUser?.role === 'Unit Head') {
-            return matchesSearch && p.assignedTo === currentUser.name;
-        }
         return matchesSearch;
     });
 
@@ -188,10 +195,7 @@ export default function GlobalTaskListPage() {
                         <h1 className="text-2xl font-black tracking-tight text-gray-900 uppercase">Global Task Management</h1>
                     </div>
                     <p className="text-sm text-gray-500 pl-9">
-                        {currentUser?.role === 'Unit Head'
-                            ? `Viewing projects specifically assigned to ${currentUser.name}.`
-                            : 'Centralized project assignment and timeline coordination for FY 2025.'
-                        }
+                        Centralized project assignment and timeline coordination for FY 2025.
                     </p>
                 </div>
 
@@ -201,7 +205,7 @@ export default function GlobalTaskListPage() {
                         <input
                             type="text"
                             placeholder="Search projects..."
-                            className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-full md:w-64 shadow-sm transition-all"
+                            className="pl-16 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-full md:w-64 shadow-sm transition-all"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -221,18 +225,17 @@ export default function GlobalTaskListPage() {
                                 <th className="px-6 py-4">Project Identification</th>
                                 <th className="px-6 py-4">Unit Head Lead</th>
                                 <th className="px-6 py-4">Timeline (Deadline)</th>
-                                <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4 text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-10 text-center text-gray-400 italic">Synchronizing project data...</td>
+                                    <td colSpan={4} className="px-6 py-10 text-center text-gray-400 italic">Synchronizing project data...</td>
                                 </tr>
                             ) : displayProjects.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-10 text-center text-gray-400 italic font-medium">No projects found.</td>
+                                    <td colSpan={4} className="px-6 py-10 text-center text-gray-400 italic font-medium">No projects found.</td>
                                 </tr>
                             ) : displayProjects.map((project) => (
                                 <tr key={project.id} className="hover:bg-blue-50/30 transition-colors group">
@@ -277,15 +280,6 @@ export default function GlobalTaskListPage() {
                                                 onChange={(e) => handleUpdateProject(project.id, 'deadline', e.target.value)}
                                             />
                                         </div>
-                                    </td>
-
-                                    <td className="px-6 py-5">
-                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm border ${project.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                            project.status === 'Drafting' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                                'bg-blue-50 text-blue-600 border-blue-100'
-                                            }`}>
-                                            {project.status || 'PROPOSED'}
-                                        </span>
                                     </td>
 
                                     <td className="px-6 py-5 text-center">

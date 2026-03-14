@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import dynamic from 'next/dynamic';
 import {
+
     Calendar,
     CheckCircle2,
     Clock,
@@ -12,6 +14,8 @@ import {
     AlertCircle,
     FolderOpen
 } from 'lucide-react';
+
+const CalendarModule = dynamic(() => import('@/components/CalendarModule'), { ssr: false });
 
 interface Project {
     id: string;
@@ -32,6 +36,8 @@ export default function UnitHeadDashboard() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [allTasks, setAllTasks] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeBreakdown, setActiveBreakdown] = useState<string | null>(null);
+    const [currentUserName, setCurrentUserName] = useState('');
 
     useEffect(() => {
         const fetchUnitHeadData = async () => {
@@ -39,73 +45,116 @@ export default function UnitHeadDashboard() {
             try {
                 const savedUser = localStorage.getItem('currentUser');
                 const currentUser = savedUser ? JSON.parse(savedUser) : null;
-                const currentUserName = currentUser?.name || '';
+                const userName = currentUser?.name || '';
+                setCurrentUserName(userName);
 
-                if (!currentUserName) {
+                if (!userName) {
                     setIsLoading(false);
                     return;
                 }
 
-                // 1. Fetch projects where user is the lead
-                const { data: leadTasks, error: leadError } = await supabase
+                // 1. Fetch projects where user is the lead (check BOTH tasks table and legacy column)
+                // A. via tasks table
+                const { data: leadTasksTable, error: leadError } = await supabase
                     .from('tasks')
-                    .select(`
-                        project_id,
-                        projects (
-                            id,
-                            alternate_id,
-                            project_name,
-                            city_municipality,
-                            project_amount,
-                            start_year,
-                            status
-                        )
-                    `)
-                    .eq('assignee_name', currentUserName)
+                    .select('project_id')
+                    .eq('assignee_name', userName)
                     .eq('task_type', 'PROJECT_LEAD');
 
-                if (leadError) throw leadError;
+                // B. via projects table (legacy)
+                const { data: legacyLeadProjects, error: legacyError } = await supabase
+                    .from('projects')
+                    .select('id')
+                    .eq('assigned_to', userName);
 
-                const leadProjectIds = leadTasks?.map((t: any) => t.project_id) || [];
+                if (leadError) throw leadError;
+                if (legacyError) throw legacyError;
+
+                const leadProjectIds = Array.from(new Set([
+                    ...(leadTasksTable?.map((t: any) => t.project_id) || []),
+                    ...(legacyLeadProjects?.map((p: any) => p.id) || [])
+                ]));
                 
-                // 2. Fetch all tasks for those lead projects (to calculate summary counts)
-                let allRelatedTasks: any[] = [];
+                // 2. Fetch projects and ALL tasks for those lead projects
+                let allRelatedTasksMapped: any[] = [];
+                let leadProjectsData: any[] = [];
+
                 if (leadProjectIds.length > 0) {
-                    const { data: tasks, error: taskError } = await supabase
-                        .from('tasks')
+                    const { data: projectsWithTasks, error: taskError } = await supabase
+                        .from('projects')
                         .select(`
                             *,
-                            projects (
-                                id,
-                                alternate_id,
-                                project_name,
-                                city_municipality,
-                                project_amount,
-                                start_year,
-                                status
-                            )
+                            tasks (*)
                         `)
-                        .in('project_id', leadProjectIds);
+                        .in('id', leadProjectIds);
                     
                     if (taskError) throw taskError;
-                    allRelatedTasks = tasks || [];
+                    leadProjectsData = projectsWithTasks || [];
+
+                    // 3. Build a unified task list (Merge Legacy JSON into Relational Tasks)
+                    leadProjectsData.forEach(p => {
+                        const projectTasks = p.tasks || [];
+                        const taskDocCodes = new Set(projectTasks.map((t: any) => t.doc_code).filter(Boolean));
+                        
+                        // Add relational tasks to the big list
+                        projectTasks.forEach((t: any) => {
+                            allRelatedTasksMapped.push({
+                                ...t,
+                                projects: { // Ensure project info is attached
+                                    id: p.id,
+                                    alternate_id: p.alternate_id,
+                                    project_name: p.project_name,
+                                    project_amount: p.project_amount,
+                                    start_year: p.start_year,
+                                    status: p.status,
+                                    created_at: p.created_at
+                                }
+                            });
+                        });
+
+                        // Add legacy assignments IF they don't have a relational task counterpart
+                        if (p.doc_assignments) {
+                            Object.entries(p.doc_assignments).forEach(([docCode, assignee]) => {
+                                if (assignee && !taskDocCodes.has(docCode)) {
+                                    allRelatedTasksMapped.push({
+                                        project_id: p.id,
+                                        task_type: 'DOC_COMPLIANCE',
+                                        doc_code: docCode,
+                                        assignee_name: assignee,
+                                        status: p.doc_statuses?.[docCode] || 'Pending',
+                                        deadline: p.doc_deadlines?.[docCode] || null,
+                                        created_at: p.created_at,
+                                        projects: {
+                                            id: p.id,
+                                            alternate_id: p.alternate_id,
+                                            project_name: p.project_name,
+                                            project_amount: p.project_amount,
+                                            start_year: p.start_year,
+                                            status: p.status,
+                                            created_at: p.created_at
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
                 }
 
-                // Map projects from leadTasks for the projects state (consistency)
-                const mappedProjects = leadTasks?.map((t: any) => ({
-                    id: t.projects?.id,
-                    alternateId: t.projects?.alternate_id,
-                    title: t.projects?.project_name || 'Untitled Project',
-                    location: t.projects?.city_municipality || 'Unspecified Location',
-                    costValue: t.projects?.project_amount || 0,
+                // Map projects for the overview list
+                const mappedProjects = leadProjectsData.map(p => ({
+                    id: p.id,
+                    alternateId: p.alternate_id || p.id.substring(0, 8).toUpperCase(),
+                    title: p.project_name || 'Untitled Project',
+                    location: p.city_municipality || 'Unspecified Location',
+                    costValue: p.project_amount || 0,
                     stage: 'Preparation',
-                    status: t.projects?.status || 'Draft',
-                    createdAt: t.projects?.created_at,
-                    fiscalYear: (t.projects?.start_year || 2025).toString()
-                })) || [];
+                    status: p.status || 'Draft',
+                    createdAt: p.created_at,
+                    fiscalYear: (p.start_year || 2025).toString()
+                }));
 
                 setProjects(mappedProjects);
-                setAllTasks(allRelatedTasks);
+                setAllTasks(allRelatedTasksMapped);
 
             } catch (err) {
                 console.error('Error fetching dashboard data:', err);
@@ -115,7 +164,18 @@ export default function UnitHeadDashboard() {
         };
 
         fetchUnitHeadData();
+
+        // Load persisted notes
+        const savedNotes = localStorage.getItem('unit_head_strategic_notes');
+        if (savedNotes) {
+            setNoteText(savedNotes);
+        }
     }, []);
+
+    const handleSaveNote = () => {
+        localStorage.setItem('unit_head_strategic_notes', noteText);
+        alert('Notes saved locally.');
+    };
 
     const todayStr = new Date().toISOString().split('T')[0];
     
@@ -129,7 +189,7 @@ export default function UnitHeadDashboard() {
     ).length;
 
     // "Pending Documents for Review" list (Submitted but not yet approved/returned)
-    const displayProjects = allTasks.filter((t: any) => 
+    const allPendingReviews = allTasks.filter((t: any) => 
         t.task_type === 'DOC_COMPLIANCE' && 
         t.status === 'Submitted'
     ).map((t: any) => ({
@@ -141,7 +201,63 @@ export default function UnitHeadDashboard() {
         deadline: t.deadline,
         status: t.status,
         createdAt: t.created_at
-    })).slice(0, 5);
+    }));
+
+    const pendingReviewCount = allPendingReviews.length;
+    const displayProjects = allPendingReviews.slice(0, 5);
+
+    // Grouping logic for Member Breakdown
+    const getMemberBreakdown = (category: string) => {
+        const members: Record<string, { count: number, total: number, approved: number, docs: any[] }> = {};
+        const today = new Date().toISOString().split('T')[0];
+
+        allTasks.forEach(t => {
+            const name = t.assignee_name || 'Unassigned';
+            if (!members[name]) {
+                members[name] = { count: 0, total: 0, approved: 0, docs: [] };
+            }
+
+            // Only count DOC_COMPLIANCE for member status
+            if (t.task_type === 'DOC_COMPLIANCE') {
+                members[name].total++;
+                if (t.status === 'Approved') members[name].approved++;
+
+                // Category-specific count and document collection
+                const docInfo = {
+                    code: t.doc_code,
+                    title: t.projects?.project_name || 'Untitled Project',
+                    status: t.status
+                };
+
+                let isMatch = false;
+                if (category === 'dueToday' && t.deadline === today) isMatch = true;
+                if (category === 'upcoming' && t.deadline && t.deadline > today) isMatch = true;
+                if (category === 'overdue' && t.deadline && t.deadline < today && t.status !== 'Approved') isMatch = true;
+                if (category === 'pendingReview' && t.status === 'Submitted') isMatch = true;
+
+                if (isMatch) {
+                    members[name].count++;
+                    members[name].docs.push(docInfo);
+                }
+            }
+        });
+
+        return Object.entries(members)
+            .map(([name, stats]) => ({
+                name,
+                count: stats.count,
+                docs: stats.docs,
+                progress: stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0
+            }))
+            .filter(m => m.count > 0 || category === 'all')
+            .sort((a, b) => b.count - a.count);
+    };
+
+    const breakdownData = activeBreakdown ? getMemberBreakdown(activeBreakdown) : [];
+    const breakdownTitle = activeBreakdown === 'dueToday' ? 'Unit Member Deadlines: Today' :
+                          activeBreakdown === 'upcoming' ? 'Unit Member Deadlines: Upcoming' :
+                          activeBreakdown === 'overdue' ? 'Unit Member Deadlines: Overdue' :
+                          activeBreakdown === 'pendingReview' ? 'Pending Documents per Member' : '';
 
     return (
         <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50 dark:bg-slate-900 animate-fade-in font-sans flex flex-col xl:flex-row gap-6 xl:gap-8">
@@ -156,39 +272,140 @@ export default function UnitHeadDashboard() {
                 </div>
 
                 {/* Activity Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                    <button 
+                        onClick={() => setActiveBreakdown(activeBreakdown === 'pendingReview' ? null : 'pendingReview')}
+                        className={`bg-white dark:bg-slate-800 rounded-xl p-5 border shadow-sm flex items-center gap-4 transition-all hover:scale-[1.02] text-left ${activeBreakdown === 'pendingReview' ? 'ring-2 ring-blue-600 border-blue-600' : 'border-slate-200 dark:border-slate-700'}`}
+                    >
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${activeBreakdown === 'pendingReview' ? 'bg-blue-600 text-white' : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'}`}>
+                            <FolderOpen className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className={`text-xs font-bold uppercase tracking-tighter ${activeBreakdown === 'pendingReview' ? 'text-blue-600' : 'text-slate-400'}`}>Pending My Review</p>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{pendingReviewCount}</h3>
+                        </div>
+                    </button>
+
+                    <button 
+                        onClick={() => setActiveBreakdown(activeBreakdown === 'dueToday' ? null : 'dueToday')}
+                        className={`bg-white dark:bg-slate-800 rounded-xl p-5 border shadow-sm flex items-center gap-4 transition-all hover:scale-[1.02] text-left group ${activeBreakdown === 'dueToday' ? 'ring-2 ring-orange-500 border-orange-500' : 'border-slate-200 dark:border-slate-700'}`}
+                    >
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${activeBreakdown === 'dueToday' ? 'bg-orange-500 text-white' : 'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400'}`}>
                             <Clock className="w-6 h-6" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Due Today</p>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{dueTodayCount}</h3>
+                            <p className={`text-[10px] font-bold uppercase tracking-tight ${activeBreakdown === 'dueToday' ? 'text-orange-600' : 'text-slate-400'}`}>Unit: Due Today</p>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{dueTodayCount}</h3>
                         </div>
-                    </div>
+                    </button>
 
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <button 
+                        onClick={() => setActiveBreakdown(activeBreakdown === 'upcoming' ? null : 'upcoming')}
+                        className={`bg-white dark:bg-slate-800 rounded-xl p-5 border shadow-sm flex items-center gap-4 transition-all hover:scale-[1.02] text-left ${activeBreakdown === 'upcoming' ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-slate-200 dark:border-slate-700'}`}
+                    >
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${activeBreakdown === 'upcoming' ? 'bg-indigo-500 text-white' : 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'}`}>
                             <Calendar className="w-6 h-6" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Upcoming Task</p>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{upcomingCount}</h3>
+                            <p className={`text-[10px] font-bold uppercase tracking-tight ${activeBreakdown === 'upcoming' ? 'text-indigo-600' : 'text-slate-400'}`}>Unit: Upcoming</p>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{upcomingCount}</h3>
                         </div>
-                    </div>
+                    </button>
 
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center">
+                    <button 
+                        onClick={() => setActiveBreakdown(activeBreakdown === 'overdue' ? null : 'overdue')}
+                        className={`bg-white dark:bg-slate-800 rounded-xl p-5 border shadow-sm flex items-center gap-4 transition-all hover:scale-[1.02] text-left ${activeBreakdown === 'overdue' ? 'ring-2 ring-red-500 border-red-500' : 'border-slate-200 dark:border-slate-700'}`}
+                    >
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${activeBreakdown === 'overdue' ? 'bg-red-500 text-white' : 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400'}`}>
                             <AlertCircle className="w-6 h-6" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Overdue Tasks</p>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{overdueCount}</h3>
+                            <p className={`text-[10px] font-bold uppercase tracking-tight ${activeBreakdown === 'overdue' ? 'text-red-600' : 'text-slate-400'}`}>Unit: Overdue</p>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{overdueCount}</h3>
                         </div>
-                    </div>
+                    </button>
 
                 </div>
+
+                {/* Member Breakdown Table (Appears on Card Selection) */}
+                {activeBreakdown && (
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg animate-in slide-in-from-top-4 duration-300">
+                        <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20 flex justify-between items-center">
+                            <h4 className="font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider text-xs">{breakdownTitle}</h4>
+                            <button onClick={() => setActiveBreakdown(null)} className="text-slate-400 hover:text-slate-600 text-[10px] font-bold uppercase">Close</button>
+                        </div>
+                        <div>
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-slate-50/30 dark:bg-slate-900/10 border-b border-slate-100 dark:border-slate-700">
+                                        <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase">Unit Member</th>
+                                        <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase text-center">Docs</th>
+                                        <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase">Overall Progress</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
+                                    {breakdownData.map((member, idx) => (
+                                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">
+                                                        {member.name.charAt(0)}
+                                                    </div>
+                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{member.name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="relative group/tooltip inline-block">
+                                                    <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-xs font-black text-slate-600 dark:text-slate-300 cursor-help transition-all group-hover/tooltip:bg-blue-600 group-hover/tooltip:text-white">
+                                                        {member.count}
+                                                    </span>
+                                                    
+                                                    {/* Custom Hover Document List */}
+                                                    <div className="invisible group-hover/tooltip:visible absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 bg-slate-900 text-white rounded-lg shadow-2xl p-3 z-50 text-left animate-in fade-in zoom-in-95 duration-200">
+                                                        <div className="flex items-center gap-2 mb-2 pb-1 border-b border-slate-700">
+                                                            <FileText className="w-3 h-3 text-blue-400" />
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Document Detail</span>
+                                                        </div>
+                                                        <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                                                            {member.docs.map((doc, dIdx) => (
+                                                                <div key={dIdx} className="space-y-0.5">
+                                                                    <div className="text-[10px] font-bold text-blue-300 uppercase tracking-tighter truncate">{doc.title}</div>
+                                                                    <div className="flex justify-between items-center text-[9px] text-slate-400 font-medium">
+                                                                        <span className="bg-slate-800 px-1 rounded">{doc.code}</span>
+                                                                        <span className={`${doc.status === 'Submitted' ? 'text-blue-400' : 'text-amber-400'}`}>{doc.status}</span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        {/* Tooltip Arrow (Points Up) */}
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-8 border-transparent border-b-slate-900"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 min-w-[200px]">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className={`h-full transition-all duration-1000 ${member.progress === 100 ? 'bg-emerald-500' : member.progress > 50 ? 'bg-blue-500' : 'bg-amber-500'}`}
+                                                            style={{ width: `${member.progress}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 w-8">{member.progress}%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {breakdownData.length === 0 && (
+                                        <tr>
+                                            <td colSpan={3} className="px-6 py-10 text-center text-xs text-slate-400 italic">No member data for this category.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
 
                 {/* Pending Documents for Review as Task (Prominent Section) */}
                 <div className="bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-blue-900/50 rounded-xl shadow-md overflow-hidden ring-1 ring-blue-500/20">
@@ -239,7 +456,7 @@ export default function UnitHeadDashboard() {
                                             <span className={(doc.status === 'Draft' || doc.status.includes('Pending')) ? 'text-orange-600 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400'}>{new Date(doc.createdAt).toLocaleDateString()}</span>
                                         </td>
                                         <td className="px-5 py-4 text-right">
-                                            <a href={`/dashboard/rbp/${doc.id}`} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer inline-block">
+                                            <a href={`/dashboard/review-document/${doc.id}/${doc.docCode}`} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer inline-block">
                                                 Open Review
                                             </a>
                                         </td>
@@ -255,31 +472,8 @@ export default function UnitHeadDashboard() {
             {/* Right Sidebar */}
             <div className="w-full xl:w-[350px] flex-shrink-0 space-y-6">
 
-                {/* Mini Calendar Widget */}
-                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-5">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                            Schedule
-                        </h3>
-                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded">March 2026</span>
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1 text-center text-xs mb-4">
-                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <div key={`${d}-${i}`} className="font-medium text-slate-400">{d}</div>)}
-                        {Array.from({ length: 31 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className={`p-1.5 rounded-full flex items-center justify-center 
-                  ${i + 1 === 7 ? 'bg-blue-600 text-white font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer'}
-                  ${[8, 12, 18, 25].includes(i + 1) ? 'relative after:absolute after:bottom-0 after:w-1 after:h-1 after:bg-orange-500 after:rounded-full' : ''}
-                `}
-                            >
-                                {i + 1}
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                {/* Interactive Calendar Module */}
+                <CalendarModule userName={currentUserName} />
 
                 {/* Notepad */}
                 <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-4 flex flex-col h-[250px]">
@@ -288,7 +482,7 @@ export default function UnitHeadDashboard() {
                             <FileText className="w-4 h-4 text-slate-500" />
                             Strategic Notes
                         </h3>
-                        <button className="text-slate-400 hover:text-blue-600 transition-colors">
+                        <button onClick={handleSaveNote} className="text-slate-400 hover:text-blue-600 transition-colors" title="Save Notes">
                             <Save className="w-4 h-4" />
                         </button>
                     </div>
