@@ -205,31 +205,57 @@ export default function PdfReviewer({
                 onClick={onSvgClick}
                 style={{ touchAction: 'none' }}
             >
-                {/* SVG Mask for Eraser strokes */}
-                <defs>
-                    <mask id="eraser-mask">
-                        {/* the mask base is fully white (meaning: show everything) */}
-                        <rect width="100%" height="100%" fill="white" />
-                        
-                        {/* eraser paths are drawn in black (meaning: hide these areas) */}
-                        {allPaths.filter(p => p.tool === 'eraser').map((p, i) => (
-                            <polyline
-                                key={`erase_${i}`}
-                                points={(p.points || []).map((pt: any) => `${pt.x},${pt.y}`).join(' ')}
-                                fill="none"
-                                stroke="black"
-                                strokeWidth={p.width || 20}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        ))}
-                    </mask>
-                </defs>
+                {/* Sequential Masking: Erasers only affect strokes drawn BEFORE them */}
+                {(() => {
+                    const blocks: { id: string, paths: { p: any, i: number }[], erasers: { p: any, i: number }[] }[] = [];
+                    let currentPaths: { p: any, i: number }[] = [];
+                    const allErasers: { p: any, i: number }[] = [];
 
-                {/* All actual drawn paths are masked by the eraser mask */}
-                <g mask="url(#eraser-mask)">
-                    {allPaths.map((p, i) => renderAnnotation(p, i))}
-                </g>
+                    allPaths.forEach((p, i) => {
+                        if (p.tool === 'eraser') {
+                            allErasers.push({ p, i });
+                            blocks.push({ id: `block_${i}`, paths: currentPaths, erasers: [] });
+                            currentPaths = [];
+                        } else {
+                            currentPaths.push({ p, i });
+                        }
+                    });
+                    blocks.push({ id: 'block_final', paths: currentPaths, erasers: [] });
+
+                    let erasersPassed = 0;
+                    blocks.forEach((b, idx) => {
+                        b.erasers = allErasers.slice(erasersPassed);
+                        if (idx < blocks.length - 1) { erasersPassed++; }
+                    });
+
+                    return (
+                        <>
+                            <defs>
+                                {blocks.map(b => b.erasers.length > 0 ? (
+                                    <mask id={`eraser-mask-${b.id}`} key={`mask-def-${b.id}`}>
+                                        <rect width="100%" height="100%" fill="white" />
+                                        {b.erasers.map(e => (
+                                            <polyline
+                                                key={`erase_${e.i}`}
+                                                points={(e.p.points || []).map((pt: any) => `${pt.x},${pt.y}`).join(' ')}
+                                                fill="none"
+                                                stroke="black"
+                                                strokeWidth={e.p.width || 20}
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                        ))}
+                                    </mask>
+                                ) : null)}
+                            </defs>
+                            {blocks.map(b => (
+                                <g key={`g-${b.id}`} mask={b.erasers.length > 0 ? `url(#eraser-mask-${b.id})` : undefined}>
+                                    {b.paths.map(x => renderAnnotation(x.p, x.i))}
+                                </g>
+                            ))}
+                        </>
+                    );
+                })()}
 
                 {/* Text labels as HTML Draggable Textboxes */}
                 {textAnnotations.map((t, i) => (

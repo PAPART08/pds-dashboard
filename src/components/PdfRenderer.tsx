@@ -13,7 +13,7 @@ interface PdfRendererProps {
     numPages: number | null;
     onLoadSuccess: (data: { numPages: number }) => void;
     paths?: any[];
-    textAnnotations?: { x: number, y: number, text: string }[];
+    textAnnotations?: { x: number, y: number, text: string, fontSize?: number, fontFamily?: string, fontWeight?: string, fontStyle?: string, color?: string }[];
     width?: number;
 }
 
@@ -150,44 +150,89 @@ export default function PdfRenderer({
                     className="absolute inset-0 w-full h-full z-10 pointer-events-none"
                     preserveAspectRatio="xMinYMin meet"
                 >
-                    <defs>
-                        <mask id="eraser-mask-readonly">
-                            <rect width="100%" height="100%" fill="white" />
-                            {paths.filter(p => p.tool === 'eraser').map((p, i) => (
-                                <polyline
-                                    key={`erase_ro_${i}`}
-                                    points={(p.points || []).map((pt: any) => `${pt.x},${pt.y}`).join(' ')}
-                                    fill="none"
-                                    stroke="black"
-                                    strokeWidth={p.width || 20}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            ))}
-                        </mask>
-                    </defs>
+                    {/* Sequential Masking: Erasers only affect strokes drawn BEFORE them */}
+                    {(() => {
+                        const blocks: { id: string, paths: { p: any, i: number }[], erasers: { p: any, i: number }[] }[] = [];
+                        let currentPaths: { p: any, i: number }[] = [];
+                        const allErasers: { p: any, i: number }[] = [];
 
-                    <g mask="url(#eraser-mask-readonly)">
-                        {paths.map((p, i) => renderAnnotation(p, i))}
-                    </g>
+                        paths.forEach((p, i) => {
+                            if (p.tool === 'eraser') {
+                                allErasers.push({ p, i });
+                                blocks.push({ id: `block_${i}`, paths: currentPaths, erasers: [] });
+                                currentPaths = [];
+                            } else {
+                                currentPaths.push({ p, i });
+                            }
+                        });
+                        blocks.push({ id: 'block_final', paths: currentPaths, erasers: [] });
 
+                        let erasersPassed = 0;
+                        blocks.forEach((b, idx) => {
+                            b.erasers = allErasers.slice(erasersPassed);
+                            if (idx < blocks.length - 1) { erasersPassed++; }
+                        });
+
+                        return (
+                            <>
+                                <defs>
+                                    {blocks.map(b => b.erasers.length > 0 ? (
+                                        <mask id={`eraser-mask-readonly-${b.id}`} key={`mask-def-${b.id}`}>
+                                            <rect width="100%" height="100%" fill="white" />
+                                            {b.erasers.map(e => (
+                                                <polyline
+                                                    key={`erase_${e.i}`}
+                                                    points={(e.p.points || []).map((pt: any) => `${pt.x},${pt.y}`).join(' ')}
+                                                    fill="none"
+                                                    stroke="black"
+                                                    strokeWidth={e.p.width || 20}
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+                                            ))}
+                                        </mask>
+                                    ) : null)}
+                                </defs>
+                                {blocks.map(b => (
+                                    <g key={`g-${b.id}`} mask={b.erasers.length > 0 ? `url(#eraser-mask-readonly-${b.id})` : undefined}>
+                                        {b.paths.map(x => renderAnnotation(x.p, x.i))}
+                                    </g>
+                                ))}
+                            </>
+                        );
+                    })()}
+
+                    {/* Text labels as HTML Draggable Textboxes */}
                     {textAnnotations.map((t, i) => (
-                        <text
+                        <foreignObject
                             key={`txt_${i}`}
                             x={t.x}
                             y={t.y}
-                            fill="#1e40af"
-                            fontSize="14"
-                            fontWeight="bold"
-                            fontFamily="Inter, system-ui, sans-serif"
-                            paintOrder="stroke"
-                            stroke="white"
-                            strokeWidth="3"
-                            strokeLinejoin="round"
-                            style={{ userSelect: 'none' }}
+                            width="400"
+                            height="400"
+                            style={{ pointerEvents: 'none', overflow: 'visible' }}
                         >
-                            {t.text}
-                        </text>
+                            <div
+                                style={{
+                                    display: 'inline-block',
+                                    padding: '6px 12px',
+                                    backgroundColor: 'transparent',
+                                    color: t.color || '#1a56db',
+                                    fontSize: `${t.fontSize || 15}px`,
+                                    fontWeight: t.fontWeight || 'normal',
+                                    fontStyle: t.fontStyle || 'normal',
+                                    fontFamily: t.fontFamily || 'Inter, system-ui, sans-serif',
+                                    borderRadius: '8px',
+                                    border: '2px solid transparent',
+                                    userSelect: 'none',
+                                    whiteSpace: 'pre-wrap',
+                                    wordBreak: 'break-word',
+                                    maxWidth: '380px'
+                                }}
+                            >
+                                {t.text}
+                            </div>
+                        </foreignObject>
                     ))}
                 </svg>
             )}

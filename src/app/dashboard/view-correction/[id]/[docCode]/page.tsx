@@ -40,6 +40,7 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
     const [numPages, setNumPages] = useState<number | null>(null);
     const [paths, setPaths] = useState<any[]>([]);
+    const [textAnnotations, setTextAnnotations] = useState<any[]>([]);
     const [comments, setComments] = useState<{ id: number, user: string, role: string, text: string, time: string, isResolved: boolean }[]>([]);
     const [replyText, setReplyText] = useState('');
     const [isUploading, setIsUploading] = useState(false);
@@ -252,43 +253,52 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
     const docName = SUPPORTING_DOC_DESCRIPTIONS[docCode as string] || 'Unknown Document';
 
     useEffect(() => {
-        // Load synced comments
-        const savedComments = localStorage.getItem(`pds_comments_${id}_${docCode}`);
-        if (savedComments) {
-            setComments(JSON.parse(savedComments));
-        } else {
-            setComments([
-                {
-                    id: 1,
-                    user: 'Engr. Maria Santos',
-                    role: 'Unit Head',
-                    text: 'Please address the critical issues found in the structural layout of Phase 1:\n- Re-calculate the load distribution for Section A-A.\n- Minimum clearance requirements not met at the main intersection.',
-                    time: '10:45 AM',
-                    isResolved: false
-                }
-            ]);
-        }
+        const fetchCorrectionData = async () => {
+             try {
+                 const { data: p, error } = await supabase.from('projects').select('doc_history, doc_uploads').eq('id', id).single();
+                 if (error) throw error;
+                 
+                 const history = p.doc_history || {};
+                 const docVersions = history[docCode] || [];
+                 
+                 let versionToDisplay = null;
+                 if (docVersions.length > 0) {
+                     // Get latest returned version
+                     versionToDisplay = docVersions[docVersions.length - 1];
+                     
+                     setPdfUrl(versionToDisplay.url || null);
+                     setPaths(versionToDisplay.paths || []);
+                     setTextAnnotations(versionToDisplay.textAnnotations || []);
+                 } else {
+                     setPdfUrl(p.doc_uploads?.[docCode] || null);
+                 }
 
-        const savedUrlGlobal = localStorage.getItem(`pdf_${id}_${docCode}`);
-        const savedUrlSession = sessionStorage.getItem(`pdf_${id}_${docCode}`);
-
-        const isValidPdfUrl = (url: string | null) => {
-            if (!url) return false;
-            return url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:application/pdf');
+                 // Load comments either from database versions or fallback
+                 if (versionToDisplay && versionToDisplay.comments) {
+                     setComments(versionToDisplay.comments);
+                 } else {
+                     const savedComments = localStorage.getItem(`pds_comments_${id}_${docCode}`);
+                     if (savedComments) {
+                         setComments(JSON.parse(savedComments));
+                     } else {
+                         setComments([
+                             {
+                                 id: 1,
+                                 user: 'Engr. Maria Santos',
+                                 role: 'Unit Head',
+                                 text: 'Please address the critical issues found in the document.',
+                                 time: '10:45 AM',
+                                 isResolved: false
+                             }
+                         ]);
+                     }
+                 }
+             } catch (e) {
+                 console.error('Failed to fetch data', e);
+             }
         };
 
-        if (isValidPdfUrl(savedUrlGlobal)) {
-            setPdfUrl(savedUrlGlobal);
-        } else if (isValidPdfUrl(savedUrlSession)) {
-            setPdfUrl(savedUrlSession);
-        }
-
-        const savedAnnotations = localStorage.getItem(`pds_annotations_${id}_${docCode}`);
-        if (savedAnnotations) {
-            try {
-                setPaths(JSON.parse(savedAnnotations));
-            } catch (err) { }
-        }
+        fetchCorrectionData();
     }, [id, docCode]);
 
     const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
@@ -351,6 +361,7 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
                                         numPages={numPages}
                                         onLoadSuccess={onDocumentLoadSuccess}
                                         paths={paths}
+                                        textAnnotations={textAnnotations}
                                         width={pageWidth}
                                     />
                                 </div>

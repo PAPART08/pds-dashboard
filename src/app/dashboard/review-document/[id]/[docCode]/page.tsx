@@ -192,6 +192,11 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                             setPreviousPdfUrl(lastVersion.url);
                             setPrevPaths(lastVersion.paths || []);
                             setPrevTextAnnotations(lastVersion.textAnnotations || []);
+
+                            if (lastVersion.comments && lastVersion.comments.length > 0) {
+                                setComments(lastVersion.comments);
+                                localStorage.setItem(`pds_comments_${id}_${docCode}`, JSON.stringify(lastVersion.comments));
+                            }
                         }
                     }
                 }
@@ -232,6 +237,13 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
 
     const handleReturn = async () => {
         try {
+            const userName = currentUser?.name || 'Reviewer';
+            const userRole = currentUser?.role || 'Reviewer';
+            const updatedComments = [...comments, { id: Date.now(), user: userName, role: userRole, text: 'Document Returned for Corrections.', time: 'Just now', isResolved: false }];
+            
+            setComments(updatedComments);
+            localStorage.setItem(`pds_comments_${id}_${docCode}`, JSON.stringify(updatedComments));
+
             const { data: p, error: fError } = await supabase
                 .from('projects')
                 .select('doc_statuses, doc_uploads, doc_history')
@@ -248,6 +260,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                     url: pdfUrl,
                     paths: paths,
                     textAnnotations: textAnnotations,
+                    comments: updatedComments,
                     uploaded_at: new Date().toISOString(),
                     version_name: `Revision ${versionNum} (Annotated)`
                 });
@@ -266,11 +279,6 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
             await supabase.from('tasks').update({ status: 'Returned' }).eq('project_id', id).eq('task_type', 'DOC_COMPLIANCE').eq('doc_code', docCode);
 
             alert("Document Returned to Compiler with Corrections.");
-            const userName = currentUser?.name || 'Reviewer';
-            const userRole = currentUser?.role || 'Reviewer';
-            const updatedComments = [...comments, { id: Date.now(), user: userName, role: userRole, text: 'Document Returned for Corrections.', time: 'Just now', isResolved: false }];
-            setComments(updatedComments);
-            localStorage.setItem(`pds_comments_${id}_${docCode}`, JSON.stringify(updatedComments));
             setTimeout(() => router.push(`/dashboard/rbp/${id}`), 1000);
         } catch (err) {
             console.error("Failed to return doc", err);
