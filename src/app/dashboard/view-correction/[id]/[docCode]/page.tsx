@@ -1,14 +1,18 @@
 "use client";
 
 import { use, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import {
     ChevronLeft,
     Download,
     ZoomIn,
     ZoomOut,
     Maximize,
+    Shrink,
     MessageSquare,
     User,
     Paperclip,
@@ -23,6 +27,8 @@ const PdfRenderer = dynamic(() => import('@/components/PdfRenderer'), {
 });
 
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { uploadDocument } from '@/lib/storage';
 
 export default function DocumentCorrectionViewer({ params: paramsProp }: { params: any }) {
     // Safely handle params
@@ -36,8 +42,30 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
     const [paths, setPaths] = useState<any[]>([]);
     const [comments, setComments] = useState<{ id: number, user: string, role: string, text: string, time: string, isResolved: boolean }[]>([]);
     const [replyText, setReplyText] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
     
+    // Zoom & Fullscreen state
+    const [zoom, setZoom] = useState(1.0);
+    const zoomIn = () => setZoom(z => Math.min(z + 0.25, 2.5));
+    const zoomOut = () => setZoom(z => Math.max(z - 0.25, 0.5));
+    const [pageWidth, setPageWidth] = useState(800);
+    const [isFullScreen, setIsFullScreen] = useState(false);
+
+    useEffect(() => {
+        if (isFullScreen) {
+            document.body.classList.add('compare-active');
+        } else {
+            document.body.classList.remove('compare-active');
+        }
+        return () => document.body.classList.remove('compare-active');
+    }, [isFullScreen]);
+
     const { profile, loading: authLoading } = useAuth();
+
+    useEffect(() => {
+        setPageWidth(Math.round(800 * zoom));
+    }, [zoom]);
 
     // Sync current user info from profile
     const currentUserName = profile?.name || '';
@@ -68,6 +96,157 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
         setComments(updatedComments);
         localStorage.setItem(`pds_comments_${id}_${docCode}`, JSON.stringify(updatedComments));
         setReplyText('');
+    };
+
+    const handleFinalRevisionUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !id || !docCode) return;
+
+        setIsUploading(true);
+        try {
+            // 1. Upload to Supabase Storage
+            const { publicUrl } = await uploadDocument(file, id, docCode);
+
+            // 2. Find and update the task status if it exists
+            const { data: task } = await supabase
+                .from('tasks')
+                .select('id')
+                .eq('project_id', id)
+                .eq('doc_code', docCode)
+                .maybeSingle();
+
+            if (task) {
+                await supabase
+                    .from('tasks')
+                    .update({ status: 'Submitted' })
+                    .eq('id', task.id);
+            }
+
+            // 3. Sync with projects table and track history
+            const { data: p, error: fError } = await supabase
+                .from('projects')
+                .select('doc_statuses, doc_uploads, doc_history')
+                .eq('id', id)
+                .single();
+
+            if (!fError && p) {
+                const currentUrl = p.doc_uploads?.[docCode];
+                const history = p.doc_history || {};
+                const docVersions = history[docCode] || [];
+                
+                // If there's an existing file, push it to history
+                if (currentUrl) {
+                    const versionNum = docVersions.length + 1;
+                    docVersions.push({
+                        url: currentUrl,
+                        uploaded_at: new Date().toISOString(),
+                        version_name: `Revision ${versionNum}`
+                    });
+                }
+
+                const newStatuses = { ...(p.doc_statuses || {}), [docCode]: 'Submitted' };
+                const newUploads = { ...(p.doc_uploads || {}), [docCode]: publicUrl };
+                const newHistory = { ...history, [docCode]: docVersions };
+
+                await supabase.from('projects').update({
+                    doc_statuses: newStatuses,
+                    doc_uploads: newUploads,
+                    doc_history: newHistory
+                }).eq('id', id);
+
+                // When a new document is submitted, clear the previous specific preview cache
+                localStorage.removeItem(`pdf_prev_${id}_${docCode}`);
+                if (currentUrl) {
+                    localStorage.setItem(`pdf_prev_${id}_${docCode}`, currentUrl);
+                }
+            }
+
+            // Update session storage for immediate preview elsewhere
+            sessionStorage.setItem(`pdf_${id}_${docCode}`, publicUrl);
+            setPdfUrl(publicUrl);
+
+            alert('Final revision successfully uploaded and submitted.');
+            router.push('/dashboard/user-task');
+        } catch (err: any) {
+            console.error("Error uploading final revision:", err);
+            alert(`Upload failed: ${err.message || 'Unknown error'}`);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleDownloadAnnotated = async () => {
+        if (!pdfUrl) return;
+        
+        setIsDownloading(true);
+        try {
+            const el = document.getElementById('pdf-renderer-container');
+            if (!el) {
+                // Fallback to simple download if component not found
+                const a = document.createElement('a');
+                a.href = pdfUrl;
+                a.download = `${docCode}_Correction.pdf`;
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                return;
+            }
+
+            const pages = Array.from(el.querySelectorAll('.react-pdf__Page')) as HTMLElement[];
+            if (pages.length === 0) throw new Error("No PDF pages found to capture.");
+
+            const canvas = await html2canvas(el, { scale: 2, useCORS: true, logging: false });
+            
+            const pdf = new jsPDF({
+                orientation: pages[0].clientWidth > pages[0].clientHeight ? 'landscape' : 'portrait',
+                unit: 'px',
+                format: [pages[0].clientWidth, pages[0].clientHeight]
+            });
+
+            const mainCtx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!mainCtx) throw new Error("Failed to get 2D context");
+
+            const containerRect = el.getBoundingClientRect();
+
+            for (let i = 0; i < pages.length; i++) {
+                const pageObj = pages[i];
+                if (i > 0) {
+                    pdf.addPage([pageObj.clientWidth, pageObj.clientHeight], pageObj.clientWidth > pageObj.clientHeight ? 'landscape' : 'portrait');
+                }
+
+                const pageCanvas = document.createElement('canvas');
+                pageCanvas.width = canvas.width;
+                pageCanvas.height = pageObj.clientHeight * 2;
+                const ctx = pageCanvas.getContext('2d');
+                if (!ctx) continue;
+
+                const pageRect = pageObj.getBoundingClientRect();
+                const pageTop = (pageRect.top - containerRect.top) * 2;
+                
+                ctx.putImageData(
+                    mainCtx.getImageData(0, pageTop, canvas.width, pageCanvas.height),
+                    0, 0
+                );
+
+                const imgData = pageCanvas.toDataURL('image/jpeg', 0.85);
+                pdf.addImage(imgData, 'JPEG', 0, 0, pageObj.clientWidth, pageObj.clientHeight);
+            }
+
+            pdf.save(`${docCode}_Correction_Annotated.pdf`);
+        } catch (err) {
+            console.error("Download failed:", err);
+            alert("Failed to generate PDF with annotations. Downloading raw PDF instead.");
+            const a = document.createElement('a');
+            a.href = pdfUrl;
+            a.download = `${docCode}_Correction.pdf`;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } finally {
+            setIsDownloading(false);
+        }
     };
 
     const docName = SUPPORTING_DOC_DESCRIPTIONS[docCode as string] || 'Unknown Document';
@@ -116,19 +295,16 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
         setNumPages(numPages);
     };
 
-    if (authLoading || !profile) {
-        return (
-            <div className="flex h-[calc(100vh-80px)] items-center justify-center bg-gray-50">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-                    <p className="font-medium text-slate-500 animate-pulse uppercase tracking-[0.2em] text-xs">Authenticating...</p>
-                </div>
-            </div>
-        );
-    }
+    // We no longer block the entire page with a spinner here because DashboardLayout 
+    // already handles the top-level loading state. This prevents "loading-in-loading" loops.
+    // If profile is still null (rare cases), we show the UI with placeholder names.
+    
+    const wrapperClasses = isFullScreen
+        ? "fixed inset-0 z-[9999] bg-[#f5f6f8] dark:bg-[#101622] flex flex-col font-sans"
+        : "flex flex-col h-[calc(100vh-80px)] bg-[#f5f6f8] dark:bg-[#101622] -mx-4 md:-mx-8 lg:-mx-10 px-4 md:px-8 lg:px-10 -my-6 pt-4 font-sans";
 
-    return (
-        <div className="flex flex-col h-[calc(100vh-80px)] overflow-hidden bg-[#f5f6f8] dark:bg-[#101622] -mx-4 md:-mx-8 lg:-mx-10 px-4 md:px-8 lg:px-10 -my-6 pt-4 font-sans">
+    const content = (
+        <div className={wrapperClasses}>
 
             {/* Top Navigation Bar */}
             <header className="flex items-center bg-white dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-800 rounded-t-xl z-10 shrink-0">
@@ -160,7 +336,7 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
 
                 {/* Document Preview Section */}
                 <div className="flex-1 p-4 flex flex-col relative">
-                    <div className="flex-1 bg-slate-200 dark:bg-slate-800 rounded-t-xl overflow-hidden shadow-inner border border-slate-200 dark:border-slate-700 relative flex justify-center items-center group">
+                    <div className="flex-1 bg-slate-200 dark:bg-slate-800 rounded-t-xl overflow-hidden shadow-inner border border-slate-200 dark:border-slate-700 relative group">
 
                         {!pdfUrl ? (
                             <div className="text-slate-400 text-center">
@@ -168,33 +344,58 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
                                 <p>No Document Found</p>
                             </div>
                         ) : (
-                            <div className="w-full h-full relative overflow-auto bg-slate-400 p-8 flex flex-col items-center">
-                                <PdfRenderer
-                                    pdfUrl={pdfUrl}
-                                    numPages={numPages}
-                                    onLoadSuccess={onDocumentLoadSuccess}
-                                    paths={paths}
-                                />
+                            <div className="absolute inset-0 overflow-auto bg-slate-400 p-8 pt-12 pb-24">
+                                <div className="min-h-min mx-auto w-max">
+                                    <PdfRenderer
+                                        pdfUrl={pdfUrl}
+                                        numPages={numPages}
+                                        onLoadSuccess={onDocumentLoadSuccess}
+                                        paths={paths}
+                                        width={pageWidth}
+                                    />
+                                </div>
                             </div>
                         )}
 
                         {/* PDF Controls Overlay */}
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full shadow-2xl border border-slate-200 flex items-center gap-4 z-20 transition-opacity opacity-0 group-hover:opacity-100">
-                            <ZoomOut className="w-5 h-5 text-slate-600 cursor-pointer hover:text-blue-600" />
-                            <span className="text-xs font-bold text-slate-900">100%</span>
-                            <ZoomIn className="w-5 h-5 text-slate-600 cursor-pointer hover:text-blue-600" />
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full shadow-2xl border border-slate-200 flex items-center gap-4 z-20 transition-all hover:scale-105 active:scale-95 group-hover:opacity-100 opacity-100">
+                            <button onClick={zoomOut} disabled={zoom <= 0.5} className="p-1 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors">
+                                <ZoomOut className="w-5 h-5 text-slate-600" />
+                            </button>
+                            <span className="text-xs font-bold text-slate-900 min-w-[45px] text-center">{Math.round(zoom * 100)}%</span>
+                            <button onClick={zoomIn} disabled={zoom >= 2.5} className="p-1 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors">
+                                <ZoomIn className="w-5 h-5 text-slate-600" />
+                            </button>
                             <div className="h-4 w-[1px] bg-slate-300"></div>
-                            <Maximize className="w-5 h-5 text-slate-600 cursor-pointer hover:text-blue-600" />
+                            <button onClick={() => setZoom(1.0)} className="px-2 py-1 rounded-full hover:bg-slate-100 transition-colors hidden md:block" title="Reset Zoom">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase">Reset</span>
+                            </button>
+                            <div className="h-4 w-[1px] bg-slate-300"></div>
+                            <button onClick={() => setIsFullScreen(!isFullScreen)} className="p-1 rounded-full hover:bg-slate-100 transition-colors" title={isFullScreen ? "Exit Full Screen" : "Full Screen"}>
+                                {isFullScreen ? <Shrink className="w-5 h-5 text-slate-600" /> : <Maximize className="w-5 h-5 text-slate-600" />}
+                            </button>
                         </div>
                     </div>
 
                     <div className="p-4 bg-white dark:bg-slate-900 flex items-center justify-between border border-t-0 border-slate-200 dark:border-slate-800 rounded-b-xl shrink-0">
                         <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{docCode}_Correction_No.1.pdf</span>
-                            <span className="text-xs text-slate-500">Last updated: Recently</span>
+                            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{docCode}_Correction.pdf</span>
+                            <span className="text-xs text-slate-500">Document containing reviewer annotations.</span>
                         </div>
-                        <button className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors">
-                            <Download className="w-5 h-5" />
+                        <button 
+                            onClick={handleDownloadAnnotated}
+                            title="Download PDF with Annotations"
+                            disabled={isDownloading}
+                            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isDownloading ? (
+                                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                                <Download className="w-4 h-4" />
+                            )}
+                            <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline-block">
+                                {isDownloading ? 'Processing...' : 'Download'}
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -254,16 +455,30 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
 
                     <div className="mt-4 pt-6 border-t border-slate-200 dark:border-slate-700">
                         <p className="text-xs text-slate-500 text-center mb-3">Done making the requested changes?</p>
-                        <label className="w-full flex justify-center items-center px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-md shadow-blue-600/20 cursor-pointer transition-colors">
-                            Upload Final Revision
-                            <input type="file" className="hidden" onChange={() => {
-                                alert('Revised document successfully uploaded.');
-                                router.push('/dashboard/user-task');
-                            }} />
+                        <label className={`w-full flex justify-center items-center px-4 py-3 rounded-xl text-white text-sm font-bold shadow-md cursor-pointer transition-colors ${isUploading ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'}`}>
+                            {isUploading ? (
+                                <>
+                                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                    Uploading...
+                                </>
+                            ) : 'Upload Final Revision'}
+                            <input 
+                                type="file" 
+                                accept="application/pdf"
+                                className="hidden" 
+                                disabled={isUploading}
+                                onChange={handleFinalRevisionUpload} 
+                            />
                         </label>
                     </div>
                 </section>
             </main>
         </div>
     );
+
+    if (isFullScreen && typeof document !== 'undefined') {
+        return createPortal(content, document.body);
+    }
+    
+    return content;
 }

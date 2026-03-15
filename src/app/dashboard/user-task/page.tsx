@@ -148,10 +148,12 @@ export default function UserTaskDashboard() {
                                 location: 'Silago, Southern Leyte',
                                 costValue: 12500000,
                                 stage: 'Preparation',
-                                status: 'Drafting',
+                                status: sd === 'PR' ? 'Returned' : 'Drafting',
                                 createdAt: new Date().toISOString(),
                                 fiscalYear: '2025',
-                                type: 'Demo Task'
+                                type: 'Demo Task',
+                                projectId: '27B00123',
+                                docCode: sd
                             });
                         });
                     }

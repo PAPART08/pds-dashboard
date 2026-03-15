@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -12,6 +12,11 @@ export interface TextAnnotation {
     x: number;
     y: number;
     text: string;
+    fontSize?: number;
+    fontFamily?: string;
+    fontWeight?: string;
+    fontStyle?: string;
+    color?: string;
 }
 
 interface PdfReviewerProps {
@@ -23,7 +28,7 @@ interface PdfReviewerProps {
     textAnnotations?: TextAnnotation[];
     activeTool: string;
     zoom?: number;
-    onMouseDown: (e: React.MouseEvent<SVGSVGElement>) => void;
+    onMouseDown: (e: React.MouseEvent<SVGSVGElement>, type?: string, index?: number) => void;
     onMouseMove: (e: React.MouseEvent<SVGSVGElement>) => void;
     onMouseUp: () => void;
     onSvgClick?: (e: React.MouseEvent<SVGSVGElement>) => void;
@@ -44,26 +49,136 @@ export default function PdfReviewer({
     onSvgClick
 }: PdfReviewerProps) {
     const [loadError, setLoadError] = useState(false);
+    const [svgHeight, setSvgHeight] = useState(1131);
+    const svgRef = useRef<SVGSVGElement>(null);
     const pageWidth = Math.round(800 * zoom);
+
+    useEffect(() => {
+        if (!svgRef.current) return;
+
+        const updateHeight = () => {
+            if (svgRef.current) {
+                const h = svgRef.current.clientHeight;
+                if (h > 0) setSvgHeight(h / zoom);
+            }
+        };
+
+        const observer = new ResizeObserver(updateHeight);
+        observer.observe(svgRef.current);
+        updateHeight();
+        return () => observer.disconnect();
+    }, [zoom, pdfUrl, numPages]);
 
     if (loadError) {
         return (
-            <div className="p-10 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl text-center">
-                <p className="text-red-600 dark:text-red-400 font-bold">Invalid PDF structure or file not found.</p>
-                <p className="text-sm text-red-500 mt-2">Please verify the document upload.</p>
+            <div className="p-8 bg-red-50 rounded-2xl text-center">
+                <p className="text-red-600 font-bold text-sm">Failed to load document.</p>
             </div>
         );
     }
 
     const allPaths = currentPath ? [...paths, currentPath] : paths;
 
+    const renderAnnotation = (p: any, i: number) => {
+        const color  = p.color  ?? (p.tool === 'highlight' ? '#fde047' : '#ef4444');
+        const width  = p.width  ?? (p.tool === 'highlight' ? 20 : 3);
+
+        /* Sticky note */
+        if (p.tool === 'sticky') {
+            const sx = p.x ?? p.points?.[0]?.x ?? 0;
+            const sy = p.y ?? p.points?.[0]?.y ?? 0;
+            return (
+                <g key={i} transform={`translate(${sx}, ${sy})`} style={{ pointerEvents: 'none' }}>
+                    <rect x="-14" y="-14" width="28" height="28" rx="5"
+                        fill={p.color ?? '#f59e0b'}
+                        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.25))' }}
+                    />
+                    <text x="0" y="5" textAnchor="middle" fontSize="14" fill="white" fontWeight="900">!</text>
+                </g>
+            );
+        }
+
+        /* Circle / Ellipse */
+        if (p.tool === 'circle') {
+            if (!p.points || p.points.length < 2) return null;
+            const s = p.points[0];
+            const e = p.points[p.points.length - 1];
+            const rx = Math.abs(e.x - s.x) / 2;
+            const ry = Math.abs(e.y - s.y) / 2;
+            const cx = (s.x + e.x) / 2;
+            const cy = (s.y + e.y) / 2;
+            return (
+                <ellipse key={i} cx={cx} cy={cy} rx={rx || 1} ry={ry || 1}
+                    fill="none" stroke={color} strokeWidth={width}
+                    strokeLinecap="round"
+                    style={{ pointerEvents: 'none' }}
+                />
+            );
+        }
+
+        /* Rectangle */
+        if (p.tool === 'square') {
+            if (!p.points || p.points.length < 2) return null;
+            const s = p.points[0];
+            const e = p.points[p.points.length - 1];
+            const x = Math.min(s.x, e.x);
+            const y = Math.min(s.y, e.y);
+            const w = Math.abs(e.x - s.x);
+            const h = Math.abs(e.y - s.y);
+            return (
+                <rect key={i} x={x} y={y} width={w || 1} height={h || 1}
+                    fill="none" stroke={color} strokeWidth={width}
+                    strokeLinecap="round"
+                    style={{ pointerEvents: 'none' }}
+                />
+            );
+        }
+
+        /* Eraser is handled in the mask, do not draw it normally */
+        if (p.tool === 'eraser') return null;
+
+        /* Freehand draw / Highlight */
+        return (
+            <polyline
+                key={i}
+                points={(p.points || []).map((pt: any) => `${pt.x},${pt.y}`).join(' ')}
+                fill="none"
+                stroke={color}
+                strokeWidth={width}
+                opacity={p.tool === 'highlight' ? 0.38 : 1}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                    mixBlendMode: p.tool === 'highlight' ? 'multiply' : 'normal',
+                    pointerEvents: 'none'
+                }}
+            />
+        );
+    };
+
+    const cursorClass = activeTool === 'select'
+        ? 'cursor-default'
+        : activeTool === 'text'
+            ? 'cursor-text'
+            : activeTool === 'sticky'
+                ? 'cursor-cell'
+                : activeTool === 'eraser'
+                    ? 'cursor-crosshair'
+                    : 'cursor-crosshair';
+
     return (
-        <div className="relative shadow-2xl" style={{ transition: 'width 0.2s ease' }}>
+        <div
+            className="relative bg-white"
+            style={{
+                width: pageWidth,
+                boxShadow: '0 25px 60px rgba(0,0,0,0.40), 0 4px 12px rgba(0,0,0,0.15)'
+            }}
+        >
             <Document
                 file={pdfUrl}
                 onLoadSuccess={onLoadSuccess}
                 onLoadError={() => setLoadError(true)}
-                className="flex flex-col gap-4"
+                className="flex flex-col"
             >
                 {Array.from({ length: numPages || 0 }, (_, i) => (
                     <div key={`page_${i + 1}`} className="relative bg-white">
@@ -79,40 +194,82 @@ export default function PdfReviewer({
 
             {/* Annotation SVG Overlay */}
             <svg
-                className={`absolute inset-0 w-full h-full z-10 ${activeTool === 'select' ? 'pointer-events-none' : activeTool === 'text' ? 'cursor-text' : 'cursor-crosshair'}`}
+                ref={svgRef}
+                id="pdf-reviewer-svg-overlay"
+                viewBox={`0 0 800 ${svgHeight}`}
+                className={`absolute inset-0 w-full h-full z-10 ${cursorClass}`}
                 onMouseDown={onMouseDown}
                 onMouseMove={onMouseMove}
                 onMouseUp={onMouseUp}
                 onMouseLeave={onMouseUp}
                 onClick={onSvgClick}
+                style={{ touchAction: 'none' }}
             >
-                {allPaths.map((p, i) => (
-                    <polyline
-                        key={i}
-                        points={p.points.map((pt: any) => `${pt.x},${pt.y}`).join(' ')}
-                        fill="none"
-                        stroke={p.tool === 'highlight' ? '#fde047' : '#ef4444'}
-                        strokeWidth={p.tool === 'highlight' ? 20 : 3}
-                        opacity={p.tool === 'highlight' ? 0.3 : 1}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        style={{ mixBlendMode: 'multiply' }}
-                    />
-                ))}
-                {/* Text Annotations */}
+                {/* SVG Mask for Eraser strokes */}
+                <defs>
+                    <mask id="eraser-mask">
+                        {/* the mask base is fully white (meaning: show everything) */}
+                        <rect width="100%" height="100%" fill="white" />
+                        
+                        {/* eraser paths are drawn in black (meaning: hide these areas) */}
+                        {allPaths.filter(p => p.tool === 'eraser').map((p, i) => (
+                            <polyline
+                                key={`erase_${i}`}
+                                points={(p.points || []).map((pt: any) => `${pt.x},${pt.y}`).join(' ')}
+                                fill="none"
+                                stroke="black"
+                                strokeWidth={p.width || 20}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        ))}
+                    </mask>
+                </defs>
+
+                {/* All actual drawn paths are masked by the eraser mask */}
+                <g mask="url(#eraser-mask)">
+                    {allPaths.map((p, i) => renderAnnotation(p, i))}
+                </g>
+
+                {/* Text labels as HTML Draggable Textboxes */}
                 {textAnnotations.map((t, i) => (
-                    <text
-                        key={`text_${i}`}
+                    <foreignObject
+                        key={`txt_${i}`}
                         x={t.x}
                         y={t.y}
-                        fill="#1e40af"
-                        fontSize="14"
-                        fontWeight="bold"
-                        fontFamily="Inter, sans-serif"
-                        style={{ userSelect: 'none', pointerEvents: 'none' }}
+                        width="400"
+                        height="400"
+                        style={{ pointerEvents: 'none', overflow: 'visible' }}
                     >
-                        {t.text}
-                    </text>
+                        <div
+                            style={{
+                                display: 'inline-block',
+                                padding: '6px 12px',
+                                backgroundColor: 'transparent',
+                                color: t.color || '#1a56db',
+                                fontSize: `${t.fontSize || 15}px`,
+                                fontWeight: t.fontWeight || 'normal',
+                                fontStyle: t.fontStyle || 'normal',
+                                fontFamily: t.fontFamily || 'Inter, system-ui, sans-serif',
+                                borderRadius: '8px',
+                                border: activeTool === 'select' ? '2px dashed rgba(59, 130, 246, 0.5)' : '2px solid transparent',
+                                cursor: activeTool === 'select' ? 'move' : activeTool === 'text' ? 'text' : 'default',
+                                pointerEvents: ['draw', 'highlight', 'eraser', 'circle', 'square'].includes(activeTool) ? 'none' : 'auto',
+                                userSelect: 'none',
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                                maxWidth: '380px'
+                            }}
+                            onMouseDown={(e) => {
+                                if (activeTool === 'select') {
+                                    e.stopPropagation();
+                                    (onMouseDown as any)(e, 'text', i);
+                                }
+                            }}
+                        >
+                            {t.text}
+                        </div>
+                    </foreignObject>
                 ))}
             </svg>
         </div>

@@ -27,6 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<Employee | null>(null);
     const [loading, setLoading] = useState(true);
+    const fetchPromiseTracker = React.useRef<Map<string, Promise<void>>>(new Map());
     const router = useRouter();
 
     useEffect(() => {
@@ -35,29 +36,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const handleAuthStateChange = async (currentSession: Session | null) => {
             if (!mounted) return;
 
-            setSession(currentSession);
             const currentUser = currentSession?.user ?? null;
             setUser(currentUser);
+            setSession(currentSession);
 
             if (currentUser) {
-                // Initialize with metadata fallback (fast) to prevent null check failures
-                // but keep 'loading' true while we fetch definitive DB data.
-                const tempProfile: Employee = {
-                    id: currentUser.id,
-                    name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'User',
-                    position: currentUser.user_metadata?.position, 
-                    unit: currentUser.user_metadata?.unit || 'Planning & Design',
-                    user_type: currentUser.user_metadata?.user_type || 'User',
-                    email: currentUser.email || '',
-                    created_at: new Date().toISOString()
-                };
-                setProfile(tempProfile);
+                console.log('[AuthContext] User detected:', currentUser.email);
+                
+                // Fast metadata sync - prevents Guest flashes if metadata is populated
+                if (currentUser.user_metadata?.position) {
+                    setProfile(prev => ({
+                        ...(prev || {}),
+                        id: currentUser.id,
+                        name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'User',
+                        position: currentUser.user_metadata?.position,
+                        unit: currentUser.user_metadata?.unit || 'Planning & Design',
+                        user_type: currentUser.user_metadata?.user_type || 'User',
+                        email: currentUser.email || '',
+                        created_at: prev?.created_at || new Date().toISOString()
+                    } as Employee));
+                    
+                    // If we have metadata, we can release the loading state immediately
+                    // The DB fetch will update the profile details in the background
+                    if (mounted) setLoading(false);
+                }
 
-                // Fetch real profile from DB (definitive)
-                // We keep 'loading' true during this fetch to avoid 'Guest' flashes
-                await fetchProfile(currentUser.id);
+                // Definitive DB fetch - do NOT await if we already released the loading state
+                const fetchTask = fetchProfile(currentUser);
+                if (loading) {
+                    await fetchTask;
+                }
             } else {
                 setProfile(null);
+                fetchPromiseTracker.current.clear();
                 localStorage.removeItem('currentUser');
             }
 
@@ -66,38 +77,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         };
 
-        const initializeAuth = async () => {
-            try {
-                const { data: { session: currentSession } } = await supabase.auth.getSession();
-                await handleAuthStateChange(currentSession);
-            } catch (error) {
-                console.error('Error fetching initial session:', error);
-                if (mounted) setLoading(false);
-            }
-        };
-
-        initializeAuth();
-
-        const safetyTimer = setTimeout(() => {
-            if (mounted && loading) {
-                console.warn('Auth check timed out. Forcing loading to false.');
-                setLoading(false);
-            }
-        }, 5000); // Reduced timeout to 5s for better UX
-
+        // Listen for all auth events
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-            console.log('Auth event:', event, 'User:', currentSession?.user?.id);
-            
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            console.log('[AuthContext] Event:', event);
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
                 await handleAuthStateChange(currentSession);
             } else if (event === 'SIGNED_OUT') {
                 setSession(null);
                 setUser(null);
                 setProfile(null);
+                fetchPromiseTracker.current.clear();
                 localStorage.removeItem('currentUser');
                 if (mounted) setLoading(false);
             }
         });
+
+        // Initialize session on mount
+        supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+            handleAuthStateChange(currentSession);
+        });
+
+        const safetyTimer = setTimeout(() => {
+            if (mounted && loading) {
+                console.warn('[AuthContext] Safety timeout hit at 15s. Releasing UI.');
+                setLoading(false);
+            }
+        }, 15000); // Increased to 15s
 
         return () => {
             mounted = false;
@@ -106,55 +111,79 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         };
     }, []);
 
-    const fetchProfile = async (userId: string) => {
+    const fetchProfile = async (currentUserItem: User) => {
+        const userId = currentUserItem?.id;
         if (!userId) return;
 
-        try {
-            const { data, error } = await supabase
-                .from('employees')
-                .select('*')
-                .eq('id', userId)
-                .maybeSingle();
-
-            if (error) {
-                console.error('Error fetching profile for ID:', userId);
-                console.error('Supabase Error:', error);
-                return;
-            }
-
-            if (!data) {
-                console.warn('No profile found in employees table for ID:', userId);
-                // Fallback to basic session info if DB profile is missing
-                if (user) {
-                    const fallbackProfile: Employee = {
-                        id: user.id,
-                        name: user.user_metadata?.full_name || user.user_metadata?.name || 'User',
-                        position: user.user_metadata?.position || 'Regular Member', // Keep default here as absolute final fallback
-                        unit: user.user_metadata?.unit || 'Planning & Design',
-                        user_type: user.user_metadata?.user_type || 'User',
-                        email: user.email,
-                        created_at: new Date().toISOString()
-                    };
-                    setProfile(fallbackProfile);
-                }
-                return;
-            }
-
-            setProfile(data as Employee);
-            
-            // Sync with legacy localStorage for compatibility during transition
-            const userData = {
-                email: data.email,
-                name: data.name,
-                role: data.position,
-                user_type: data.user_type,
-                route: getRedirectRoute(data.position)
-            };
-            localStorage.setItem('currentUser', JSON.stringify(userData));
-
-        } catch (error: any) {
-            console.error('Profile fetch unexpected error:', error?.message || error);
+        if (fetchPromiseTracker.current.has(userId)) {
+            console.log('[AuthContext] Fetch already in progress/completed for:', userId);
+            await fetchPromiseTracker.current.get(userId);
+            return;
         }
+
+        const fetchPromise = (async () => {
+            console.log('[AuthContext] Fetching DB profile for:', userId);
+            try {
+                const fetchQuery = supabase
+                    .from('employees')
+                    .select('*')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                const { data, error } = await Promise.race([
+                    fetchQuery,
+                    new Promise<{data: any, error: any}>((resolve) => 
+                        setTimeout(() => resolve({ data: null, error: { message: 'Profile fetch timeout', isTimeout: true } }), 8000)
+                    )
+                ]);
+
+                if (error || !data) {
+                    if (error && !(error as any).isTimeout) {
+                        console.error('[AuthContext] DB Error:', error.message);
+                    } else if (error && (error as any).isTimeout) {
+                        console.warn('[AuthContext] DB Fetch timed out. Using metadata/cache fallback.');
+                    } else {
+                        console.warn('[AuthContext] No DB record found.');
+                    }
+                    
+                    // CRITICAL FALLBACK: If DB fails or times out, use metadata to at least let the user into the app
+                    // Only update if current profile is null or position is empty/Guest
+                    setProfile(prev => {
+                        // If we already have a valid position (e.g. from previous successful fetch or metadata sync), keep it
+                        if (prev && prev.position && prev.position !== 'Guest') return prev;
+                        
+                        const metadata = currentUserItem?.user_metadata || {};
+                        return {
+                            id: userId,
+                            name: metadata.full_name || metadata.name || metadata.displayName || 'User',
+                            position: metadata.position || 'Guest',
+                            unit: metadata.unit || 'Planning & Design',
+                            user_type: metadata.user_type || 'User',
+                            email: currentUserItem?.email || '',
+                            created_at: new Date().toISOString()
+                        } as Employee;
+                    });
+                    return;
+                }
+
+                console.log('[AuthContext] Profile Loaded:', data.name, '(', data.position, ')');
+                setProfile(data as Employee);
+                
+                localStorage.setItem('currentUser', JSON.stringify({
+                    email: data.email,
+                    name: data.name,
+                    role: data.position,
+                    user_type: data.user_type
+                }));
+
+            } catch (err: any) {
+                console.error('[AuthContext] Unexpected fetch error:', err);
+                fetchPromiseTracker.current.delete(userId);
+            }
+        })();
+
+        fetchPromiseTracker.current.set(userId, fetchPromise);
+        await fetchPromise;
     };
 
     const getRedirectRoute = (role: string) => {

@@ -282,11 +282,11 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           <div className={styles.roleBoxWrapper}>
             <div className={styles.roleBox}>
               <div className={styles.roleAvatar}>
-                {userName ? userName.split(' ').map(n => n[0]).join('') : '??'}
+                {authLoading ? '..' : (userName ? userName.split(' ').map(n => n[0]).join('') : '??')}
               </div>
               <div className={styles.roleInfo}>
-                <p className={styles.roleName}>{userName || 'Unknown User'}</p>
-                <p className={styles.roleTitle}>{userRole || 'Guest'}</p>
+                <p className={styles.roleName}>{authLoading ? 'Verifying...' : (userName || 'Unknown User')}</p>
+                <p className={styles.roleTitle}>{authLoading ? 'Please wait' : (userRole || 'Guest')}</p>
               </div>
             </div>
           </div>
