@@ -92,10 +92,11 @@ export default function GlobalTaskListPage() {
         };
 
         fetchUnitHeads();
+        fetchProjects();
         }
     }, [profile, loading, router]);
 
-    const fetchProjects = async () => {
+    async function fetchProjects() {
         setIsLoading(true);
         try {
             // Fetch projects and their associated tasks from Supabase
