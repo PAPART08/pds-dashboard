@@ -28,25 +28,7 @@ export async function updateSession(request: NextRequest) {
 
     // Use getSession() instead of getUser() to decode locally
     // avoids Edge API network fetch timeouts which mistakenly invalidate Edge cookies!
-    const { data: { session } } = await supabase.auth.getSession();
-
-    // Check auth rules
-    const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
-    const isLoginRoute = request.nextUrl.pathname.startsWith('/login');
-
-    if (isDashboardRoute && !session) {
-        // Redirect unsigned in users trying to access dashboard
-        const url = request.nextUrl.clone();
-        url.pathname = '/login';
-        return NextResponse.redirect(url);
-    }
-
-    if (isLoginRoute && session) {
-        // Redirect signed in users trying to access login
-        const url = request.nextUrl.clone();
-        url.pathname = '/dashboard/user-task'; 
-        return NextResponse.redirect(url);
-    }
+    await supabase.auth.getSession();
 
     return response;
 }
