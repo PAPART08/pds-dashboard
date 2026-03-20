@@ -104,9 +104,12 @@ export default function Login() {
 
             if (data?.user) {
                 console.log('Login successful for user:', data.user.id);
-                // We no longer manually fetch profile and redirect here.
-                // The redirected is handled by the useEffect watching session & profile state
-                // from useAuth(), ensuring consistency.
+                
+                // Force a hard redirect instead of relying purely on AuthContext 
+                // to fix race conditions where Vercel Edge drops the soft-navigation RSC auth
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 500);
             }
         } catch (err: any) {
             setError(err.message || 'An unexpected error occurred during login.');
