@@ -17,48 +17,12 @@ export async function updateSession(request: NextRequest) {
                     return request.cookies.get(name)?.value;
                 },
                 set(name: string, value: string, options: CookieOptions) {
-                    // Update the request cookies
-                    request.cookies.set({
-                        name,
-                        value,
-                        ...options,
-                    });
-                    
-                    // Also clone the response to set the cookie
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
-                    });
-                    
-                    // Set cookie on response
-                    response.cookies.set({
-                        name,
-                        value,
-                        ...options,
-                    });
+                    request.cookies.set({ name, value, ...options });
+                    response.cookies.set({ name, value, ...options });
                 },
                 remove(name: string, options: CookieOptions) {
-                    // Remove from request
-                    request.cookies.set({
-                        name,
-                        value: '',
-                        ...options,
-                    });
-                    
-                    // Also clone timezone to set cookie as expired
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
-                    });
-                    
-                    // Remove from response
-                    response.cookies.set({
-                        name,
-                        value: '',
-                        ...options,
-                    });
+                    request.cookies.set({ name, value: '', ...options });
+                    response.cookies.set({ name, value: '', ...options });
                 },
             },
         }
