@@ -26,25 +26,24 @@ export async function updateSession(request: NextRequest) {
         }
     );
 
-    // This will refresh session if expired
-    const { data: { user } } = await supabase.auth.getUser();
+    // Use getSession() instead of getUser() to decode locally
+    // avoids Edge API network fetch timeouts which mistakenly invalidate Edge cookies!
+    const { data: { session } } = await supabase.auth.getSession();
 
     // Check auth rules
     const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
     const isLoginRoute = request.nextUrl.pathname.startsWith('/login');
 
-    if (isDashboardRoute && !user) {
+    if (isDashboardRoute && !session) {
         // Redirect unsigned in users trying to access dashboard
         const url = request.nextUrl.clone();
         url.pathname = '/login';
         return NextResponse.redirect(url);
     }
 
-    if (isLoginRoute && user) {
+    if (isLoginRoute && session) {
         // Redirect signed in users trying to access login
-        // In a real app we might redirect based on role, for now falling back to default or what we had
         const url = request.nextUrl.clone();
-        // Fallback to user-task, the dashboard layout handles specific role routing if needed
         url.pathname = '/dashboard/user-task'; 
         return NextResponse.redirect(url);
     }
