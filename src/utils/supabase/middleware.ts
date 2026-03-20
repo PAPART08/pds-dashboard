@@ -9,35 +9,17 @@ export async function updateSession(request: NextRequest) {
     });
 
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://jilacswgiuyasvposygg.supabase.co',
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppbGFjc3dnaXV5YXN2cG9zeWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MTg4NDcsImV4cCI6MjA4ODQ5NDg0N30.3Zgvh2rlJu0r37IrmJ2rG244R-d4DVaRcNvokaBMdOs',
         {
             cookies: {
-                get(name: string) {
-                    return request.cookies.get(name)?.value;
+                getAll() {
+                    return request.cookies.getAll();
                 },
-                set(name: string, value: string, options: CookieOptions) {
-                    request.cookies.set({
-                        name,
-                        value,
-                        ...options,
-                    });
-                    response.cookies.set({
-                        name,
-                        value,
-                        ...options,
-                    });
-                },
-                remove(name: string, options: CookieOptions) {
-                    request.cookies.set({
-                        name,
-                        value: '',
-                        ...options,
-                    });
-                    response.cookies.set({
-                        name,
-                        value: '',
-                        ...options,
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        request.cookies.set({ name, value, ...options });
+                        response.cookies.set({ name, value, ...options });
                     });
                 },
             },
