@@ -105,10 +105,19 @@ export default function Login() {
             if (data?.user) {
                 console.log('Login successful for user:', data.user.id);
                 
-                // Force a hard redirect instead of relying purely on AuthContext 
-                // to fix race conditions where Vercel Edge drops the soft-navigation RSC auth
+                // Fetch the user's role quickly to determine the correct route
+                const { data: profile } = await supabase
+                    .from('employees')
+                    .select('position')
+                    .eq('id', data.user.id)
+                    .single();
+
+                const role = profile?.position || data?.user?.user_metadata?.position || 'Guest';
+                const targetRoute = getRedirectRoute(role);
+                
+                // Force a hard redirect to the correct role dashboard
                 setTimeout(() => {
-                    window.location.href = '/dashboard';
+                    window.location.href = targetRoute;
                 }, 500);
             }
         } catch (err: any) {

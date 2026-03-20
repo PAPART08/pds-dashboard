@@ -152,7 +152,7 @@ export default function MemorandumsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this memorandum?')) return;
+        if (!(await window.customConfirm('Are you sure you want to delete this memorandum?'))) return;
         try {
             const { error } = await supabase.from('memorandums').delete().eq('id', id);
             if (error) throw error;

@@ -180,12 +180,18 @@ export default function UnitHeadDashboard() {
 
     const todayStr = new Date().toISOString().split('T')[0];
     
-    // Counts based on ALL tasks in projects that this Unit Head leads
-    const dueTodayCount = allTasks.filter((t: any) => t.deadline === todayStr).length;
-    const upcomingCount = allTasks.filter((t: any) => t.deadline && t.deadline > todayStr).length;
-    const overdueCount = allTasks.filter((t: any) => 
+    // Counts based on DOC_COMPLIANCE tasks to strictly match the member breakdown drawer
+    const docTasks = allTasks.filter((t: any) => t.task_type === 'DOC_COMPLIANCE');
+
+    const dueTodayCount = docTasks.filter((t: any) => t.deadline === todayStr).length;
+    const upcomingCount = docTasks.filter((t: any) => t.deadline && t.deadline > todayStr).length;
+    const overdueCount = docTasks.filter((t: any) => 
         t.deadline && 
         t.deadline < todayStr && 
+        t.status !== 'Approved'
+    ).length;
+    const unscheduledCount = docTasks.filter((t: any) => 
+        !t.deadline && 
         t.status !== 'Approved'
     ).length;
 
@@ -234,6 +240,7 @@ export default function UnitHeadDashboard() {
                 if (category === 'dueToday' && t.deadline === today) isMatch = true;
                 if (category === 'upcoming' && t.deadline && t.deadline > today) isMatch = true;
                 if (category === 'overdue' && t.deadline && t.deadline < today && t.status !== 'Approved') isMatch = true;
+                if (category === 'unscheduled' && !t.deadline && t.status !== 'Approved') isMatch = true;
                 if (category === 'pendingReview' && t.status === 'Submitted') isMatch = true;
 
                 if (isMatch) {
@@ -258,6 +265,7 @@ export default function UnitHeadDashboard() {
     const breakdownTitle = activeBreakdown === 'dueToday' ? 'Unit Member Deadlines: Today' :
                           activeBreakdown === 'upcoming' ? 'Unit Member Deadlines: Upcoming' :
                           activeBreakdown === 'overdue' ? 'Unit Member Deadlines: Overdue' :
+                          activeBreakdown === 'unscheduled' ? 'Unit Member Deadlines: Unscheduled' :
                           activeBreakdown === 'pendingReview' ? 'Pending Documents per Member' : '';
 
     return (
@@ -273,7 +281,7 @@ export default function UnitHeadDashboard() {
                 </div>
 
                 {/* Activity Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
 
                     <button 
                         onClick={() => setActiveBreakdown(activeBreakdown === 'pendingReview' ? null : 'pendingReview')}
@@ -290,40 +298,53 @@ export default function UnitHeadDashboard() {
 
                     <button 
                         onClick={() => setActiveBreakdown(activeBreakdown === 'dueToday' ? null : 'dueToday')}
-                        className={`bg-white dark:bg-slate-800 rounded-xl p-5 border shadow-sm flex items-center gap-4 transition-all hover:scale-[1.02] text-left group ${activeBreakdown === 'dueToday' ? 'ring-2 ring-orange-500 border-orange-500' : 'border-slate-200 dark:border-slate-700'}`}
+                        className={`bg-white dark:bg-slate-800 rounded-xl p-4 border shadow-sm flex items-center gap-3 transition-all hover:scale-[1.02] text-left group ${activeBreakdown === 'dueToday' ? 'ring-2 ring-orange-500 border-orange-500' : 'border-slate-200 dark:border-slate-700'}`}
                     >
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${activeBreakdown === 'dueToday' ? 'bg-orange-500 text-white' : 'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400'}`}>
-                            <Clock className="w-6 h-6" />
+                        <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center ${activeBreakdown === 'dueToday' ? 'bg-orange-500 text-white' : 'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400'}`}>
+                            <Clock className="w-5 h-5" />
                         </div>
-                        <div>
-                            <p className={`text-[10px] font-bold uppercase tracking-tight ${activeBreakdown === 'dueToday' ? 'text-orange-600' : 'text-slate-400'}`}>Unit: Due Today</p>
+                        <div className="min-w-0">
+                            <p className={`text-[9px] font-bold uppercase tracking-tight truncate ${activeBreakdown === 'dueToday' ? 'text-orange-600' : 'text-slate-400'}`}>Unit: Due Today</p>
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{dueTodayCount}</h3>
                         </div>
                     </button>
 
                     <button 
                         onClick={() => setActiveBreakdown(activeBreakdown === 'upcoming' ? null : 'upcoming')}
-                        className={`bg-white dark:bg-slate-800 rounded-xl p-5 border shadow-sm flex items-center gap-4 transition-all hover:scale-[1.02] text-left ${activeBreakdown === 'upcoming' ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-slate-200 dark:border-slate-700'}`}
+                        className={`bg-white dark:bg-slate-800 rounded-xl p-4 border shadow-sm flex items-center gap-3 transition-all hover:scale-[1.02] text-left ${activeBreakdown === 'upcoming' ? 'ring-2 ring-indigo-500 border-indigo-500' : 'border-slate-200 dark:border-slate-700'}`}
                     >
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${activeBreakdown === 'upcoming' ? 'bg-indigo-500 text-white' : 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'}`}>
-                            <Calendar className="w-6 h-6" />
+                        <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center ${activeBreakdown === 'upcoming' ? 'bg-indigo-500 text-white' : 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'}`}>
+                            <Calendar className="w-5 h-5" />
                         </div>
-                        <div>
-                            <p className={`text-[10px] font-bold uppercase tracking-tight ${activeBreakdown === 'upcoming' ? 'text-indigo-600' : 'text-slate-400'}`}>Unit: Upcoming</p>
+                        <div className="min-w-0">
+                            <p className={`text-[9px] font-bold uppercase tracking-tight truncate ${activeBreakdown === 'upcoming' ? 'text-indigo-600' : 'text-slate-400'}`}>Unit: Upcoming</p>
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{upcomingCount}</h3>
                         </div>
                     </button>
 
                     <button 
                         onClick={() => setActiveBreakdown(activeBreakdown === 'overdue' ? null : 'overdue')}
-                        className={`bg-white dark:bg-slate-800 rounded-xl p-5 border shadow-sm flex items-center gap-4 transition-all hover:scale-[1.02] text-left ${activeBreakdown === 'overdue' ? 'ring-2 ring-red-500 border-red-500' : 'border-slate-200 dark:border-slate-700'}`}
+                        className={`bg-white dark:bg-slate-800 rounded-xl p-4 border shadow-sm flex items-center gap-3 transition-all hover:scale-[1.02] text-left ${activeBreakdown === 'overdue' ? 'ring-2 ring-red-500 border-red-500' : 'border-slate-200 dark:border-slate-700'}`}
                     >
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${activeBreakdown === 'overdue' ? 'bg-red-500 text-white' : 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400'}`}>
-                            <AlertCircle className="w-6 h-6" />
+                        <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center ${activeBreakdown === 'overdue' ? 'bg-red-500 text-white' : 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400'}`}>
+                            <AlertCircle className="w-5 h-5" />
                         </div>
-                        <div>
-                            <p className={`text-[10px] font-bold uppercase tracking-tight ${activeBreakdown === 'overdue' ? 'text-red-600' : 'text-slate-400'}`}>Unit: Overdue</p>
+                        <div className="min-w-0">
+                            <p className={`text-[9px] font-bold uppercase tracking-tight truncate ${activeBreakdown === 'overdue' ? 'text-red-600' : 'text-slate-400'}`}>Unit: Overdue</p>
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{overdueCount}</h3>
+                        </div>
+                    </button>
+
+                    <button 
+                        onClick={() => setActiveBreakdown(activeBreakdown === 'unscheduled' ? null : 'unscheduled')}
+                        className={`bg-white dark:bg-slate-800 rounded-xl p-4 border shadow-sm flex items-center gap-3 transition-all hover:scale-[1.02] text-left ${activeBreakdown === 'unscheduled' ? 'ring-2 ring-slate-500 border-slate-500' : 'border-slate-200 dark:border-slate-700'}`}
+                    >
+                        <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center ${activeBreakdown === 'unscheduled' ? 'bg-slate-500 text-white' : 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400'}`}>
+                            <Calendar className="w-5 h-5 opacity-40" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className={`text-[9px] font-bold uppercase tracking-tight truncate ${activeBreakdown === 'unscheduled' ? 'text-slate-600' : 'text-slate-400'}`}>Unscheduled</p>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{unscheduledCount}</h3>
                         </div>
                     </button>
 

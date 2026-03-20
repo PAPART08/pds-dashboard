@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://jilacswgiuyasvposygg.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppbGFjc3dnaXV5YXN2cG9zeWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MTg4NDcsImV4cCI6MjA4ODQ5NDg0N30.3Zgvh2rlJu0r37IrmJ2rG244R-d4DVaRcNvokaBMdOs';
@@ -8,16 +8,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Create a single supabase client for interacting with your database
-const isBrowser = typeof window !== 'undefined';
-
-export const supabase = createClient(
+// Using createBrowserClient automatically configures cookie storage for SSR compatibility
+export const supabase = createBrowserClient(
     supabaseUrl,
-    supabaseAnonKey,
-    {
-        auth: {
-            persistSession: isBrowser,
-            autoRefreshToken: isBrowser,
-            detectSessionInUrl: isBrowser
-        }
-    }
+    supabaseAnonKey
 );

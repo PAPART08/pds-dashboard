@@ -106,6 +106,7 @@ export default function GlobalTaskListPage() {
                     *,
                     tasks (*)
                 `)
+                .eq('phase', 'RBP')
                 .eq('is_included_in_master_list', true)
                 .order('created_at', { ascending: false });
 

@@ -27,6 +27,7 @@ export default function ApprovalQueuePage() {
         const { data, error } = await supabase
           .from('projects')
           .select('*')
+          .eq('phase', 'RBP')
           .eq('status', 'Submitted to Section Chief');
           
         if (error) throw error;

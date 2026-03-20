@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import {
     Navigation,
     Map as MapIcon,
@@ -102,6 +103,8 @@ const UNITS: UnitStats[] = [
 ];
 
 export default function DashboardPage() {
+    const { profile } = useAuth();
+
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 

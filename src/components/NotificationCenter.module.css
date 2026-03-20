@@ -1,0 +1,230 @@
+.container {
+    position: relative;
+    display: inline-block;
+}
+
+.trigger {
+    position: relative;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trigger:hover {
+    background-color: rgba(30, 41, 59, 1);
+}
+
+.icon {
+    font-size: 28px;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+
+.trigger:hover .icon {
+    color: #137fec;
+}
+
+.badgeContainer {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    height: 16px;
+    width: 16px;
+}
+
+.ping {
+    position: absolute;
+    display: inline-flex;
+    height: 100%;
+    width: 100%;
+    border-radius: 50%;
+    background-color: #f87171;
+    opacity: 0.75;
+    animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    height: 16px;
+    width: 16px;
+    background-color: #ef4444;
+    font-size: 10px;
+    font-weight: bold;
+    color: white;
+}
+
+@keyframes ping {
+    75%, 100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+.dropdown {
+    position: absolute;
+    right: 0;
+    margin-top: 0.75rem;
+    width: 24rem;
+    background: rgba(30, 41, 59, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    z-index: 50;
+    overflow: hidden;
+    transform-origin: top right;
+    animation: scale-in 0.2s ease-out;
+}
+
+@keyframes scale-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #f1f5f9;
+    margin: 0;
+}
+
+.markReadBtn {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #137fec;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 0;
+}
+
+.markReadBtn:hover {
+    color: #3b82f6;
+}
+
+.list {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.list::-webkit-scrollbar {
+    width: 4px;
+}
+.list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+.list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.item {
+    padding: 1rem 1.25rem;
+    display: flex;
+    gap: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    background-color: transparent;
+}
+
+.item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.itemUnread {
+    background-color: rgba(19, 127, 236, 0.05);
+}
+
+.iconWrapper {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.iconTask {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+.iconMention {
+    background-color: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+}
+
+.iconAlert {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.content {
+    flex: 1;
+}
+
+.message {
+    font-size: 0.875rem;
+    color: #e2e8f0;
+    line-height: 1.4;
+    margin: 0 0 0.25rem 0;
+}
+
+.timestamp {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.unreadDot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: #137fec;
+    margin-top: 0.375rem;
+}
+
+.footer {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 0.875rem 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #94a3b8;
+    background: transparent;
+    border: none;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.footer:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.05);
+}

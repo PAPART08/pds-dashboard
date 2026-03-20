@@ -35,5 +35,29 @@ export interface Employee {
     user_type: string;
     username?: string;
     email?: string;
+    avatar_url?: string;
     created_at: string;
+}
+
+export interface ActivityLogDetails {
+    old?: Record<string, any>;
+    new?: Record<string, any>;
+    inserted?: boolean;
+    deleted?: boolean;
+    [key: string]: any;
+}
+
+export interface ActivityLog {
+    id: string;
+    user_id: string | null;
+    action_type: string;
+    entity_type: string;
+    entity_id: string;
+    project_id: string | null;
+    details: ActivityLogDetails;
+    created_at: string;
+    
+    // joined fields
+    employee?: Employee;
+    project?: Project;
 }

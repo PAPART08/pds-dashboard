@@ -32,6 +32,7 @@ interface Project {
     docCode?: string;
     type?: string;
     deadline?: string;
+    phase?: string;
 }
 
 export default function UserTaskDashboard() {
@@ -39,6 +40,7 @@ export default function UserTaskDashboard() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [currentUserName, setCurrentUserName] = useState('');
+    const [activePhaseFilter, setActivePhaseFilter] = useState('All');
     const { profile, loading } = useAuth();
 
     useEffect(() => {
@@ -67,7 +69,8 @@ export default function UserTaskDashboard() {
                             project_name,
                             city_municipality,
                             project_amount,
-                            start_year
+                            start_year,
+                            phase
                         )
                     `)
                     .eq('assignee_name', currentUserName)
@@ -91,7 +94,7 @@ export default function UserTaskDashboard() {
                         
                         userAssignedTasks.push({
                             id: t.id,
-                            docId: `${t.projects?.alternate_id || t.projects?.id.substring(0, 8).toUpperCase()}${t.doc_code ? `-${t.doc_code}` : ''}`,
+                            docId: `${t.projects?.alternate_id || (t.projects?.id ? t.projects.id.substring(0, 8).toUpperCase() : 'UNKNOWN')}${t.doc_code ? `-${t.doc_code}` : ''}`,
                             title: t.projects?.project_name || 'Untitled Project',
                             location: t.projects?.city_municipality || 'Unspecified',
                             costValue: t.projects?.project_amount || 0,
@@ -102,7 +105,8 @@ export default function UserTaskDashboard() {
                             type: 'Assigned Document',
                             deadline: t.deadline,
                             projectId: t.project_id,
-                            docCode: t.doc_code
+                            docCode: t.doc_code,
+                            phase: t.projects?.phase || 'RBP'
                         });
                     });
                 }
@@ -117,7 +121,7 @@ export default function UserTaskDashboard() {
                                     if (!seenTaskDocCodes.has(compositeKey)) {
                                         userAssignedTasks.push({
                                             id: `legacy-${p.id}-${docCode}`,
-                            docId: `${p.alternate_id || p.id.substring(0, 8).toUpperCase()}${docCode ? `-${docCode}` : ''}`,
+                            docId: `${p.alternate_id || (p.id ? p.id.substring(0, 8).toUpperCase() : 'UNKNOWN')}${docCode ? `-${docCode}` : ''}`,
                             title: p.project_name || 'Untitled Project',
                             location: p.city_municipality || 'Unspecified',
                             costValue: p.project_amount || 0,
@@ -128,7 +132,8 @@ export default function UserTaskDashboard() {
                             type: 'Legacy Assignment',
                             deadline: p.doc_deadlines?.[docCode] || null,
                             projectId: p.id,
-                            docCode: docCode
+                            docCode: docCode,
+                            phase: p.phase || 'RBP'
                                         });
                                     }
                                 }
@@ -153,14 +158,15 @@ export default function UserTaskDashboard() {
                                 fiscalYear: '2025',
                                 type: 'Demo Task',
                                 projectId: '27B00123',
-                                docCode: sd
+                                docCode: sd,
+                                phase: 'RBP'
                             });
                         });
                     }
 
                     setProjects(userAssignedTasks);
-            } catch (err) {
-                console.error('Error fetching tasks:', err);
+            } catch (err: any) {
+                console.error('Error fetching tasks:', err.message || err);
             } finally {
                 setIsLoading(false);
             }
@@ -180,19 +186,22 @@ export default function UserTaskDashboard() {
         alert('Notes saved locally.');
     };
 
-    // Calculate dynamic counts based on project data
+    // Filter projects based on the selected phase tab
+    const displayProjects = activePhaseFilter === 'All' 
+        ? projects 
+        : projects.filter(p => p.phase === activePhaseFilter);
+
+    // Calculate dynamic counts based on displayProjects
     const todayStr = new Date().toISOString().split('T')[0];
-    const dueTodayCount = projects.filter(p => p.deadline === todayStr).length;
-    const upcomingCount = projects.filter(p => p.deadline && p.deadline > todayStr).length;
+    const dueTodayCount = displayProjects.filter(p => p.deadline === todayStr).length;
+    const upcomingCount = displayProjects.filter(p => p.deadline && p.deadline > todayStr).length;
     
     // Overdue Logic: Deadline is past AND status is not Approved
-    const overdueCount = projects.filter(p => 
+    const overdueCount = displayProjects.filter(p => 
         p.deadline && 
         p.deadline < todayStr && 
         p.status !== 'Approved'
     ).length;
-
-    const displayProjects = projects; 
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, projectId: string, docCode: string, taskTableId: string) => {
         const file = e.target.files?.[0];
@@ -297,12 +306,29 @@ export default function UserTaskDashboard() {
                 {/* Technical Review List */}
                 <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
                     <div className="p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                            Documents to Comply
-                        </h3>
+                        <div className="flex flex-col gap-3">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                Documents to Comply
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                {['All', 'RBP', 'NEP', 'GAA'].map((phase) => (
+                                    <button
+                                        key={phase}
+                                        onClick={() => setActivePhaseFilter(phase)}
+                                        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                                            activePhaseFilter === phase 
+                                            ? 'bg-blue-600 text-white shadow-sm' 
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
+                                        }`}
+                                    >
+                                        {phase === 'All' ? 'All Phases' : phase}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                        <div className="relative w-full sm:w-64">
+                        <div className="relative w-full sm:w-64 self-start sm:self-auto mt-2 sm:mt-0">
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
@@ -335,7 +361,19 @@ export default function UserTaskDashboard() {
                                     </tr>
                                 ) : displayProjects.map((doc) => (
                                     <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <td className="px-5 py-4 font-extrabold text-[#1e293b] dark:text-white tracking-wider whitespace-normal break-words min-w-[150px]">{doc.docCode || doc.docId || doc.id.substring(0, 8)}</td>
+                                        <td className="px-5 py-4 font-extrabold text-[#1e293b] dark:text-white tracking-wider whitespace-normal break-words min-w-[150px]">
+                                            <div className="flex flex-col gap-1 items-start">
+                                                <span>{doc.docCode || doc.docId || doc.id.substring(0, 8)}</span>
+                                                <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${
+                                                    doc.phase === 'RBP' ? 'bg-[#0f172a] text-white dark:bg-slate-700' :
+                                                    doc.phase === 'NEP' ? 'bg-[#10b981] text-white dark:bg-emerald-900/50 dark:text-emerald-400' :
+                                                    doc.phase === 'GAA' ? 'bg-[#f97316] text-white dark:bg-orange-900/50 dark:text-orange-400' :
+                                                    'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                                                }`}>
+                                                    {doc.phase || 'N/A'}
+                                                </span>
+                                            </div>
+                                        </td>
                                         <td className="px-5 py-4">
                                             <div className="max-w-[180px] lg:max-w-[300px] whitespace-normal break-words" title={doc.title}>{doc.title}</div>
                                         </td>

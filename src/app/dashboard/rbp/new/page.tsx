@@ -11,6 +11,7 @@ import styles from './page.module.css';
 
 export default function NewProjectEntry() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPhase, setCurrentPhase] = useState('RBP');
 
   // Core Form State
   const [formData, setFormData] = useState({
@@ -88,10 +89,16 @@ export default function NewProjectEntry() {
   const infraTypesForThrust = useMemo(() => formData.thrust ? ((codes as any).thrust_infra?.[formData.thrust] || []) : [], [formData.thrust]);
   const componentTypes = useMemo(() => (codes as any).component_types || [], []);
 
-  // Check for Edit Mode
+  // Check for Edit Mode and Phase
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const projectId = params.get('id');
+    const phaseParam = params.get('phase');
+    
+    if (phaseParam) {
+      setCurrentPhase(phaseParam.toUpperCase());
+    }
+
     if (projectId) {
       loadProject(projectId);
     }
@@ -497,12 +504,16 @@ export default function NewProjectEntry() {
         {/* Header / Nav */}
         <header className={styles.header}>
           <div className={styles.headerLeft}>
-            <Link href="/dashboard/rbp" className={styles.backBtn}>
+            <Link href={currentPhase === 'RBP' ? '/dashboard/rbp' : `/dashboard/${currentPhase.toLowerCase()}/projects`} className={styles.backBtn}>
               <span className={`material-symbols-outlined ${styles.headerIcon}`}>arrow_back_ios_new</span>
             </Link>
             <div className={styles.headerTitleBox}>
               <h1 className={styles.headerTitle}>RIF v.9.0</h1>
-              <p className={styles.headerSubtitle}>Regional Budget Proposal (RBP)</p>
+              <p className={styles.headerSubtitle}>
+                {currentPhase === 'RBP' ? 'Regional Budget Proposal (RBP)' : 
+                 currentPhase === 'NEP' ? 'National Expenditure Program (NEP)' : 
+                 'General Appropriations Act (GAA)'}
+              </p>
             </div>
           </div>
           <div className={styles.headerRight}>
@@ -941,11 +952,11 @@ export default function NewProjectEntry() {
             className={styles.btnDanger}
             onClick={async () => {
               if (formData.id) {
-                if (confirm('Are you sure you want to delete this project from the database?')) {
+                if (await window.customConfirm('Are you sure you want to delete this project from the database?')) {
                   try {
                     const { error } = await supabase.from('projects').delete().eq('id', formData.id);
                     if (error) throw error;
-                    window.location.href = '/dashboard/rbp';
+                    window.location.href = currentPhase === 'RBP' ? '/dashboard/rbp' : `/dashboard/${currentPhase.toLowerCase()}/projects`;
                   } catch (err) {
                     console.error('Delete failed:', err);
                     alert('Failed to delete project from Supabase.');

@@ -1,0 +1,122 @@
+.hubContainer {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hubHeader {
+  margin-bottom: 2rem;
+}
+
+.hubHeader h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--dpwh-blue, #0f172a);
+  margin-bottom: 0.5rem;
+}
+
+.hubHeader p {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.reportCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+}
+
+.reportCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  border-color: #cbd5e1;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.iconBox {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background-color: #f1f5f9;
+  color: var(--dpwh-blue, #0f172a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBox span {
+  font-size: 24px;
+}
+
+.cardHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cardBody {
+  color: #475569;
+  line-height: 1.5;
+  flex-grow: 1;
+  margin-bottom: 1.5rem;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--dpwh-blue, #3b82f6);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.reportViewWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.reportViewHeader {
+  padding: 16px 24px 0 24px;
+  background-color: var(--background, #f1f5f9);
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 0;
+  transition: color 0.2s;
+}
+
+.backBtn:hover {
+  color: var(--dpwh-blue, #0f172a);
+}
+
+@media print {
+  .hubHeader, .cardsGrid, .reportViewHeader {
+    display: none !important;
+  }
+}

@@ -49,6 +49,7 @@ export default function MasterList() {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
+        .eq('phase', 'RBP')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -85,7 +86,7 @@ export default function MasterList() {
   }, []);
 
   const handleDelete = async (id: string, altId?: string) => {
-    if (!confirm(`Are you sure you want to delete project ${altId || id}?`)) return;
+    if (!(await window.customConfirm(`Are you sure you want to delete project ${altId || id}?`))) return;
 
     try {
       // Supabase delete exclusively

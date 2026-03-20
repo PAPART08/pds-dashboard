@@ -94,7 +94,7 @@ export default function TeamPage() {
   );
 
   const handleEditClick = (employee: Employee) => {
-    setSelectedEmployee({ ...employee });
+    setSelectedEmployee({ ...employee, password: '' });
     setIsEditing(true);
   };
 
@@ -150,7 +150,7 @@ export default function TeamPage() {
   const handleDeleteMember = async () => {
     if (!selectedEmployee) return;
 
-    const confirmDelete = window.confirm(`Are you sure you want to remove ${selectedEmployee.name}?`);
+    const confirmDelete = await window.customConfirm(`Are you sure you want to remove ${selectedEmployee.name}?`);
     if (!confirmDelete) return;
 
     const updatedTeam = team.filter(e => e.id !== selectedEmployee.id);

@@ -216,7 +216,7 @@ export default function CalendarModule({ userName }: { userName: string }) {
 
     // --- Delete event ---
     const handleDeleteEvent = async (eventId: string) => {
-        if (!confirm('Delete this event?')) return;
+        if (!(await window.customConfirm('Delete this event?'))) return;
         try {
             const { error } = await supabase.from('calendar_events').delete().eq('id', eventId);
             if (error) throw error;

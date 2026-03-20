@@ -18,7 +18,7 @@ import {
   Eye,
   UserPlus
 } from 'lucide-react';
-import { getRequiredDocs } from '@/lib/supporting-docs';
+import { getRequiredDocs, getNepGaaDocs } from '@/lib/supporting-docs';
 import { EMPLOYEES } from '@/lib/employees';
 
 export default function ProjectTrackerPage({ params }: { params: Promise<{ id: string }> }) {
@@ -94,7 +94,8 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
             status: data.status || 'Drafting',
             subProgramCode: data.sub_program_code,
             thrust: data.thrust,
-            deadline: data.deadline
+            deadline: data.deadline,
+            phase: data.phase
           });
 
           // Extract assignments from the tasks table
@@ -196,9 +197,23 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
     }
   };
 
-  const documents = getRequiredDocs(project?.subProgramCode, project?.thrust);
+  let documents = getRequiredDocs(project?.subProgramCode, project?.thrust);
+  if (project?.phase === 'NEP' || project?.phase === 'GAA') {
+    documents = getNepGaaDocs();
+  }
 
   const handleSubmitToChief = async () => {
+    // Enforce completeness
+    const hasIncompleteDocs = documents.some((doc: any) => {
+      const currentStatus = docTaskStatuses?.[doc.code] || (uploadedDocs[doc.code] ? 'Submitted' : 'Pending');
+      return currentStatus !== 'Approved';
+    });
+
+    if (hasIncompleteDocs) {
+      alert("All documents must be fully marked as 'APPROVED' before you can submit the project to the Section Chief.");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('projects')

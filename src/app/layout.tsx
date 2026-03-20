@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
 import { AuthProvider } from '@/context/AuthContext'
+import GlobalAlert from '@/components/GlobalAlert'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -35,7 +36,14 @@ export default function RootLayout({
                   theme: {
                       extend: {
                           colors: {
-                              "primary": "#135bec",
+                              "primary": "#1152d4",
+                              "background": "#f6f6f8",
+                              "surface": "#ffffff",
+                              "surface-container": "#f1f3f9",
+                              "surface-container-low": "#f8f9fc",
+                              "on-surface": "#0f172a",
+                              "outline-variant": "#e2e8f0",
+                              "on-primary-container": "#1e40af",
                               "background-light": "#f6f6f8",
                               "background-dark": "#101622",
                           },
@@ -52,6 +60,7 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <AuthProvider>
+          <GlobalAlert />
           {children}
         </AuthProvider>
       </body>

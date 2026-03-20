@@ -1,0 +1,125 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.modalContent {
+  background: #f8fafc;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1400px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  z-index: 10;
+}
+
+.modalHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.modalActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.printBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: var(--dpwh-blue, #10b981); /* Use DPWH primary */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.printBtn:hover {
+  opacity: 0.9;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  padding: 4px;
+}
+
+.closeBtn:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+.modalBody {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Print Styles specific to Modal */
+@media print {
+  :global(body) {
+    overflow: visible !important;
+  }
+
+  .modalOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: transparent;
+    padding: 0;
+    display: block; /* Ensure it behaves like a normal document for printing */
+  }
+  
+  .modalContent {
+    box-shadow: none;
+    height: auto;
+    overflow: visible;
+    width: 100%;
+    max-width: none;
+    display: block;
+  }
+  
+  .modalHeader {
+    display: none !important;
+  }
+  
+  .modalBody {
+    overflow: visible;
+    display: block;
+  }
+}

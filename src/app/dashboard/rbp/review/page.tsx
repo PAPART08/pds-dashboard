@@ -28,7 +28,10 @@ export default function ReviewQueuePage() {
         const currentUser = profile ? { name: profile.name, role: profile.position, position: profile.position, user_type: profile.user_type } : {};
         
         // Fetch only from Supabase
-        const { data, error } = await supabase.from('projects').select('*');
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('phase', 'RBP');
         if (error) throw error;
 
         if (data) {

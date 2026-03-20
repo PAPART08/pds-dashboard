@@ -110,18 +110,23 @@ export async function updateTeamMember(userData: any) {
             }
 
         // 2. Update the custom 'employees' table
+        const updateDbAttrs: any = {
+            name: userData.name,
+            username: userData.username,
+            email: userData.email,
+            position: userData.position,
+            unit: userData.unit,
+            user_type: userData.user_type,
+            restrictions: userData.restrictions,
+        };
+
+        if (userData.password) {
+            updateDbAttrs.password = userData.password;
+        }
+
         const { error: dbError } = await supabaseAdmin
             .from("employees")
-            .update({
-                name: userData.name,
-                username: userData.username,
-                email: userData.email,
-                position: userData.position,
-                unit: userData.unit,
-                user_type: userData.user_type,
-                restrictions: userData.restrictions,
-                password: userData.password, // Keep sync for existing logic
-            })
+            .update(updateDbAttrs)
             .eq("id", userData.id);
 
         if (dbError) {

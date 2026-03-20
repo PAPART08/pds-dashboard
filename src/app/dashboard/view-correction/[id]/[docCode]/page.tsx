@@ -254,6 +254,7 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
 
     useEffect(() => {
         const fetchCorrectionData = async () => {
+             if (!id) return;
              try {
                  const { data: p, error } = await supabase.from('projects').select('doc_history, doc_uploads').eq('id', id).single();
                  if (error) throw error;
@@ -293,8 +294,8 @@ export default function DocumentCorrectionViewer({ params: paramsProp }: { param
                          ]);
                      }
                  }
-             } catch (e) {
-                 console.error('Failed to fetch data', e);
+             } catch (e: any) {
+                 console.error('Failed to fetch data:', e.message || e);
              }
         };
 

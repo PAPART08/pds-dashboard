@@ -1,0 +1,272 @@
+.reportContainerWrapper {
+  padding: 24px;
+  background-color: var(--background, #f1f5f9);
+  min-height: calc(100vh - 80px); /* Account for header */
+}
+
+.modalWrapper {
+  padding: 0;
+  min-height: auto;
+  background-color: transparent;
+}
+
+.actionBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
+.printBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--dpwh-blue, #0f172a);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.printBtn:hover {
+  background-color: #1e293b;
+}
+
+.printBtn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.reportPaper {
+  background-color: white;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  padding: 10mm;
+  width: 210mm;
+  min-height: 290mm; /* strictly under 297mm to prevent html2canvas rounding errors causing blank spillover pages */
+  box-sizing: border-box;
+  margin: 0 auto;
+  color: #000;
+  font-family: Tahoma, Geneva, sans-serif; /* For printable document feel */
+  background-image: repeating-linear-gradient(to bottom, transparent, transparent 296mm, #cbd5e1 296mm, #cbd5e1 297mm);
+}
+
+.reportHeader {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.reportContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.printOnly {
+  display: none;
+}
+
+/* 
+  During a direct PDF Download, we strictly remove web-viewer margins / padding / heights 
+  so html2pdf.js does not calculate accidental overflow and spawn blank ghost pages!
+*/
+.isDownloading #master-list-report-content {
+  gap: 0 !important;
+}
+
+.isDownloading .reportPaper {
+  min-height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  background-image: none !important;
+}
+
+.reportHeader h1 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.reportHeader h2 {
+  font-size: 1rem;
+  font-weight: normal;
+}
+
+.reportTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 7.5pt; /* Explicitly requested typography size */
+  table-layout: fixed; /* Force column widths to squeeze if necessary */
+}
+
+.reportTable th {
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+  padding: 8px 4px;
+  text-align: left;
+  font-weight: bold;
+  vertical-align: bottom;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.reportTable tr {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.reportTable td {
+  padding: 4px;
+  vertical-align: top;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.reportTable td.amountCell {
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.reportTable td.targetCell {
+  white-space: nowrap;
+}
+
+/* Hierarchy Rows Styling based on image */
+.regionRow {
+  font-weight: bold;
+  font-size: 1.25rem;
+  padding-top: 16px !important;
+}
+
+.deoRow {
+  font-weight: bold;
+}
+.deoRow:first-child {
+  padding-left: 24px !important;
+}
+
+.categoryRow {
+  font-weight: bold;
+}
+.categoryRow:first-child {
+  text-decoration: underline;
+  padding-left: 48px !important;
+}
+
+.thrustRow {
+  font-weight: bold;
+}
+.thrustRow:first-child {
+  text-decoration: underline;
+  padding-left: 72px !important;
+}
+
+.projectTitleRow > td {
+  padding-top: 16px !important;
+}
+
+.idCell {
+  padding-left: 48px !important;
+}
+
+
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  color: var(--text-muted, #64748b);
+  gap: 16px;
+}
+
+/* Print CSS */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  
+  :global(html),
+  :global(body),
+  :global(div[class*="layout"]),
+  :global(div[class*="bg-"]) {
+    background-color: white !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  :global(aside),
+  :global(header),
+  .actionBar {
+    display: none !important;
+  }
+
+  /* Make sure the main content expands to fill page when sidebar is gone */
+  :global(main) {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  .printOnly {
+    display: block !important;
+  }
+  .screenOnly {
+    display: none !important;
+  }
+
+  .reportContainerWrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    background: white !important;
+    background-color: white !important;
+  }
+
+  .reportContent {
+    gap: 0 !important; /* Prevents 24px gaps from bleeding into native page breaks! */
+  }
+
+  .reportPaper {
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important; /* Forces it to perfectly shrink into the 190mm physically printable area */
+    max-width: 100% !important;
+    background-image: none !important;
+  }
+
+  /* Shrink everything to fit on A4 Portrait natively */
+  .reportTable {
+    font-size: 7.5pt !important;
+    width: 100%;
+    table-layout: fixed;
+    word-wrap: break-word;
+  }
+
+  .reportTable th {
+    padding: 4px 2px !important;
+  }
+
+  .reportTable thead {
+    display: table-header-group;
+  }
+  .reportTable td {
+    padding: 2px 4px !important;
+  }
+
+  .reportHeader h1 { font-size: 14pt !important; margin-bottom: 4px; }
+  .reportHeader h2 { font-size: 10pt !important; }
+  .regionRow { font-size: 12pt !important; padding-top: 12px !important; }
+  .deoRow:first-child { padding-left: 12px !important; }
+  .categoryRow:first-child { padding-left: 24px !important; }
+  .thrustRow:first-child { padding-left: 36px !important; }
+}

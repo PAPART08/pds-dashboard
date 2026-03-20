@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import styles from './Sidebar.module.css';
 import { useAuth } from '@/context/AuthContext';
+import ProfileModal from './ProfileModal';
 
 // Define User Roles
 type UserRole = 'Admin' | 'Section Chief' | 'Unit Head' | 'Planning Unit Head' | 'Planning Engineer' | 'Unit Member' | 'Regular Member' | 'Cost Estimator' | 'Project Programmer' | 'User';
@@ -13,13 +14,15 @@ type UserRole = 'Admin' | 'Section Chief' | 'Unit Head' | 'Planning Unit Head' |
 export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isCollapsed?: boolean; toggleSidebar?: () => void }) {
   const pathname = usePathname();
   const { profile, loading: authLoading, signOut } = useAuth();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   
   const userRole = (profile?.position || '') as UserRole | '';
   const userRestrictions = (profile as any)?.restrictions || [];
   const userName = profile?.name || '';
   const isLoaded = !authLoading && !!profile;
+  const isWorkspaceUser = userRole === 'Unit Member' || userRole === 'Regular Member' || userRole === 'Planning Engineer';
 
-  const activeStage: 'RBP' | 'GAA' | 'ADMIN' = pathname.includes('/gaa') ? 'GAA' : (pathname.includes('/team') || pathname.includes('/settings')) ? 'ADMIN' : 'RBP';
+  const activeStage: 'RBP' | 'NEP' | 'GAA' | 'ADMIN' = pathname.includes('/gaa') ? 'GAA' : pathname.includes('/nep') ? 'NEP' : (pathname.includes('/team') || pathname.includes('/settings')) ? 'ADMIN' : 'RBP';
 
   const getOverviewHref = () => {
     switch (userRole) {
@@ -45,48 +48,98 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
       label: 'Regional Budget Proposal',
       items: [
         {
+          category: 'Dashboards & Analytics',
           name: 'Overall Progress',
           href: '/dashboard/rbp-progress',
           icon: 'analytics',
           roles: ['Section Chief', 'Planning Unit Head']
         },
         {
-          name: 'Project Detail Entry',
-          href: '/dashboard/rbp',
-          icon: 'inventory_2',
-          roles: ['Planning Unit Head']
+          category: 'Dashboards & Analytics',
+          name: 'Division Performance Metrics',
+          href: '/dashboard/rbp/performance',
+          icon: 'speed',
+          roles: ['Section Chief']
         },
         {
-          name: 'Global Task List',
-          href: '/dashboard/rbp/global-tasks',
-          icon: 'list_alt',
-          roles: ['Section Chief', 'Planning Unit Head']
-        },
-        {
+          category: 'Dashboards & Analytics',
           name: 'Master List',
           href: '/dashboard/rbp/master-list',
           icon: 'database',
           roles: ['Section Chief', 'Planning Unit Head']
         },
         {
+          category: 'Dashboards & Analytics',
+          name: 'Reports',
+          href: '/dashboard/rbp/reports',
+          icon: 'print',
+          roles: ['Section Chief', 'Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Project Detail Entry',
+          href: '/dashboard/rbp',
+          icon: 'inventory_2',
+          roles: ['Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Global Task List',
+          href: '/dashboard/rbp/global-tasks',
+          icon: 'list_alt',
+          roles: ['Section Chief', 'Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Missing Documents Tracker',
+          href: '/dashboard/rbp/missing-docs',
+          icon: 'find_in_page',
+          roles: ['Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Task Delegation',
+          href: '/dashboard/rbp/delegation',
+          icon: 'assignment_ind',
+          roles: ['Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Unit Member Activity',
+          href: '/dashboard/rbp/unit-activity',
+          icon: 'recent_actors',
+          roles: ['Unit Head']
+        },
+        {
+          category: 'Reviews & Approvals',
           name: 'Technical Review Queue',
           href: '/dashboard/rbp/review',
           icon: 'assignment_turned_in',
           roles: ['Section Chief', 'Unit Head']
         },
         {
+          category: 'Reviews & Approvals',
+          name: 'Returned / Needs Revision Log',
+          href: '/dashboard/rbp/returned-log',
+          icon: 'assignment_return',
+          roles: ['Unit Head']
+        },
+        {
+          category: 'Reviews & Approvals',
           name: 'Final Approvals',
           href: '/dashboard/approval',
           icon: 'approval',
           roles: ['Section Chief']
         },
         {
+          category: 'Reviews & Approvals',
           name: 'Memorandums',
           href: '/dashboard/memorandums',
           icon: 'description',
           roles: ['Section Chief']
         },
         {
+          category: 'My Workspace',
           name: 'My Tasks',
           href: '/dashboard/planning-member-task',
           icon: 'task_alt',
@@ -94,27 +147,204 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
         },
       ]
     },
-    GAA: {
-      color: 'var(--dpwh-orange)', // DPWH Orange
-      label: 'Project Implementation',
+    NEP: {
+      color: 'var(--dpwh-green, #10b981)', // Tailwind Emerald 500 equivalent color
+      label: 'National Expenditure Program',
       items: [
         {
-          name: 'GAA Overview',
-          href: '/dashboard/gaa',
-          icon: 'engineering',
-          roles: ['Section Chief', 'Unit Head', 'Planning Unit Head', 'Unit Member', 'Regular Member']
+          category: 'Dashboards & Analytics',
+          name: 'NEP Dashboard',
+          href: '/dashboard/nep',
+          icon: 'dashboard',
+          roles: ['Section Chief', 'Planning Unit Head', 'Unit Head']
         },
         {
-          name: 'Financial Targets',
-          href: '/dashboard/gaa/financials',
-          icon: 'account_balance_wallet',
+          category: 'Dashboards & Analytics',
+          name: 'Division Performance Metrics',
+          href: '/dashboard/nep/performance',
+          icon: 'speed',
+          roles: ['Section Chief']
+        },
+        {
+          category: 'Dashboards & Analytics',
+          name: 'Reports',
+          href: '/dashboard/nep/reports',
+          icon: 'print',
           roles: ['Section Chief', 'Planning Unit Head']
         },
         {
+          category: 'Operations & Data',
+          name: 'All NEP Projects',
+          href: '/dashboard/nep/projects',
+          icon: 'list_alt',
+          roles: ['Section Chief', 'Planning Unit Head', 'Unit Head', 'Planning Engineer', 'Unit Member']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Global Task List',
+          href: '/dashboard/nep/global-tasks',
+          icon: 'list_alt',
+          roles: ['Section Chief', 'Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Missing Documents Tracker',
+          href: '/dashboard/nep/missing-docs',
+          icon: 'find_in_page',
+          roles: ['Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Task Delegation',
+          href: '/dashboard/nep/delegation',
+          icon: 'assignment_ind',
+          roles: ['Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Document Tracking',
+          href: '/dashboard/nep/documents',
+          icon: 'folder_open',
+          roles: ['Section Chief', 'Unit Head', 'Planning Engineer']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Unit Member Activity',
+          href: '/dashboard/nep/unit-activity',
+          icon: 'recent_actors',
+          roles: ['Unit Head']
+        },
+        {
+          category: 'Reviews & Approvals',
+          name: 'Technical Review Queue',
+          href: '/dashboard/nep/review',
+          icon: 'assignment_turned_in',
+          roles: ['Section Chief', 'Unit Head']
+        },
+        {
+          category: 'Reviews & Approvals',
+          name: 'Returned / Needs Revision Log',
+          href: '/dashboard/nep/returned-log',
+          icon: 'assignment_return',
+          roles: ['Unit Head']
+        },
+        {
+          category: 'Reviews & Approvals',
+          name: 'Final Approvals',
+          href: '/dashboard/nep/approval',
+          icon: 'approval',
+          roles: ['Section Chief']
+        },
+        {
+          category: 'Phase Operations',
+          name: 'Migrate from RBP',
+          href: '/dashboard/nep/migrate',
+          icon: 'move_up',
+          roles: ['Section Chief', 'Planning Unit Head']
+        },
+      ]
+    },
+    GAA: {
+      color: 'var(--dpwh-orange)', // DPWH Orange
+      label: 'General Appropriations Act',
+      items: [
+        {
+          category: 'Dashboards & Analytics',
+          name: 'GAA Dashboard',
+          href: '/dashboard/gaa',
+          icon: 'dashboard',
+          roles: ['Section Chief', 'Unit Head', 'Planning Unit Head', 'Unit Member', 'Regular Member']
+        },
+        {
+          category: 'Dashboards & Analytics',
+          name: 'Division Performance Metrics',
+          href: '/dashboard/gaa/performance',
+          icon: 'speed',
+          roles: ['Section Chief']
+        },
+        {
+          category: 'Dashboards & Analytics',
+          name: 'Reports',
+          href: '/dashboard/gaa/reports',
+          icon: 'print',
+          roles: ['Section Chief', 'Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'All GAA Projects',
+          href: '/dashboard/gaa/projects',
+          icon: 'list_alt',
+          roles: ['Section Chief', 'Planning Unit Head', 'Unit Head', 'Planning Engineer', 'Unit Member']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Global Task List',
+          href: '/dashboard/gaa/global-tasks',
+          icon: 'list_alt',
+          roles: ['Section Chief', 'Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Missing Documents Tracker',
+          href: '/dashboard/gaa/missing-docs',
+          icon: 'find_in_page',
+          roles: ['Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Task Delegation',
+          href: '/dashboard/gaa/delegation',
+          icon: 'assignment_ind',
+          roles: ['Planning Unit Head']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Document Tracking',
+          href: '/dashboard/gaa/documents',
+          icon: 'folder_open',
+          roles: ['Section Chief', 'Unit Head', 'Planning Engineer']
+        },
+        {
+          category: 'Operations & Data',
+          name: 'Unit Member Activity',
+          href: '/dashboard/gaa/unit-activity',
+          icon: 'recent_actors',
+          roles: ['Unit Head']
+        },
+        {
+          category: 'Execution & Updates',
           name: 'Physical Progress',
           href: '/dashboard/gaa/progress',
           icon: 'bar_chart',
           roles: ['Section Chief', 'Unit Head', 'Unit Member', 'Regular Member']
+        },
+        {
+          category: 'Reviews & Approvals',
+          name: 'Technical Review Queue',
+          href: '/dashboard/gaa/review',
+          icon: 'assignment_turned_in',
+          roles: ['Section Chief', 'Unit Head']
+        },
+        {
+          category: 'Reviews & Approvals',
+          name: 'Returned / Needs Revision Log',
+          href: '/dashboard/gaa/returned-log',
+          icon: 'assignment_return',
+          roles: ['Unit Head']
+        },
+        {
+          category: 'Reviews & Approvals',
+          name: 'Final Approvals',
+          href: '/dashboard/gaa/approval',
+          icon: 'approval',
+          roles: ['Section Chief']
+        },
+        {
+          category: 'Phase Operations',
+          name: 'Migrate from NEP',
+          href: '/dashboard/gaa/migrate',
+          icon: 'move_up',
+          roles: ['Section Chief', 'Planning Unit Head']
         },
       ]
     },
@@ -206,24 +436,30 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
       </div>
 
       {/* Stage Selection */}
+      {!isWorkspaceUser && (
       <div className={styles.moduleSelect}>
         {!isCollapsed && <p className={styles.moduleLabel}>Select Module</p>}
-        <div className={styles.moduleGrid} style={isCollapsed ? { gridTemplateColumns: '1fr' } : {}}>
+        <div className={styles.moduleGrid} style={isCollapsed ? { flexDirection: 'column' } : {}}>
           <Link
             href="/dashboard/rbp"
             className={`${styles.moduleBtn} ${activeStage === 'RBP' ? styles.moduleBtnActiveRBP : ''}`}
             title="Regional Budget Proposal"
           >
-            <span className={`material-symbols-outlined ${styles.moduleIcon}`}>account_balance_wallet</span>
-            {!isCollapsed && <span className={styles.moduleText}>RBP</span>}
+            {isCollapsed ? <span className={`material-symbols-outlined ${styles.moduleIcon}`}>account_balance_wallet</span> : <span className={styles.moduleText}>RBP</span>}
+          </Link>
+          <Link
+            href="/dashboard/nep"
+            className={`${styles.moduleBtn} ${activeStage === 'NEP' ? styles.moduleBtnActiveGAA : ''}`}
+            title="National Expenditure Program"
+          >
+            {isCollapsed ? <span className={`material-symbols-outlined ${styles.moduleIcon}`}>folder_shared</span> : <span className={styles.moduleText}>NEP</span>}
           </Link>
           <Link
             href="/dashboard/gaa"
             className={`${styles.moduleBtn} ${activeStage === 'GAA' ? styles.moduleBtnActiveGAA : ''}`}
             title="Project Implementation"
           >
-            <span className={`material-symbols-outlined ${styles.moduleIcon}`}>analytics</span>
-            {!isCollapsed && <span className={styles.moduleText}>GAA</span>}
+            {isCollapsed ? <span className={`material-symbols-outlined ${styles.moduleIcon}`}>analytics</span> : <span className={styles.moduleText}>GAA</span>}
           </Link>
           {userRole === 'Admin' && (
             <Link
@@ -232,12 +468,12 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
               style={activeStage === 'ADMIN' ? { backgroundColor: 'var(--dpwh-blue)', color: 'white' } : {}}
               title="Administration"
             >
-              <span className={`material-symbols-outlined ${styles.moduleIcon}`}>admin_panel_settings</span>
-              {!isCollapsed && <span className={styles.moduleText}>ADMIN</span>}
+              {isCollapsed ? <span className={`material-symbols-outlined ${styles.moduleIcon}`}>admin_panel_settings</span> : <span className={styles.moduleText}>ADMIN</span>}
             </Link>
           )}
         </div>
       </div>
+      )}
 
       {/* Navigation Links */}
       <nav className={styles.nav}>
@@ -252,11 +488,27 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
             <div className={styles.navItemIconBox}>
               <span className={`material-symbols-outlined ${styles.navItemIcon}`}>dashboard</span>
             </div>
-            {!isCollapsed && <span>Overview Dashboard</span>}
+            {!isCollapsed && <span>{isWorkspaceUser ? 'My Workspace Overview' : 'Overview Dashboard'}</span>}
           </Link>
         </div>
 
-        {filteredItems.length > 0 && (
+        {isWorkspaceUser ? (
+          <div className={styles.navSection}>
+            {!isCollapsed && (
+              <div className={styles.navSectionHeader}>
+                <div className={styles.navDot} style={{ backgroundColor: '#3b82f6' }}></div>
+                <p className={styles.navSectionLabel}>My Workspace</p>
+              </div>
+            )}
+            {!isCollapsed && <p className={styles.navCategoryHeader}>Projects</p>}
+            {renderLink({ name: 'Project List (RBP)', href: '/dashboard/rbp', icon: 'account_balance_wallet' })}
+            {renderLink({ name: 'Project List (NEP)', href: '/dashboard/nep/projects', icon: 'folder_shared' })}
+            {renderLink({ name: 'Project List (GAA)', href: '/dashboard/gaa/projects', icon: 'analytics' })}
+            {!isCollapsed && <p className={styles.navCategoryHeader}>Execution & Updates</p>}
+            {renderLink({ name: 'Physical Progress', href: '/dashboard/gaa/progress', icon: 'bar_chart' })}
+            {renderLink({ name: 'My Uploads / Documents', href: '/dashboard/my-uploads', icon: 'folder_open' })}
+          </div>
+        ) : filteredItems.length > 0 && (
           <div className={styles.navSection}>
             {!isCollapsed && (
               <div className={styles.navSectionHeader}>
@@ -264,7 +516,22 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
                 <p className={styles.navSectionLabel}>{navConfig[activeStage].label}</p>
               </div>
             )}
-            {filteredItems.map(renderLink)}
+            {(() => {
+              let currentCat = '';
+              return filteredItems.map((item) => {
+                const isNewCat = (item as any).category && (item as any).category !== currentCat;
+                if (isNewCat) currentCat = (item as any).category;
+
+                return (
+                  <React.Fragment key={item.href}>
+                    {isNewCat && !isCollapsed && (
+                      <p className={styles.navCategoryHeader}>{(item as any).category}</p>
+                    )}
+                    {renderLink(item as any)}
+                  </React.Fragment>
+                );
+              });
+            })()}
           </div>
         )}
 
@@ -280,13 +547,17 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
       <div className={styles.footer}>
         {!isCollapsed && (
           <div className={styles.roleBoxWrapper}>
-            <div className={styles.roleBox}>
+            <div className={styles.roleBox} onClick={() => setIsProfileModalOpen(true)}>
               <div className={styles.roleAvatar}>
-                {authLoading ? '..' : (userName ? userName.split(' ').map(n => n[0]).join('') : '??')}
+                {authLoading ? '..' : 
+                 (profile?.avatar_url ? 
+                    <img src={profile.avatar_url} alt="Profile" className={styles.roleAvatarImage} /> 
+                  : (userName ? userName.split(' ').map(n => n[0]).join('') : '??'))}
               </div>
               <div className={styles.roleInfo}>
                 <p className={styles.roleName}>{authLoading ? 'Verifying...' : (userName || 'Unknown User')}</p>
                 <p className={styles.roleTitle}>{authLoading ? 'Please wait' : (userRole || 'Guest')}</p>
+                <div style={{ fontSize: '0.625rem', color: '#1152d4', marginTop: '0.125rem', fontWeight: 600 }}>Account Settings</div>
               </div>
             </div>
           </div>
@@ -324,6 +595,12 @@ export default function Sidebar({ isCollapsed = false, toggleSidebar }: { isColl
           </div>
         </div>
       </div>
+
+      <ProfileModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+        onUploadSuccess={() => window.location.reload()}
+      />
     </aside>
   );
 }

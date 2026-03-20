@@ -7,7 +7,6 @@ export const SUPPORTING_DOC_DESCRIPTIONS: Record<string, string> = {
     'SD-09': 'Detailed Engineering Design (DED)/Preliminary Plans',
     'SD-10': 'Geotagged Photos',
     'SD-11': 'Hydraulic and Hydrologic Analysis',
-    'SD-12': 'Modification Form/Variation Order/Change Order/As-Built Plan',
     'SD-15': 'Program of Work (POW)',
     'SD-17': 'Project Profile',
     'SD-18': 'ROW Certification',
@@ -32,14 +31,15 @@ export const SUPPORTING_DOC_DESCRIPTIONS: Record<string, string> = {
     'SD-39': 'Certification of No Double Funding',
     'SD-40': 'MYCPPM (Convergence Matrix)',
     'SD-41': 'Geotechnical Study',
+    'SD-ABC': 'Approved Budget for the Contract (ABC)',
 };
 
 // Internal mapping helper from PAP Description to SD Codes
 const PAP_MAPPING: Record<string, string[]> = {
-    "DRAINAGE": ["SD-08", "SD-10", "SD-12", "SD-15", "SD-18", "SD-19", "SD-23"],
-    "PREVENTIVE MAINTENANCE": ["SD-05", "SD-10", "SD-12", "SD-15", "SD-19", "SD-23"],
-    "SLOPE COLLAPSE": ["SD-01", "SD-09", "SD-10", "SD-12", "SD-15", "SD-18", "SD-19", "SD-41"],
-    "DAMAGED PAVED ROADS": ["SD-04", "SD-05", "SD-10", "SD-12", "SD-15", "SD-19", "SD-23"],
+    "DRAINAGE": ["SD-08", "SD-10", "SD-15", "SD-18", "SD-19", "SD-23"],
+    "PREVENTIVE MAINTENANCE": ["SD-05", "SD-10", "SD-15", "SD-19", "SD-23"],
+    "SLOPE COLLAPSE": ["SD-01", "SD-09", "SD-10", "SD-15", "SD-18", "SD-19", "SD-41"],
+    "DAMAGED PAVED ROADS": ["SD-04", "SD-05", "SD-10", "SD-15", "SD-19", "SD-23"],
     "NEW BRIDGES": ["SD-09", "SD-10", "SD-11", "SD-15", "SD-17"],
     "REPAIR OF PERMANENT BRIDGES": ["SD-10", "SD-15", "SD-17"],
     "REPLACEMENT OF BRIDGES": ["SD-09", "SD-10", "SD-11", "SD-15", "SD-17"],
@@ -52,12 +52,12 @@ const PAP_MAPPING: Record<string, string[]> = {
     "TOURISM": ["SD-10", "SD-15", "SD-17", "SD-22", "SD-37", "SD-40"],
     "ROLL-IT": ["SD-10", "SD-15", "SD-17", "SD-22", "SD-37", "SD-40"],
     "TIKAS": ["SD-10", "SD-15", "SD-17", "SD-22", "SD-34", "SD-35", "SD-36", "SD-37", "SD-38", "SD-39", "SD-40"],
-    "BY-PASS": ["SD-09", "SD-12", "SD-15", "SD-17", "SD-18", "SD-20", "SD-22"],
-    "FLYOVERS": ["SD-09", "SD-12", "SD-15", "SD-17", "SD-18", "SD-20", "SD-22"],
-    "MISSING LINKS": ["SD-09", "SD-12", "SD-15", "SD-17", "SD-18", "SD-20", "SD-22"],
-    "OFF-CARRIAGEWAY": ["SD-12", "SD-15", "SD-17", "SD-18", "SD-19"],
-    "PAVING OF UNPAVED": ["SD-10", "SD-12", "SD-15", "SD-19"],
-    "ROAD WIDENING": ["SD-07", "SD-10", "SD-12", "SD-15", "SD-17", "SD-18", "SD-19"],
+    "BY-PASS": ["SD-09", "SD-15", "SD-17", "SD-18", "SD-20", "SD-22"],
+    "FLYOVERS": ["SD-09", "SD-15", "SD-17", "SD-18", "SD-20", "SD-22"],
+    "MISSING LINKS": ["SD-09", "SD-15", "SD-17", "SD-18", "SD-20", "SD-22"],
+    "OFF-CARRIAGEWAY": ["SD-15", "SD-17", "SD-18", "SD-19"],
+    "PAVING OF UNPAVED": ["SD-10", "SD-15", "SD-19"],
+    "ROAD WIDENING": ["SD-07", "SD-10", "SD-15", "SD-17", "SD-18", "SD-19"],
     "MVUC": ["SD-09", "SD-10", "SD-15", "SD-17", "SD-18", "SD-23", "SD-31", "SD-32", "SD-33", "SD-41"],
     "PROBRED": ["SD-10", "SD-15", "SD-17", "SD-22", "SD-37", "SD-40"],
     "SIPAG": ["SD-10", "SD-15", "SD-17", "SD-22", "SD-37", "SD-40"],
@@ -118,6 +118,14 @@ export function getRequiredDocs(subProgramCode?: string | number, thrust?: strin
         }
     }
 
+    return codes.map(code => ({
+        code,
+        label: SUPPORTING_DOC_DESCRIPTIONS[code] || code
+    }));
+}
+
+export function getNepGaaDocs(): { code: string; label: string }[] {
+    const codes = ['SD-09', 'SD-15', 'SD-23', 'SD-ABC'];
     return codes.map(code => ({
         code,
         label: SUPPORTING_DOC_DESCRIPTIONS[code] || code

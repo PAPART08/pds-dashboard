@@ -5,6 +5,8 @@ import Link from 'next/link';
 import styles from './page.module.css';
 import { supabase } from '@/lib/supabase';
 import ImportModal from '@/components/ImportModal';
+import { useAuth } from '@/context/AuthContext';
+import ProjectDetailModal from '@/components/ProjectDetailModal';
 
 interface Project {
   id: string;
@@ -22,6 +24,12 @@ export default function RBPStagePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const { profile, loading: authLoading } = useAuth();
+  
+  const userRole = profile?.position || '';
+  const isWorkspaceUser = userRole === 'Unit Member' || userRole === 'Regular Member';
+  const userName = profile?.name || '';
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,8 +56,10 @@ export default function RBPStagePage() {
           city_municipality,
           status,
           created_at,
-          is_included_in_master_list
+          is_included_in_master_list,
+          doc_assignments
         `)
+        .eq('phase', 'RBP')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -59,7 +69,28 @@ export default function RBPStagePage() {
 
       if (data) {
         console.log(`Successfully fetched ${data.length} projects.`);
-        const formatted = data.map(p => ({
+        let filteredData = data;
+        
+        if (isWorkspaceUser && userName) {
+            const { data: tasks } = await supabase
+                .from('tasks')
+                .select('project_id')
+                .eq('assignee_name', userName);
+                
+            const assignedProjectIds = new Set(tasks?.map(t => t.project_id) || []);
+            
+            filteredData = data.filter(p => {
+                let isLegacyAssigned = false;
+                if (p.doc_assignments) {
+                    isLegacyAssigned = Object.values(p.doc_assignments).some(
+                        (assignee: any) => typeof assignee === 'string' && assignee.toLowerCase().trim() === userName.toLowerCase().trim()
+                    );
+                }
+                return assignedProjectIds.has(p.id) || isLegacyAssigned;
+            });
+        }
+
+        const formatted = filteredData.map(p => ({
           id: p.id,
           alternateId: p.alternate_id,
           projectDescription: p.project_name || 'No Description',
@@ -87,7 +118,9 @@ export default function RBPStagePage() {
   };
 
   useEffect(() => {
-    fetchProjects();
+    if (!authLoading) {
+        fetchProjects();
+    }
     // Check for local development data to sync
     const localData = localStorage.getItem('rbp_projects');
     if (localData) {
@@ -106,7 +139,7 @@ export default function RBPStagePage() {
     const localData = localStorage.getItem('rbp_projects');
     if (!localData) return;
 
-    if (!confirm("We found projects saved in your browser's local storage. Would you like to sync them to the Cloud (Supabase)? This will merge them with the current list.")) return;
+    if (!(await window.customConfirm("We found projects saved in your browser's local storage. Would you like to sync them to the Cloud (Supabase)? This will merge them with the current list."))) return;
 
     setIsSyncing(true);
     try {
@@ -150,7 +183,7 @@ export default function RBPStagePage() {
   };
 
   const handleDelete = async (id: string, altId?: string) => {
-    if (!confirm(`Are you sure you want to delete project ${altId || id}?`)) return;
+    if (!(await window.customConfirm(`Are you sure you want to delete project ${altId || id}?`))) return;
 
     try {
       const { error } = await supabase.from('projects').delete().eq('id', id);
@@ -488,14 +521,18 @@ export default function RBPStagePage() {
               expand_more
             </span>
           </div>
-          <button className={styles.btnFilter} onClick={() => setIsImportOpen(true)}>
-            <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>upload</span>
-            <span>Import</span>
-          </button>
-          <Link href="/dashboard/rbp/new" className={styles.btnEncode}>
-            <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>add_circle</span>
-            <span>Encode Project</span>
-          </Link>
+          {!isWorkspaceUser && (
+            <>
+              <button className={styles.btnFilter} onClick={() => setIsImportOpen(true)}>
+                <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>upload</span>
+                <span>Import</span>
+              </button>
+              <Link href="/dashboard/rbp/new" className={styles.btnEncode}>
+                <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>add_circle</span>
+                <span>Encode Project</span>
+              </Link>
+            </>
+          )}
         </div>
       </section>
 
@@ -509,7 +546,7 @@ export default function RBPStagePage() {
                 <th className={styles.th}>Description</th>
                 <th className={styles.th}>Location</th>
                 <th className={styles.th} style={{ textAlign: 'right' }}>Cost (M)</th>
-                <th className={styles.th} style={{ textAlign: 'center' }}>Master List</th>
+                {!isWorkspaceUser && <th className={styles.th} style={{ textAlign: 'center' }}>Master List</th>}
                 <th className={styles.th} style={{ textAlign: 'center' }}>Status</th>
                 <th className={styles.th} style={{ textAlign: 'right' }}>Actions</th>
               </tr>
@@ -541,6 +578,7 @@ export default function RBPStagePage() {
                     <td className={styles.td}>
                       <p className={styles.cost}>{project.totalCost?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </td>
+                    {!isWorkspaceUser && (
                     <td className={styles.td}>
                       <div style={{ display: 'flex', justifyContent: 'center' }}>
                         <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -567,6 +605,7 @@ export default function RBPStagePage() {
                         </label>
                       </div>
                     </td>
+                    )}
                     <td className={styles.td}>
                       <div className={styles.badgeWrapper}>
                         <span className={`${styles.badge} ${styles.badgeDrafting}`}>
@@ -576,12 +615,20 @@ export default function RBPStagePage() {
                     </td>
                     <td className={styles.td}>
                       <div className={styles.actions}>
-                        <Link href={`/dashboard/rbp/new?id=${project.id}`} className={styles.actionBtn}>
-                          <span className={`material-symbols-outlined ${styles.actionIcon}`}>edit</span>
-                        </Link>
-                        <button className={styles.actionBtn} onClick={() => handleDelete(project.id, project.alternateId)}>
-                          <span className={`material-symbols-outlined ${styles.actionIcon}`} style={{ color: 'var(--danger)' }}>delete</span>
-                        </button>
+                        {isWorkspaceUser ? (
+                          <button className={styles.actionBtn} onClick={() => setSelectedProjectId(project.id)} title="View Project Details">
+                            <span className={`material-symbols-outlined ${styles.actionIcon}`}>visibility</span>
+                          </button>
+                        ) : (
+                          <>
+                            <Link href={`/dashboard/rbp/new?id=${project.id}`} className={styles.actionBtn}>
+                              <span className={`material-symbols-outlined ${styles.actionIcon}`}>edit</span>
+                            </Link>
+                            <button className={styles.actionBtn} onClick={() => handleDelete(project.id, project.alternateId)}>
+                              <span className={`material-symbols-outlined ${styles.actionIcon}`} style={{ color: 'var(--danger)' }}>delete</span>
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -624,6 +671,13 @@ export default function RBPStagePage() {
         onClose={() => setIsImportOpen(false)}
         onImport={handleImport}
       />
+
+      {selectedProjectId && (
+        <ProjectDetailModal
+          projectId={selectedProjectId}
+          onClose={() => setSelectedProjectId(null)}
+        />
+      )}
     </div>
   );
 }
