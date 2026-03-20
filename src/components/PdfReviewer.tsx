@@ -28,10 +28,10 @@ interface PdfReviewerProps {
     textAnnotations?: TextAnnotation[];
     activeTool: string;
     zoom?: number;
-    onMouseDown: (e: React.MouseEvent<SVGSVGElement>, type?: string, index?: number) => void;
-    onMouseMove: (e: React.MouseEvent<SVGSVGElement>) => void;
-    onMouseUp: () => void;
-    onSvgClick?: (e: React.MouseEvent<SVGSVGElement>) => void;
+    onPointerDown: (e: React.MouseEvent<SVGSVGElement> | React.PointerEvent<SVGSVGElement> | React.PointerEvent<HTMLDivElement>, type?: string, index?: number) => void;
+    onPointerMove: (e: React.MouseEvent<SVGSVGElement> | React.PointerEvent<SVGSVGElement>) => void;
+    onPointerUp: () => void;
+    onSvgClick?: (e: React.MouseEvent<SVGSVGElement> | React.PointerEvent<SVGSVGElement>) => void;
 }
 
 export default function PdfReviewer({
@@ -43,9 +43,9 @@ export default function PdfReviewer({
     textAnnotations = [],
     activeTool,
     zoom = 1,
-    onMouseDown,
-    onMouseMove,
-    onMouseUp,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
     onSvgClick
 }: PdfReviewerProps) {
     const [loadError, setLoadError] = useState(false);
@@ -198,10 +198,20 @@ export default function PdfReviewer({
                 id="pdf-reviewer-svg-overlay"
                 viewBox={`0 0 800 ${svgHeight}`}
                 className={`absolute inset-0 w-full h-full z-10 ${cursorClass}`}
-                onMouseDown={onMouseDown}
-                onMouseMove={onMouseMove}
-                onMouseUp={onMouseUp}
-                onMouseLeave={onMouseUp}
+                onPointerDown={(e) => {
+                    const el = e.currentTarget;
+                    if (el.setPointerCapture) el.setPointerCapture(e.pointerId);
+                    onPointerDown(e);
+                }}
+                onPointerMove={onPointerMove}
+                onPointerUp={(e) => {
+                    const el = e.currentTarget;
+                    if (el.hasPointerCapture && el.hasPointerCapture(e.pointerId)) {
+                        el.releasePointerCapture(e.pointerId);
+                    }
+                    onPointerUp();
+                }}
+                onPointerLeave={onPointerUp}
                 onClick={onSvgClick}
                 style={{ touchAction: 'none' }}
             >
@@ -286,10 +296,10 @@ export default function PdfReviewer({
                                 wordBreak: 'break-word',
                                 maxWidth: '380px'
                             }}
-                            onMouseDown={(e) => {
+                            onPointerDown={(e) => {
                                 if (activeTool === 'select') {
                                     e.stopPropagation();
-                                    (onMouseDown as any)(e, 'text', i);
+                                    (onPointerDown as any)(e, 'text', i);
                                 }
                             }}
                         >

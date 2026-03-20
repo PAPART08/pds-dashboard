@@ -80,6 +80,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
     const [selectedPrevVersion, setSelectedPrevVersion] = useState<string>('latest');
     const [prevPaths, setPrevPaths] = useState<any[]>([]);
     const [prevTextAnnotations, setPrevTextAnnotations] = useState<any[]>([]);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
 
     const isCompareReady = showComparison && previousPdfUrl;
 
@@ -224,10 +225,10 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
 
             await supabase.from('tasks').update({ status: 'Approved' }).eq('project_id', id).eq('task_type', 'DOC_COMPLIANCE').eq('doc_code', docCode);
 
-            alert("Document Approved & Sent to Chief.");
+            alert("Document Approved.");
             const userName = currentUser?.name || 'Reviewer';
             const userRole = currentUser?.role || 'Reviewer';
-            setComments([...comments, { id: Date.now(), user: userName, role: userRole, text: 'Document Approved & Sent to Chief.', time: 'Just now', isResolved: true }]);
+            setComments([...comments, { id: Date.now(), user: userName, role: userRole, text: 'Document Approved.', time: 'Just now', isResolved: true }]);
             setTimeout(() => router.push(`/dashboard/rbp/${id}`), 1000);
         } catch (err) {
             console.error("Failed to approve doc", err);
@@ -295,7 +296,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
     };
 
     // Drawing Handlers
-    const startDrawing = (e: React.MouseEvent<SVGSVGElement>, type?: string, index?: number) => {
+    const startDrawing = (e: React.MouseEvent<SVGSVGElement> | React.PointerEvent<SVGSVGElement> | React.PointerEvent<HTMLDivElement> | any, type?: string, index?: number) => {
         const svgElement = document.getElementById('pdf-reviewer-svg-overlay') || (e.currentTarget as Element);
         const rect = svgElement.getBoundingClientRect();
         const x = (e.clientX - rect.left) / zoom;
@@ -320,7 +321,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
         }
     };
 
-    const draw = (e: React.MouseEvent<SVGSVGElement>) => {
+    const draw = (e: React.MouseEvent<SVGSVGElement> | React.PointerEvent<SVGSVGElement> | any) => {
         const svgElement = document.getElementById('pdf-reviewer-svg-overlay') || (e.currentTarget as Element);
         const rect = svgElement.getBoundingClientRect();
         const x = (e.clientX - rect.left) / zoom;
@@ -357,7 +358,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
         }
     };
 
-    const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    const handleSvgClick = (e: React.MouseEvent<SVGSVGElement> | React.PointerEvent<SVGSVGElement> | any) => {
         const svgElement = document.getElementById('pdf-reviewer-svg-overlay') || (e.currentTarget as Element);
         const rect = svgElement.getBoundingClientRect();
         const x = (e.clientX - rect.left) / zoom;
@@ -497,7 +498,10 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                     )}
 
                     {!isCompareReady && (
-                        <button className="flex items-center space-x-1.5 px-3 py-2 text-[11px] font-bold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all bg-white">
+                        <button 
+                            onClick={() => setShowHistoryModal(true)}
+                            className="flex items-center space-x-1.5 px-3 py-2 text-[11px] font-bold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all bg-white"
+                        >
                             <History className="w-3.5 h-3.5" />
                             <span>History</span>
                         </button>
@@ -754,9 +758,9 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                                         textAnnotations={textAnnotations}
                                         activeTool={activeTool}
                                         zoom={zoom}
-                                        onMouseDown={startDrawing}
-                                        onMouseMove={draw}
-                                        onMouseUp={endDrawing}
+                                        onPointerDown={startDrawing}
+                                        onPointerMove={draw}
+                                        onPointerUp={endDrawing}
                                         onSvgClick={handleSvgClick}
                                     />
                                 ) : (
@@ -853,7 +857,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                                     style={{ boxShadow: '0 4px 14px rgba(26,86,219,0.35)' }}
                                 >
                                     <Check className="w-4 h-4 mr-2" />
-                                    Approve & Send
+                                    Approve
                                 </button>
                                 <button
                                     onClick={handleReturn}
@@ -952,6 +956,65 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                     </div>
                 </aside>
             </main>
+
+            {/* History Modal */}
+            {showHistoryModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white w-[500px] max-h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <div className="flex items-center gap-3">
+                                <History className="w-5 h-5 text-blue-600" />
+                                <h3 className="font-bold text-gray-900">Version History</h3>
+                            </div>
+                            <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 overflow-y-auto flex-1">
+                            {docVersions.length === 0 ? (
+                                <div className="text-center text-gray-400 py-10">
+                                    <History className="w-10 h-10 mx-auto mb-3 opacity-20" />
+                                    <p className="text-sm font-medium">No history found for this document.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-6 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+                                    {docVersions.map((v, idx) => (
+                                        <div key={idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                                            <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-blue-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                                                <span className="text-[10px] font-bold">{idx + 1}</span>
+                                            </div>
+                                            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2rem)] p-4 rounded bg-white shadow-sm border border-slate-100">
+                                                <div className="flex items-center justify-between space-x-2 mb-1">
+                                                    <div className="font-bold text-slate-800 text-xs">{v.version_name || `Version ${idx + 1}`}</div>
+                                                    <div className="text-[9px] font-black text-slate-400">{new Date(v.uploaded_at).toLocaleDateString()}</div>
+                                                </div>
+                                                <div className="text-[10px] text-slate-500 font-medium">
+                                                    Annotations: {v.paths?.length || 0} • Text: {v.textAnnotations?.length || 0}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {/* Current version */}
+                                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                                        <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-green-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                                            <span className="text-[10px] font-bold">{docVersions.length + 1}</span>
+                                        </div>
+                                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2rem)] p-4 rounded bg-green-50 shadow-sm border border-green-200">
+                                            <div className="flex items-center justify-between space-x-2 mb-1">
+                                                <div className="font-bold text-green-800 text-xs">Current Document</div>
+                                                <div className="text-[9px] font-black text-green-600 bg-green-200 px-1.5 py-0.5 rounded">LATEST</div>
+                                            </div>
+                                            <div className="text-[10px] text-green-700 font-medium">
+                                                Current annotations and changes.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style jsx global>{`
                 ::-webkit-scrollbar { width: 5px; height: 5px; }
