@@ -17,12 +17,28 @@ export async function updateSession(request: NextRequest) {
                     return request.cookies.get(name)?.value;
                 },
                 set(name: string, value: string, options: CookieOptions) {
-                    request.cookies.set({ name, value, ...options });
-                    response.cookies.set({ name, value, ...options });
+                    request.cookies.set({
+                        name,
+                        value,
+                        ...options,
+                    });
+                    response.cookies.set({
+                        name,
+                        value,
+                        ...options,
+                    });
                 },
                 remove(name: string, options: CookieOptions) {
-                    request.cookies.set({ name, value: '', ...options });
-                    response.cookies.set({ name, value: '', ...options });
+                    request.cookies.set({
+                        name,
+                        value: '',
+                        ...options,
+                    });
+                    response.cookies.set({
+                        name,
+                        value: '',
+                        ...options,
+                    });
                 },
             },
         }
