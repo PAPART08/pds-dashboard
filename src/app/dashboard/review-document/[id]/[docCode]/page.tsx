@@ -542,7 +542,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                 {/* ── 1. LEFT PANEL: Previous Version ── */}
                 {isCompareReady && (
                     <aside
-                        className="flex flex-col border-b lg:border-r lg:border-b-0 border-slate-800 bg-[#2C3E50] shrink-0 w-full lg:w-1/2 min-h-0"
+                        className="flex flex-col border-b lg:border-r lg:border-b-0 border-slate-800 bg-[#2C3E50] w-full lg:flex-1 min-h-0"
                     >
                         {/* Panel header */}
                         <div className="h-10 px-4 flex items-center justify-between bg-black/20 border-b border-white/5 shrink-0">
@@ -644,7 +644,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                     )}
 
                     {/* Floating Toolbar — GoodNotes style pill */}
-                    <div className={`absolute left-1/2 -translate-x-1/2 z-50 ${isCompareReady ? 'top-14' : 'top-5'}`}>
+                    <div className={`absolute left-1/2 -translate-x-1/2 z-[60] ${isCompareReady ? (isFullscreen ? 'top-20 mt-2' : 'top-16') : (isFullscreen ? 'top-12' : 'top-5')}`}>
                         <div
                             className="flex items-center px-1.5 py-1.5 rounded-2xl border border-white/10"
                             style={{
