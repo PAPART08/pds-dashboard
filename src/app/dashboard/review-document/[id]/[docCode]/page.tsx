@@ -542,7 +542,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                 {/* ── 1. LEFT PANEL: Previous Version ── */}
                 {isCompareReady && (
                     <aside
-                        className="flex flex-col border-b lg:border-r lg:border-b-0 border-slate-800 bg-[#2C3E50] w-full lg:flex-1 min-h-0"
+                        className="flex flex-col border-b lg:border-r lg:border-b-0 border-slate-800 bg-[#2C3E50] w-full lg:flex-1 min-w-0 min-h-0"
                     >
                         {/* Panel header */}
                         <div className="h-10 px-4 flex items-center justify-between bg-black/20 border-b border-white/5 shrink-0">
@@ -630,7 +630,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
 
                 {/* ── 2. CENTER PANEL: Current Version + Annotation Tools ── */}
                 <section
-                    className={`flex flex-col relative overflow-hidden flex-1 min-h-0 ${isCompareReady ? 'lg:border-r border-slate-800' : ''} ${!isFullscreen && !isCompareReady ? 'bg-white rounded-2xl shadow-sm border border-slate-200' : ''}`}
+                    className={`flex flex-col relative overflow-hidden flex-1 min-w-0 min-h-0 ${isCompareReady ? 'lg:border-r border-slate-800' : ''} ${!isFullscreen && !isCompareReady ? 'bg-white rounded-2xl shadow-sm border border-slate-200' : ''}`}
                     style={{ background: isCompareReady ? '#243342' : (isFullscreen ? '#2C3E50' : '') }}
                 >
                     {isCompareReady && (
@@ -1082,7 +1082,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
         </div>
     );
 
-    if (isCompareReady && typeof document !== 'undefined') {
+    if ((isCompareReady || isFullscreen) && typeof document !== 'undefined') {
         return createPortal(content, document.body);
     }
 
