@@ -50,6 +50,7 @@ export default function PdfReviewer({
 }: PdfReviewerProps) {
     const [loadError, setLoadError] = useState(false);
     const [svgHeight, setSvgHeight] = useState(1131);
+    const [hasPen, setHasPen] = useState(false); // Track if user is using a stylus
     const svgRef = useRef<SVGSVGElement>(null);
     const pageWidth = Math.round(800 * zoom);
 
@@ -199,12 +200,23 @@ export default function PdfReviewer({
                 viewBox={`0 0 800 ${svgHeight}`}
                 className={`absolute inset-0 w-full h-full z-10 ${cursorClass}`}
                 onPointerDown={(e) => {
+                    if (e.pointerType === 'pen') {
+                        setHasPen(true);
+                    }
+                    // Palm rejection: If pen is detected and tool is not 'select', ignore fingers (let them scroll)
+                    if (hasPen && e.pointerType === 'touch' && activeTool !== 'select') {
+                        return;
+                    }
                     const el = e.currentTarget;
                     if (el.setPointerCapture) el.setPointerCapture(e.pointerId);
                     onPointerDown(e);
                 }}
-                onPointerMove={onPointerMove}
+                onPointerMove={(e) => {
+                    if (hasPen && e.pointerType === 'touch' && activeTool !== 'select') return;
+                    onPointerMove(e);
+                }}
                 onPointerUp={(e) => {
+                    if (hasPen && e.pointerType === 'touch' && activeTool !== 'select') return;
                     const el = e.currentTarget;
                     if (el.hasPointerCapture && el.hasPointerCapture(e.pointerId)) {
                         el.releasePointerCapture(e.pointerId);
@@ -213,7 +225,7 @@ export default function PdfReviewer({
                 }}
                 onPointerLeave={onPointerUp}
                 onClick={onSvgClick}
-                style={{ touchAction: 'none' }}
+                style={{ touchAction: (activeTool === 'select' || (hasPen && activeTool !== 'select')) ? 'pan-x pan-y' : 'none' }}
             >
                 {/* Sequential Masking: Erasers only affect strokes drawn BEFORE them */}
                 {(() => {

@@ -625,8 +625,8 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
 
                 {/* ── 2. CENTER PANEL: Current Version + Annotation Tools ── */}
                 <section 
-                    className={`flex flex-col relative overflow-hidden shrink-0 min-h-0 ${isCompareReady ? 'lg:border-r border-slate-800' : ''}`} 
-                    style={{ flexGrow: 1, minWidth: 0, background: isCompareReady ? '#243342' : '#2C3E50' }}
+                    className={`flex flex-col relative overflow-hidden flex-1 min-h-0 ${isCompareReady ? 'lg:border-r border-slate-800' : ''}`} 
+                    style={{ background: isCompareReady ? '#243342' : '#2C3E50' }}
                 >
                     {isCompareReady && (
                         <div className="h-10 px-4 flex items-center justify-between bg-blue-600/10 border-b border-blue-500/20 shrink-0 absolute top-0 w-full z-40">
