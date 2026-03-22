@@ -51,6 +51,7 @@ export default function PdfReviewer({
     const [loadError, setLoadError] = useState(false);
     const [svgHeight, setSvgHeight] = useState(1131);
     const [hasPen, setHasPen] = useState(false); // Track if user is using a stylus
+    const [touchPanStart, setTouchPanStart] = useState<{ x: number, y: number } | null>(null);
     const svgRef = useRef<SVGSVGElement>(null);
     const pageWidth = Math.round(800 * zoom);
 
@@ -203,8 +204,9 @@ export default function PdfReviewer({
                     if (e.pointerType === 'pen') {
                         setHasPen(true);
                     }
-                    // Palm rejection: If pen is detected and tool is not 'select', ignore fingers (let them scroll)
-                    if (hasPen && e.pointerType === 'touch' && activeTool !== 'select') {
+                    // Palm rejection: If touch is detected and tool is not 'select', handle pan manually
+                    if (e.pointerType === 'touch' && activeTool !== 'select') {
+                        setTouchPanStart({ x: e.clientX, y: e.clientY });
                         return;
                     }
                     const el = e.currentTarget;
@@ -212,20 +214,45 @@ export default function PdfReviewer({
                     onPointerDown(e);
                 }}
                 onPointerMove={(e) => {
-                    if (hasPen && e.pointerType === 'touch' && activeTool !== 'select') return;
+                    if (e.pointerType === 'touch' && activeTool !== 'select') {
+                        if (touchPanStart) {
+                            const dx = e.clientX - touchPanStart.x;
+                            const dy = e.clientY - touchPanStart.y;
+                            const container = svgRef.current?.closest('.overflow-auto');
+                            if (container) {
+                                container.scrollBy({ left: -dx, top: -dy });
+                            }
+                            setTouchPanStart({ x: e.clientX, y: e.clientY });
+                        }
+                        return;
+                    }
                     onPointerMove(e);
                 }}
                 onPointerUp={(e) => {
-                    if (hasPen && e.pointerType === 'touch' && activeTool !== 'select') return;
+                    if (e.pointerType === 'touch' && activeTool !== 'select') {
+                        setTouchPanStart(null);
+                        return;
+                    }
                     const el = e.currentTarget;
                     if (el.hasPointerCapture && el.hasPointerCapture(e.pointerId)) {
                         el.releasePointerCapture(e.pointerId);
                     }
                     onPointerUp();
                 }}
-                onPointerLeave={onPointerUp}
+                onPointerLeave={(e) => {
+                    if (e.pointerType === 'touch' && activeTool !== 'select') {
+                        setTouchPanStart(null);
+                        return;
+                    }
+                    onPointerUp();
+                }}
                 onClick={onSvgClick}
-                style={{ touchAction: (activeTool === 'select' || (hasPen && activeTool !== 'select')) ? 'pan-x pan-y' : 'none' }}
+                style={{ 
+                    touchAction: 'none', // ALWAYS none to prevent browser interference & freeze
+                    userSelect: 'none', 
+                    WebkitUserSelect: 'none', 
+                    WebkitTouchCallout: 'none' 
+                }}
             >
                 {/* Sequential Masking: Erasers only affect strokes drawn BEFORE them */}
                 {(() => {

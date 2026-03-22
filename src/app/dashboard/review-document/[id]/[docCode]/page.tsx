@@ -26,6 +26,8 @@ import {
     Circle,
     Square,
     Undo2,
+    Maximize,
+    Minimize,
 } from 'lucide-react';
 import { SUPPORTING_DOC_DESCRIPTIONS } from '@/lib/supporting-docs';
 import dynamic from 'next/dynamic';
@@ -62,6 +64,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
     const [numPages, setNumPages] = useState<number | null>(null);
     const [comments, setComments] = useState<{ id: number, user: string, role: string, text: string, time: string, isResolved: boolean }[]>([]);
     const [newComment, setNewComment] = useState('');
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const { profile, loading: authLoading } = useAuth();
 
     const currentUser = profile ? { name: profile.name, role: profile.position } : null;
@@ -452,11 +455,11 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
     }
 
     // By placing the wrapper conditionally fixed, we break it out of the dashboard layout limitations.
-    const wrapperClasses = isCompareReady
-        ? "fixed inset-0 z-[9999] bg-white flex flex-col overflow-hidden w-[100vw] h-[100vh]"
+    const wrapperClasses = isFullscreen || isCompareReady
+        ? "fixed inset-0 z-[9999] bg-[#e2e8f0] flex flex-col overflow-hidden w-[100vw] h-[100vh]"
         : "flex flex-col overflow-hidden bg-white relative";
         
-    const wrapperStyle = isCompareReady 
+    const wrapperStyle = isFullscreen || isCompareReady 
         ? {} 
         : { 
             height: 'calc(100vh - 80px)', 
@@ -470,7 +473,8 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
     const content = (
         <div className={wrapperClasses} style={wrapperStyle}>
             {/* ─── Global Header ─── */}
-            <header className={`h-14 px-5 flex items-center justify-between border-b ${isCompareReady ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white'} z-50 shrink-0 shadow-sm`}>
+            {!isFullscreen && (
+                <header className={`h-14 px-5 flex items-center justify-between border-b ${isCompareReady ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white'} z-50 shrink-0 shadow-sm`}>
                 <div className="flex items-center space-x-3">
                     <Link
                         href={`/dashboard/rbp/${id}`}
@@ -530,9 +534,10 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                     )}
                 </div>
             </header>
+            )}
 
             {/* ─── Main Layout ─── */}
-            <main className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0 bg-slate-100">
+            <main className={`flex flex-col lg:flex-row flex-1 ${isFullscreen ? 'h-full overflow-hidden' : 'p-4 gap-4 max-w-[1800px] mx-auto w-full'} ${!isFullscreen ? layoutOffset.offset : ''}`}>
 
                 {/* ── 1. LEFT PANEL: Previous Version ── */}
                 {isCompareReady && (
@@ -570,7 +575,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                                     </select>
                                 </div>
                             </div>
-                            
+
                             {/* Zoom controls for Left PDF */}
                             <div className="flex items-center bg-black/30 rounded-lg overflow-hidden">
                                 <button
@@ -624,9 +629,9 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                 )}
 
                 {/* ── 2. CENTER PANEL: Current Version + Annotation Tools ── */}
-                <section 
-                    className={`flex flex-col relative overflow-hidden flex-1 min-h-0 ${isCompareReady ? 'lg:border-r border-slate-800' : ''}`} 
-                    style={{ background: isCompareReady ? '#243342' : '#2C3E50' }}
+                <section
+                    className={`flex flex-col relative overflow-hidden flex-1 min-h-0 ${isCompareReady ? 'lg:border-r border-slate-800' : ''} ${!isFullscreen && !isCompareReady ? 'bg-white rounded-2xl shadow-sm border border-slate-200' : ''}`}
+                    style={{ background: isCompareReady ? '#243342' : (isFullscreen ? '#2C3E50' : '') }}
                 >
                     {isCompareReady && (
                         <div className="h-10 px-4 flex items-center justify-between bg-blue-600/10 border-b border-blue-500/20 shrink-0 absolute top-0 w-full z-40">
@@ -637,7 +642,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                              </div>
                         </div>
                     )}
-                    
+
                     {/* Floating Toolbar — GoodNotes style pill */}
                     <div className={`absolute left-1/2 -translate-x-1/2 z-50 ${isCompareReady ? 'top-14' : 'top-5'}`}>
                         <div
@@ -689,8 +694,8 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                                 <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur rounded-xl shadow-xl border border-gray-200 p-3 flex space-x-2 items-center z-50">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mr-2">Thickness</span>
                                     {[2, 4, 8, 16].map(sz => (
-                                        <button 
-                                            key={sz} 
+                                        <button
+                                            key={sz}
                                             onClick={() => setStrokeWidth(showSettingsOptions === 'highlight' || showSettingsOptions === 'eraser' ? sz * 2.5 : sz)}
                                             className="w-8 h-8 rounded hover:bg-gray-100 transition-colors flex items-center justify-center"
                                         >
@@ -759,6 +764,17 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                                     />
                                 ))}
                             </div>
+
+                            <Divider />
+
+                            {/* Fullscreen toggle */}
+                            <button
+                                onClick={() => setIsFullscreen(!isFullscreen)}
+                                className={`p-2 rounded-xl transition-colors mx-0.5 ${isFullscreen ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}`}
+                                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                            >
+                                {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                            </button>
                         </div>
                     </div>
 
@@ -813,7 +829,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                                                 if (e.key === 'Escape') setShowTextInput(null);
                                             }}
                                             placeholder="Type annotation..."
-                                            className="px-3 py-1.5 text-sm outline-none w-52 text-gray-800 font-medium bg-transparent"
+                                            className="w-full px-3 py-1.5 text-sm outline-none text-gray-800 font-medium bg-transparent"
                                             autoFocus
                                         />
                                         <button onClick={submitTextAnnotation} className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
@@ -841,146 +857,148 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                 </section>
 
                 {/* ── 3. RIGHT PANEL: Actions & Comments ── */}
-                <aside 
-                    className={`flex flex-col border-t lg:border-t-0 lg:border-l border-gray-100 bg-white shrink-0 overflow-hidden ${isCompareReady ? 'shadow-2xl z-50' : ''}`} 
-                    style={{ 
-                        width: isCompareReady ? (typeof window !== 'undefined' && window.innerWidth <= 1024 ? '100%' : 320) : undefined, 
-                        flexBasis: typeof window !== 'undefined' && window.innerWidth <= 1024 ? '40%' : 'auto' 
-                    }}
-                >
-                    <div className="w-full lg:w-[380px] flex flex-col h-full bg-white ml-auto relative" style={isCompareReady ? { width: '100%' } : {}}>
-                    {/* Action buttons */}
-                    <div className="p-4 space-y-2.5 border-b border-gray-100 bg-gray-50/60 shrink-0">
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                onClick={handleSaveAnnotations}
-                                className="flex items-center justify-center py-2.5 px-2 text-[11px] font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm"
-                            >
-                                <Save className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                                <span className="truncate">Save Ann.</span>
-                            </button>
-                            <label className="flex items-center justify-center py-2.5 px-2 text-[11px] font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm cursor-pointer">
-                                <Download className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                                <span className="truncate">Upload PDF</span>
-                                <input
-                                    type="file"
-                                    accept="application/pdf"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) setPdfUrl(URL.createObjectURL(file));
-                                    }}
-                                />
-                            </label>
-                        </div>
-
-                        {canReview && (
-                            <>
+                {!isFullscreen && (
+                    <aside
+                        className={`flex flex-col border-t lg:border-t-0 lg:border-l border-gray-100 bg-white shrink-0 overflow-hidden ${isCompareReady ? 'shadow-2xl z-50' : ''}`}
+                        style={{
+                            width: isCompareReady ? (typeof window !== 'undefined' && window.innerWidth <= 1024 ? '100%' : 320) : undefined,
+                            flexBasis: typeof window !== 'undefined' && window.innerWidth <= 1024 ? '40%' : 'auto'
+                        }}
+                    >
+                        <div className="w-full lg:w-[380px] flex flex-col h-full bg-white ml-auto relative" style={isCompareReady ? { width: '100%' } : {}}>
+                        {/* Action buttons */}
+                        <div className="p-4 space-y-2.5 border-b border-gray-100 bg-gray-50/60 shrink-0">
+                            <div className="grid grid-cols-2 gap-2">
                                 <button
-                                    onClick={handleApprove}
-                                    className="w-full flex items-center justify-center py-3 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-bold rounded-xl transition-all active:scale-[0.98]"
-                                    style={{ boxShadow: '0 4px 14px rgba(26,86,219,0.35)' }}
+                                    onClick={handleSaveAnnotations}
+                                    className="flex items-center justify-center py-2.5 px-2 text-[11px] font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm"
                                 >
-                                    <Check className="w-4 h-4 mr-2" />
-                                    Approve
+                                    <Save className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                                    <span className="truncate">Save Ann.</span>
                                 </button>
-                                <button
-                                    onClick={handleReturn}
-                                    className="w-full flex items-center justify-center py-3 bg-white border-2 border-orange-200 text-orange-600 text-[12px] font-bold rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-all active:scale-[0.98]"
-                                >
-                                    <X className="w-4 h-4 mr-2" />
-                                    Return with Corrections
-                                </button>
-                            </>
-                        )}
-
-                        {!canReview && (
-                            <div className="py-2 px-3 bg-amber-50 border border-amber-100 rounded-xl">
-                                <p className="text-[10px] font-black uppercase tracking-wide text-amber-600">Review Mode Only</p>
-                                <p className="text-[11px] text-amber-700 mt-0.5">Review remarks from your supervisor below.</p>
+                                <label className="flex items-center justify-center py-2.5 px-2 text-[11px] font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm cursor-pointer">
+                                    <Download className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                                    <span className="truncate">Upload PDF</span>
+                                    <input
+                                        type="file"
+                                        accept="application/pdf"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) setPdfUrl(URL.createObjectURL(file));
+                                        }}
+                                    />
+                                </label>
                             </div>
-                        )}
-                    </div>
 
-                    {/* Comments feed */}
-                    <div className="flex-1 flex flex-col min-h-0">
-                        <div className="px-5 py-3 flex items-center justify-between border-b border-gray-50 shrink-0">
-                            <h3 className="font-bold text-[12px] flex items-center text-gray-800">
-                                <MessageSquare className="w-3.5 h-3.5 mr-2 text-blue-600" />
-                                Remarks
-                            </h3>
-                            <span className="text-[10px] font-black px-2 py-0.5 bg-gray-100 rounded-full text-gray-500">
-                                {comments.length}
-                            </span>
+                            {canReview && (
+                                <>
+                                    <button
+                                        onClick={handleApprove}
+                                        className="w-full flex items-center justify-center py-3 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-bold rounded-xl transition-all active:scale-[0.98]"
+                                        style={{ boxShadow: '0 4px 14px rgba(26,86,219,0.35)' }}
+                                    >
+                                        <Check className="w-4 h-4 mr-2" />
+                                        Approve
+                                    </button>
+                                    <button
+                                        onClick={handleReturn}
+                                        className="w-full flex items-center justify-center py-3 bg-white border-2 border-orange-200 text-orange-600 text-[12px] font-bold rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-all active:scale-[0.98]"
+                                    >
+                                        <X className="w-4 h-4 mr-2" />
+                                        Return with Corrections
+                                    </button>
+                                </>
+                            )}
+
+                            {!canReview && (
+                                <div className="py-2 px-3 bg-amber-50 border border-amber-100 rounded-xl">
+                                    <p className="text-[10px] font-black uppercase tracking-wide text-amber-600">Review Mode Only</p>
+                                    <p className="text-[11px] text-amber-700 mt-0.5">Review remarks from your supervisor below.</p>
+                                </div>
+                            )}
                         </div>
 
-                        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 min-h-0">
-                            {comments.map(c => (
-                                <div key={c.id} className="relative">
-                                    {/* Active indicator bar */}
-                                    {!c.isResolved && (
-                                        <div
-                                            className="absolute -left-5 top-0 w-1 h-full rounded-r-full"
-                                            style={{ background: '#1a56db', boxShadow: '0 0 8px rgba(26,86,219,0.4)' }}
-                                        />
-                                    )}
-                                    <div className={`transition-all ${c.isResolved ? 'opacity-50' : ''}`}>
-                                        <div className="flex items-center space-x-2 mb-1">
-                                            <span className="text-[12px] font-bold text-gray-900">{c.user}</span>
-                                            <span className="text-[9px] font-black px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded uppercase tracking-wider truncate max-w-[100px]" title={c.role}>
-                                                {c.role}
-                                            </span>
-                                        </div>
-                                        <p className="text-[12px] text-gray-600 leading-relaxed mb-2">{c.text}</p>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-bold text-gray-400">{c.time}</span>
-                                            {c.isResolved ? (
-                                                <button
-                                                    onClick={() => resolveComment(c.id)}
-                                                    className="flex items-center space-x-1 text-[9px] font-black text-green-600 bg-green-50 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors"
-                                                >
-                                                    <Check className="w-3 h-3" />
-                                                    <span>RESOLVED</span>
-                                                </button>
-                                            ) : (
-                                                canReview && (
+                        {/* Comments feed */}
+                        <div className="flex-1 flex flex-col min-h-0">
+                            <div className="px-5 py-3 flex items-center justify-between border-b border-gray-50 shrink-0">
+                                <h3 className="font-bold text-[12px] flex items-center text-gray-800">
+                                    <MessageSquare className="w-3.5 h-3.5 mr-2 text-blue-600" />
+                                    Remarks
+                                </h3>
+                                <span className="text-[10px] font-black px-2 py-0.5 bg-gray-100 rounded-full text-gray-500">
+                                    {comments.length}
+                                </span>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 min-h-0">
+                                {comments.map(c => (
+                                    <div key={c.id} className="relative">
+                                        {/* Active indicator bar */}
+                                        {!c.isResolved && (
+                                            <div
+                                                className="absolute -left-5 top-0 w-1 h-full rounded-r-full"
+                                                style={{ background: '#1a56db', boxShadow: '0 0 8px rgba(26,86,219,0.4)' }}
+                                            />
+                                        )}
+                                        <div className={`transition-all ${c.isResolved ? 'opacity-50' : ''}`}>
+                                            <div className="flex items-center space-x-2 mb-1">
+                                                <span className="text-[12px] font-bold text-gray-900">{c.user}</span>
+                                                <span className="text-[9px] font-black px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded uppercase tracking-wider truncate max-w-[100px]" title={c.role}>
+                                                    {c.role}
+                                                </span>
+                                            </div>
+                                            <p className="text-[12px] text-gray-600 leading-relaxed mb-2">{c.text}</p>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] font-bold text-gray-400">{c.time}</span>
+                                                {c.isResolved ? (
                                                     <button
                                                         onClick={() => resolveComment(c.id)}
-                                                        className="text-[9px] font-black text-blue-600 hover:underline uppercase"
+                                                        className="flex items-center space-x-1 text-[9px] font-black text-green-600 bg-green-50 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors"
                                                     >
-                                                        Resolve
+                                                        <Check className="w-3 h-3" />
+                                                        <span>RESOLVED</span>
                                                     </button>
-                                                )
-                                            )}
+                                                ) : (
+                                                    canReview && (
+                                                        <button
+                                                            onClick={() => resolveComment(c.id)}
+                                                            className="text-[9px] font-black text-blue-600 hover:underline uppercase"
+                                                        >
+                                                            Resolve
+                                                        </button>
+                                                    )
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
 
-                        {/* Comment input */}
-                        <div className="p-4 border-t border-gray-100 shrink-0 bg-gray-50/50">
-                            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-300 transition-all">
-                                <textarea
-                                    value={newComment}
-                                    onChange={e => setNewComment(e.target.value)}
-                                    placeholder={canReview ? "Add a remark..." : "Reply to a remark..."}
-                                    className="w-full px-4 py-3 text-[12px] outline-none bg-transparent resize-none text-gray-700 font-medium"
-                                    style={{ height: 70 }}
-                                />
-                                <div className="flex justify-end px-3 py-2 border-t border-gray-50 bg-gray-50/50">
-                                    <button
-                                        onClick={addComment}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-xl text-[11px] font-bold transition-all active:scale-95"
-                                    >
-                                        Post
-                                    </button>
+                            {/* Comment input */}
+                            <div className="p-4 border-t border-gray-100 shrink-0 bg-gray-50/50">
+                                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-300 transition-all">
+                                    <textarea
+                                        value={newComment}
+                                        onChange={e => setNewComment(e.target.value)}
+                                        placeholder={canReview ? "Add a remark..." : "Reply to a remark..."}
+                                        className="w-full px-4 py-3 text-[12px] outline-none bg-transparent resize-none text-gray-700 font-medium"
+                                        style={{ height: 70 }}
+                                    />
+                                    <div className="flex justify-end px-3 py-2 border-t border-gray-50 bg-gray-50/50">
+                                        <button
+                                            onClick={addComment}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-xl text-[11px] font-bold transition-all active:scale-95"
+                                        >
+                                            Post
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                </aside>
+                    </aside>
+                )}
             </main>
 
             {/* History Modal */}
@@ -1047,7 +1065,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                 ::-webkit-scrollbar-track { background: transparent; }
                 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 99px; }
                 ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.22); }
-                
+
                 .custom-scrollbar-dark::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
                 .custom-scrollbar-dark::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
 
