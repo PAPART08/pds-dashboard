@@ -347,12 +347,12 @@ export default function ProjectTrackerPage({ params }: { params: Promise<{ id: s
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <div className="flex flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-3 xl:mt-0">
+                      <div className="flex flex-col gap-1 max-w-[120px] md:max-w-[160px]">
                         <label className="text-[8px] font-black text-gray-400 uppercase ml-1">Assignee</label>
                         <select
                           disabled={isMember}
-                          className={`text-[10px] border rounded px-2 py-1 outline-none font-bold ${isMember ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-white'}`}
+                          className={`text-[10px] border rounded px-2 py-1 outline-none font-bold truncate ${isMember ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-white'}`}
                           value={docAssignments[doc.code] || ''}
                           onChange={(e) => handleAssignDoc(doc.code, e.target.value)}
                         >
