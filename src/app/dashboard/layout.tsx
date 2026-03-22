@@ -23,6 +23,17 @@ export default function DashboardLayout({
 
     useEffect(() => {
         setIsMounted(true);
+        const handleResize = () => {
+            if (window.innerWidth <= 1024) {
+                setIsSidebarCollapsed(true);
+            } else {
+                setIsSidebarCollapsed(false);
+            }
+        };
+        // Initial check
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
     
     useEffect(() => {

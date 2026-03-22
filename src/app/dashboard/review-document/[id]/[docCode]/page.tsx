@@ -72,6 +72,21 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
     const zoomIn = () => setZoom(z => Math.min(z + 0.25, 2.5));
     const zoomOut = () => setZoom(z => Math.max(z - 0.25, 0.5));
 
+    // Responsive structural offsets
+    const [layoutOffset, setLayoutOffset] = useState({ offset: '-2.5rem' });
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth <= 1024) {
+                setLayoutOffset({ offset: '-1rem' });
+            } else {
+                setLayoutOffset({ offset: '-2.5rem' });
+            }
+        };
+        handleResize(); // Initialize
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     // Comparison state
     const [previousPdfUrl, setPreviousPdfUrl] = useState<string | null>(null);
     const [showComparison, setShowComparison] = useState(false);
@@ -438,12 +453,19 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
 
     // By placing the wrapper conditionally fixed, we break it out of the dashboard layout limitations.
     const wrapperClasses = isCompareReady
-        ? "fixed inset-0 z-[9999] bg-white flex flex-col overflow-hidden"
-        : "flex flex-col overflow-hidden bg-white w-full h-full";
+        ? "fixed inset-0 z-[9999] bg-white flex flex-col overflow-hidden w-[100vw] h-[100vh]"
+        : "flex flex-col overflow-hidden bg-white relative";
         
     const wrapperStyle = isCompareReady 
         ? {} 
-        : { height: 'calc(100vh - 80px)', marginLeft: '-2.5rem', marginRight: '-2.5rem', marginTop: '-1.5rem', paddingBottom: '2.5rem' };
+        : { 
+            height: 'calc(100vh - 80px)', 
+            marginLeft: layoutOffset.offset, 
+            marginRight: layoutOffset.offset, 
+            marginTop: '-1.5rem', 
+            paddingBottom: '2.5rem',
+            maxWidth: '100vw'
+        };
 
     const content = (
         <div className={wrapperClasses} style={wrapperStyle}>
@@ -510,13 +532,12 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
             </header>
 
             {/* ─── Main Layout ─── */}
-            <main className="flex flex-1 overflow-hidden min-h-0 bg-slate-100">
+            <main className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0 bg-slate-100">
 
                 {/* ── 1. LEFT PANEL: Previous Version ── */}
                 {isCompareReady && (
                     <aside
-                        className="flex flex-col border-r border-slate-800 bg-[#2C3E50] shrink-0"
-                        style={{ flexBasis: '50%', minWidth: 0 }}
+                        className="flex flex-col border-b lg:border-r lg:border-b-0 border-slate-800 bg-[#2C3E50] shrink-0 w-full lg:w-1/2 min-h-0"
                     >
                         {/* Panel header */}
                         <div className="h-10 px-4 flex items-center justify-between bg-black/20 border-b border-white/5 shrink-0">
@@ -604,8 +625,8 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
 
                 {/* ── 2. CENTER PANEL: Current Version + Annotation Tools ── */}
                 <section 
-                    className={`flex flex-col relative overflow-hidden shrink-0 ${isCompareReady ? 'border-r border-slate-800' : ''}`} 
-                    style={{ flexBasis: isCompareReady ? '50%' : 'auto', flexGrow: 1, minWidth: 0, background: isCompareReady ? '#243342' : '#2C3E50' }}
+                    className={`flex flex-col relative overflow-hidden shrink-0 min-h-0 ${isCompareReady ? 'lg:border-r border-slate-800' : ''}`} 
+                    style={{ flexGrow: 1, minWidth: 0, background: isCompareReady ? '#243342' : '#2C3E50' }}
                 >
                     {isCompareReady && (
                         <div className="h-10 px-4 flex items-center justify-between bg-blue-600/10 border-b border-blue-500/20 shrink-0 absolute top-0 w-full z-40">
@@ -821,9 +842,13 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
 
                 {/* ── 3. RIGHT PANEL: Actions & Comments ── */}
                 <aside 
-                    className={`flex flex-col border-l border-gray-100 bg-white shrink-0 overflow-hidden ${isCompareReady ? 'shadow-2xl z-50' : ''}`} 
-                    style={{ width: isCompareReady ? 320 : 380 }}
+                    className={`flex flex-col border-t lg:border-t-0 lg:border-l border-gray-100 bg-white shrink-0 overflow-hidden ${isCompareReady ? 'shadow-2xl z-50' : ''}`} 
+                    style={{ 
+                        width: isCompareReady ? (typeof window !== 'undefined' && window.innerWidth <= 1024 ? '100%' : 320) : undefined, 
+                        flexBasis: typeof window !== 'undefined' && window.innerWidth <= 1024 ? '40%' : 'auto' 
+                    }}
                 >
+                    <div className="w-full lg:w-[380px] flex flex-col h-full bg-white ml-auto relative" style={isCompareReady ? { width: '100%' } : {}}>
                     {/* Action buttons */}
                     <div className="p-4 space-y-2.5 border-b border-gray-100 bg-gray-50/60 shrink-0">
                         <div className="grid grid-cols-2 gap-2">
@@ -954,6 +979,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
                             </div>
                         </div>
                     </div>
+                </div>
                 </aside>
             </main>
 
