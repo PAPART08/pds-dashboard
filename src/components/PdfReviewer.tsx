@@ -171,9 +171,17 @@ export default function PdfReviewer({
     return (
         <div
             className="relative bg-white"
+            onContextMenu={(e) => {
+                if (activeTool !== 'select') e.preventDefault();
+            }}
             style={{
                 width: pageWidth,
-                boxShadow: '0 25px 60px rgba(0,0,0,0.40), 0 4px 12px rgba(0,0,0,0.15)'
+                boxShadow: '0 25px 60px rgba(0,0,0,0.40), 0 4px 12px rgba(0,0,0,0.15)',
+                touchAction: activeTool === 'select' ? 'auto' : 'none',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none',
+                WebkitTapHighlightColor: 'transparent',
             }}
         >
             <Document
