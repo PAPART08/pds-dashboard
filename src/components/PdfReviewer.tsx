@@ -248,7 +248,7 @@ export default function PdfReviewer({
                 }}
                 onClick={onSvgClick}
                 style={{ 
-                    touchAction: 'none', // ALWAYS none to prevent browser interference & freeze
+                    touchAction: activeTool === 'select' ? 'auto' : 'none', // ALWAYS none to prevent browser interference & freeze, EXCEPT when navigating in 'select'
                     userSelect: 'none', 
                     WebkitUserSelect: 'none', 
                     WebkitTouchCallout: 'none' 

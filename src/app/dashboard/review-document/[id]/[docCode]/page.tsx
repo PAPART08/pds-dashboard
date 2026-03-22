@@ -537,7 +537,7 @@ export default function DocumentReviewPage({ params: paramsProp }: { params: any
             )}
 
             {/* ─── Main Layout ─── */}
-            <main className={`flex flex-col lg:flex-row flex-1 ${isFullscreen ? 'h-full overflow-hidden' : 'p-4 gap-4 max-w-[1800px] mx-auto w-full'} ${!isFullscreen ? layoutOffset.offset : ''}`}>
+            <main className={`flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0 ${isFullscreen ? 'h-full' : 'p-4 gap-4 max-w-[1800px] mx-auto w-full'} ${!isFullscreen ? layoutOffset.offset : ''}`}>
 
                 {/* ── 1. LEFT PANEL: Previous Version ── */}
                 {isCompareReady && (
